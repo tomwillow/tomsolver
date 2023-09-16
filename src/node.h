@@ -1,4 +1,6 @@
+#pragma once
 #include "error_type.h"
+#include "math_operator.h"
 
 #include <iostream>
 
@@ -9,95 +11,6 @@
 #include <cassert>
 
 namespace tomsolver {
-
-enum class MathOperator {
-    MATH_NULL,
-    //一元
-    MATH_POSITIVE,
-    MATH_NEGATIVE,
-
-    //函数
-    MATH_SIN,
-    MATH_COS,
-    MATH_TAN,
-    MATH_ARCSIN,
-    MATH_ARCCOS,
-    MATH_ARCTAN,
-    MATH_SQRT,
-    MATH_LN,
-    MATH_LOG10,
-    MATH_EXP,
-
-    //二元
-    MATH_ADD,
-    MATH_SUBSTRACT,
-    MATH_MULTIPLY,
-    MATH_DIVIDE,
-    MATH_POWER,
-    MATH_AND,
-    MATH_OR,
-    MATH_MOD,
-
-    MATH_LEFT_PARENTHESIS,
-    MATH_RIGHT_PARENTHESIS
-};
-
-std::string MathOperatorToStr(MathOperator op) {
-    switch (op) {
-    case MathOperator::MATH_NULL:
-        assert(0);
-        return "";
-    //一元
-    case MathOperator::MATH_POSITIVE:
-        return "+";
-    case MathOperator::MATH_NEGATIVE:
-        return "-";
-    //函数
-    case MathOperator::MATH_SIN:
-        return "sin";
-    case MathOperator::MATH_COS:
-        return "cos";
-    case MathOperator::MATH_TAN:
-        return "tan";
-    case MathOperator::MATH_ARCSIN:
-        return "asin";
-    case MathOperator::MATH_ARCCOS:
-        return "acos";
-    case MathOperator::MATH_ARCTAN:
-        return "atan";
-    case MathOperator::MATH_SQRT:
-        return "sqrt";
-    case MathOperator::MATH_LN:
-        return "ln";
-    case MathOperator::MATH_LOG10:
-        return "log10";
-    case MathOperator::MATH_EXP:
-        return "exp";
-    //二元
-    case MathOperator::MATH_ADD:
-        return "+";
-    case MathOperator::MATH_SUBSTRACT:
-        return "-";
-    case MathOperator::MATH_MULTIPLY:
-        return "*";
-    case MathOperator::MATH_DIVIDE:
-        return "/";
-    case MathOperator::MATH_POWER:
-        return "^";
-    case MathOperator::MATH_AND:
-        return "&";
-    case MathOperator::MATH_OR:
-        return "|";
-    case MathOperator::MATH_MOD:
-        return "%";
-    case MathOperator::MATH_LEFT_PARENTHESIS:
-        return "(";
-    case MathOperator::MATH_RIGHT_PARENTHESIS:
-        return ")";
-    }
-    throw MathError{ErrorType::ERROR_WRONG_MATH_OPERATOR,
-                             std::string("value=" + std::to_string(static_cast<int>(op)))};
-}
 
 enum class NodeType { NUMBER, OPERATOR, VARIABLE, FUNCTION };
 
@@ -122,6 +35,12 @@ struct Node {
         return *this;
     }
 
+    std::string ToString() const noexcept {
+        std::string ret;
+        TraverseInOrder(ret);
+        return ret;
+    }
+
 private:
     NodeType type;
     MathOperator op;
@@ -131,115 +50,101 @@ private:
     std::unique_ptr<Node> left, right;
 
     std::unique_ptr<Node> CopyTree(const std::unique_ptr<Node> &rhs) const noexcept {
+        if (rhs == nullptr) {
+            return nullptr;
+        }
         auto ret = std::make_unique<Node>(rhs->type, rhs->op, rhs->value, rhs->varname);
         ret->left = CopyTree(rhs->left);
         ret->right = CopyTree(rhs->right);
         return ret;
     }
 
-    std::string ToString() const noexcept {
+    std::string NodeToStr() const noexcept {
         switch (type) {
         case NodeType::NUMBER:
             return std::to_string(value);
         case NodeType::VARIABLE:
             return varname;
-        default:
-            assert(0 && "unexpected NodeType. maybe this is a bug.");
+        case NodeType::OPERATOR:
+            return MathOperatorToStr(op);
+        }
+        assert(0 && "unexpected NodeType. maybe this is a bug.");
+        return "";
+    }
+
+    void TraverseInOrder(std::string &output) const noexcept {
+        switch (type) {
+        case NodeType::NUMBER:
+        case NodeType::VARIABLE:
+            output += NodeToStr();
+            return;
+        }
+
+        int has_parenthesis = 0;
+        if (GetOperatorNum(op) == 1) //一元运算符：函数和取负
+        {
+            if (type == NodeType::FUNCTION) {
+                output += NodeToStr() + "(";
+                has_parenthesis = 1;
+            } else {
+                output += "(" + NodeToStr();
+                has_parenthesis = 1;
+            }
+        } else {
+            //非一元运算符才输出，即一元运算符的输出顺序已改变
+            if (type == NodeType::OPERATOR) //本级为运算符
+                if (parent != nullptr)
+                    if ((GetOperatorNum(parent->op) == 2 && //父运算符存在，为二元，
+                         (Rank(parent->op) > Rank(op)       //父级优先级高于本级->加括号
+
+                          || ( //两级优先级相等
+                                 Rank(parent->op) == Rank(op) &&
+                                 (
+                                     //本级为父级的右子树 且父级不满足结合律->加括号
+                                     (InAssociativeLaws(parent->op) == false && this == parent->right.get()) ||
+                                     //两级都是右结合
+                                     (InAssociativeLaws(parent->op) == false && IsLeft2Right(op) == false)))))
+
+                        //||
+
+                        ////父运算符存在，为除号，且本级为分子，则添加括号
+                        //(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
+                    ) {
+                        output += "(";
+                        has_parenthesis = 1;
+                    }
+        }
+
+        if (left != nullptr) //左遍历
+        {
+            left->TraverseInOrder(output);
+        }
+
+        if (GetOperatorNum(op) != 1) //非一元运算符才输出，即一元运算符的输出顺序已改变
+        {
+            output += NodeToStr();
+        }
+
+        if (right != nullptr) //右遍历
+        {
+            right->TraverseInOrder(output);
+        }
+
+        //回到本级时补齐右括号，包住前面的东西
+        if (has_parenthesis) {
+            output += ")";
         }
     }
 
-     void TraverseInOrder(Node *now, std::string &output)
-    {
-    	int has_parenthesis = 0;
-    	if (GetOperateNum(now->eOperator) == 1)//一元运算符：函数和取负
-    	{
-    		if (now->eType == NODE_FUNCTION)
-    		{
-    			output += Node2Str(*now) + "(";
-    			has_parenthesis = 1;
-    		}
-    		else
-    		{
-    			output += "(" + Node2Str(*now);
-    			has_parenthesis = 1;
-    		}
-    	}
-    
-    	if (GetOperateNum(now->eOperator) != 1)//非一元运算符才输出，即一元运算符的输出顺序已改变
-    	{
-    		if (now->eType == NODE_OPERATOR)//本级为运算符
-    			if (now->parent != NULL)
-    				if (
-    					(GetOperateNum(now->parent->eOperator) == 2 &&//父运算符存在，为二元，
-    						(
-    							Rank(now->parent->eOperator) >
-    Rank(now->eOperator)//父级优先级高于本级->加括号
-    							||
-    							(//两级优先级相等
-    								Rank(now->parent->eOperator) == Rank(now->eOperator) &&
-    								(
-    									//本级为父级的右子树 且父级不满足结合律->加括号
-    									(inAssociativeLaws(now->parent->eOperator) == false && now ==
-    now->parent->right)
-    									||
-    									////两级都是右结合
-    									(isLeft2Right(now->parent->eOperator) == false && isLeft2Right(now->eOperator) ==
-    false)
-    									)
-    								)
-    							)
-    						)
-    
-    					//||
-    
-    					////父运算符存在，为除号，且本级为分子，则添加括号
-    					//(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
-    					)
-    				{
-    					output += "(";
-    					has_parenthesis = 1;
-    				}
-    	}
-    
-    	if (now->left != NULL)//左遍历
-    	{
-    		TraverseInOrder(now->left, output);
-    	}
-    
-    	if (GetOperateNum(now->eOperator) != 1)//非一元运算符才输出，即一元运算符的输出顺序已改变
-    	{
-    		output += Node2Str(*now);
-    	}
-    
-    
-    	if (now->right != NULL)//右遍历
-    	{
-    		TraverseInOrder(now->right, output);
-    	}
-    
-    	//回到本级时补齐右括号，包住前面的东西
-    	if (has_parenthesis)
-    	{
-    		output += "";
-    	}
-    }
-
     friend std::ostream &operator<<(std::ostream &out, const std::unique_ptr<Node> &n) noexcept;
-    friend std::unique_ptr<Node> operator+(const std::unique_ptr<Node> &n1, const std::unique_ptr<Node> &n2) noexcept;
-    friend std::unique_ptr<Node> operator+(std::unique_ptr<Node> &&n1, std::unique_ptr<Node> &&n2) noexcept;
+    friend std::unique_ptr<Node> OperatorSome(MathOperator op, const std::unique_ptr<Node> &n1,
+                                              const std::unique_ptr<Node> &n2) noexcept;
+    friend std::unique_ptr<Node> OperatorSome(MathOperator op, std::unique_ptr<Node> &&n1,
+                                              std::unique_ptr<Node> &&n2) noexcept;
 };
 
 std::ostream &operator<<(std::ostream &out, const std::unique_ptr<Node> &n) noexcept {
-    if (n->left) {
-        out << n->left;
-    }
-
-    out << n->ToString() << " ";
-
-    if (n->right) {
-        out << n->right;
-    }
-
+    out << n->ToString();
     return out;
 }
 
@@ -247,27 +152,101 @@ std::unique_ptr<Node> Num(double num) noexcept {
     return std::make_unique<Node>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
 }
 
-std::unique_ptr<Node> operator+(const std::unique_ptr<Node> &n1, const std::unique_ptr<Node> &n2) noexcept {
-    auto ret = std::make_unique<Node>(NodeType::OPERATOR, MathOperator::MATH_ADD, 0, "");
+/**
+ * 有效性检查（返回0则出现异常字符）
+ */
+// bool IsLegal(char c) {
+//	if (isDoubleChar(c)) return true;
+//	if (isBaseOperator(c)) return true;
+//	if (IsCharAlpha(c) || c == '_') return true;
+//	return false;
+//}
+
+bool VarNameIsLegal(const std::string &varname) noexcept {
+    if (varname.empty()) {
+        return false;
+    }
+    char c = varname[0];
+    if (!isalpha(c) && c != '_') {
+        return false;
+    }
+    auto n = varname.size();
+    for (size_t i = 1; i < n; ++i) {
+        c = varname[i];
+        if (isalnum(c) || c == '_') {
+            continue;
+        }
+        return false;
+    }
+    return true;
+}
+
+/**
+ *
+ * @exception 名字不合法
+ */
+std::unique_ptr<Node> Var(const std::string &varname) {
+    if (!VarNameIsLegal(varname)) {
+        throw std::runtime_error("Illegal varname: " + varname);
+    }
+    return std::make_unique<Node>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, varname);
+}
+
+/**
+* 二元操作符的运算，返回拷贝拼合后的节点
+*/
+std::unique_ptr<Node> OperatorSome(MathOperator op, const std::unique_ptr<Node> &n1,
+                                   const std::unique_ptr<Node> &n2) noexcept {
+    auto ret = std::make_unique<Node>(NodeType::OPERATOR, op, 0, "");
     auto n1Clone = std::unique_ptr<Node>(new Node(*n1));
     n1Clone->parent = ret.get();
     ret->left = std::move(n1Clone);
 
     auto n2Clone = std::make_unique<Node>(*n2);
     n2Clone->parent = ret.get();
-    ret->left = std::move(n2Clone);
+    ret->right = std::move(n2Clone);
     return ret;
 }
 
-std::unique_ptr<Node> operator+(std::unique_ptr<Node> &&n1, std::unique_ptr<Node> &&n2) noexcept {
-    auto ret = std::make_unique<Node>(NodeType::OPERATOR, MathOperator::MATH_ADD, 0, "");
-    n1->parent = ret.get();
-    ret->left = std::move(n1);
+/**
+ * 二元操作符的运算，返回移动拼合后的节点
+ */
+    std::unique_ptr<Node> OperatorSome(MathOperator op, std::unique_ptr<Node> && n1,
+                                       std::unique_ptr<Node> && n2) noexcept {
+        auto ret = std::make_unique<Node>(NodeType::OPERATOR, op, 0, "");
+        n1->parent = ret.get();
+        ret->left = std::move(n1);
 
-    n2->parent = ret.get();
-    ret->right = std::move(n2);
-    return ret;
-}
+        n2->parent = ret.get();
+        ret->right = std::move(n2);
+        return ret;
+    }
+
+    
+    std::unique_ptr<Node> operator+(const std::unique_ptr<Node> &n1, const std::unique_ptr<Node> &n2) noexcept {
+        return OperatorSome(MathOperator::MATH_ADD, n1, n2);
+    }
+
+    std::unique_ptr<Node> operator+(std::unique_ptr<Node> &&n1, std::unique_ptr<Node> &&n2) noexcept {
+        return OperatorSome(MathOperator::MATH_ADD, n1, n2);
+    }
+    std::unique_ptr<Node> operator+(std::unique_ptr<Node> &&n1, double d) noexcept {
+        return OperatorSome(MathOperator::MATH_ADD, n1, Num(d));
+    }
+
+    std::unique_ptr<Node> operator-(const std::unique_ptr<Node> &n1, const std::unique_ptr<Node> &n2) noexcept {
+        return OperatorSome(MathOperator::MATH_SUB, n1, n2);
+    }
+
+    std::unique_ptr<Node> operator-(const std::unique_ptr<Node> &n1, double d) noexcept {
+        return OperatorSome(MathOperator::MATH_SUB, n1, Num(d));
+    }
+    std::unique_ptr<Node> operator-(std::unique_ptr<Node> &&n1, std::unique_ptr<Node> &&n2) noexcept {
+        return OperatorSome(MathOperator::MATH_SUB, n1, n2);
+    }
+    std::unique_ptr<Node> operator-(std::unique_ptr<Node> &&n1, double d) noexcept {
+        return OperatorSome(MathOperator::MATH_SUB, n1, Num(d));
+    }
 
 // Node operator*(const Node &n1, const Node &n2) {
 //    Func fn(Func::FuncType::MUL);

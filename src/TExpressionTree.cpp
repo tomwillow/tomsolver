@@ -139,150 +139,6 @@
 //	}
 //}
 //
-///* 返回运算符结合性 */
-//bool TExpressionTree::isLeft2Right(enumMathOperator eOperator)
-//{
-//	switch (eOperator)
-//	{
-//	case MATH_MOD://%
-//	case MATH_AND://&
-//	case MATH_OR://|
-//	case MATH_MULTIPLY:
-//	case MATH_DIVIDE:
-//	case MATH_ADD:
-//	case MATH_SUBSTRACT:
-//		return true;
-//
-//	case MATH_POSITIVE://正负号为右结合
-//	case MATH_NEGATIVE:
-//	case MATH_POWER://^
-//		return false;
-//		//函数和括号不计结合性
-//	default:
-//		return true;
-//	}
-//}
-//
-///* 返回运算符的优先级 */
-//int TExpressionTree::Rank(enumMathOperator eOperator)
-//{
-//	switch (eOperator)
-//	{
-//	case MATH_SQRT:
-//	case MATH_SIN:
-//	case MATH_COS:
-//	case MATH_TAN:
-//	case MATH_ARCSIN:
-//	case MATH_ARCCOS:
-//	case MATH_ARCTAN:
-//	case MATH_LN:
-//	case MATH_LOG10:
-//	case MATH_EXP:
-//		return 15;
-//
-//	case MATH_POSITIVE://除了函数，所有运算符均可将正负号挤出
-//	case MATH_NEGATIVE:
-//		return 14;
-//
-//	case MATH_MOD://%
-//		return 13;
-//
-//	case MATH_AND://&
-//	case MATH_OR://|
-//		return 12;
-//
-//	case MATH_POWER://^
-//		return 11;
-//
-//	case MATH_MULTIPLY:
-//	case MATH_DIVIDE:
-//		return 10;
-//
-//	case MATH_ADD:
-//	case MATH_SUBSTRACT:
-//		return 5;
-//
-//	case MATH_LEFT_PARENTHESIS://左右括号优先级小是为了不被其余任何运算符挤出
-//	case MATH_RIGHT_PARENTHESIS:
-//		return 0;
-//	default:
-//		throw MathError{ ErrorType::ERROR_WRONG_MATH_OPERATOR, std::string("VALUE:" + to_string(eOperator)) };
-//	}
-//}
-//
-//int TExpressionTree::GetOperateNum(TExpressionTree::enumMathOperator eOperator)
-//{
-//	switch (eOperator)
-//	{
-//	case MATH_SQRT:
-//	case MATH_SIN:
-//	case MATH_COS:
-//	case MATH_TAN:
-//	case MATH_ARCSIN:
-//	case MATH_ARCCOS:
-//	case MATH_ARCTAN:
-//	case MATH_LN:
-//	case MATH_LOG10:
-//	case MATH_EXP:
-//
-//	case MATH_POSITIVE://正负号
-//	case MATH_NEGATIVE:
-//		return 1;
-//
-//	case MATH_MOD://%
-//	case MATH_AND://&
-//	case MATH_OR://|
-//	case MATH_POWER://^
-//	case MATH_MULTIPLY:
-//	case MATH_DIVIDE:
-//	case MATH_ADD:
-//	case MATH_SUBSTRACT:
-//		return 2;
-//
-//	case MATH_LEFT_PARENTHESIS:
-//	case MATH_RIGHT_PARENTHESIS:
-//		return 0;
-//	default:
-//		return 0;
-//	}
-//}
-//
-//bool TExpressionTree::inAssociativeLaws(enumMathOperator eOperator)
-//{
-//	switch (eOperator)
-//	{
-//	case MATH_SQRT:
-//	case MATH_SIN:
-//	case MATH_COS:
-//	case MATH_TAN:
-//	case MATH_ARCSIN:
-//	case MATH_ARCCOS:
-//	case MATH_ARCTAN:
-//	case MATH_LN:
-//	case MATH_LOG10:
-//	case MATH_EXP:
-//
-//	case MATH_POSITIVE://正负号
-//	case MATH_NEGATIVE:
-//
-//	case MATH_MOD://%
-//	case MATH_AND://&
-//	case MATH_OR://|
-//	case MATH_POWER://^
-//	case MATH_DIVIDE:
-//	case MATH_SUBSTRACT:
-//
-//	case MATH_LEFT_PARENTHESIS:
-//	case MATH_RIGHT_PARENTHESIS:
-//		return false;
-//
-//	case MATH_ADD:
-//	case MATH_MULTIPLY:
-//		return true;
-//	}
-//	assert(0);
-//	return false;
-//}
 //
 ///* 是基本运算符()+-* /^&|% */
 //bool TExpressionTree::isBaseOperator(char c)
@@ -360,7 +216,7 @@
 //	case '+':
 //		return MATH_ADD;
 //	case '-':
-//		return MATH_SUBSTRACT;
+//		return MATH_SUB;
 //	case '*':
 //		return MATH_MULTIPLY;
 //	case '/':
@@ -392,7 +248,7 @@
 //		return "";
 //	case MATH_ADD:
 //		return "+";
-//	case MATH_SUBSTRACT:
+//	case MATH_SUB:
 //		return "-";
 //	case MATH_MULTIPLY:
 //		return "*";
@@ -411,13 +267,6 @@
 //	}
 //}
 //
-///* 有效性检查（返回0则出现异常字符） */
-//bool TExpressionTree::isLegal(char c) {
-//	if (isDoubleChar(c)) return true;
-//	if (isBaseOperator(c)) return true;
-//	if (IsCharAlpha(c) || c == '_') return true;
-//	return false;
-//}
 //
 //
 ///* 字符是0-9或. */
@@ -743,7 +592,7 @@
 //		PreInOrder[0]->eOperator = MATH_POSITIVE;
 //		i++;
 //	}
-//	if (PreInOrder[0]->eOperator == MATH_SUBSTRACT)
+//	if (PreInOrder[0]->eOperator == MATH_SUB)
 //	{
 //		PreInOrder[0]->eOperator = MATH_NEGATIVE;
 //		i++;
@@ -762,7 +611,7 @@
 //				i++;
 //				continue;
 //			}
-//			if (PreInOrder[i]->eOperator == MATH_SUBSTRACT)
+//			if (PreInOrder[i]->eOperator == MATH_SUB)
 //			{
 //				PreInOrder[i]->eOperator = MATH_NEGATIVE;
 //				i++;
@@ -920,7 +769,7 @@
 //	case MATH_ADD:
 //		Operator->value = value1 + value2;
 //		break;
-//	case MATH_SUBSTRACT:
+//	case MATH_SUB:
 //		Operator->value = value1 - value2;
 //		break;
 //	}
@@ -982,7 +831,7 @@
 //				Diff(now->left, var);
 //			return;
 //		case MATH_ADD:
-//		case MATH_SUBSTRACT:
+//		case MATH_SUB:
 //			if (now->left != NULL)
 //				Diff(now->left, var);
 //			if (now->right != NULL)
@@ -1042,7 +891,7 @@
 //
 //				//创建减号
 //				TNode *substract;
-//				substract = NewNode(NODE_OPERATOR, MATH_SUBSTRACT);
+//				substract = NewNode(NODE_OPERATOR, MATH_SUB);
 //
 //				//创建2个乘号
 //				TNode *multiply1, *multiply2;
@@ -1605,7 +1454,7 @@
 //		}
 //
 //		//0-x=-x
-//		if (now->eOperator == MATH_SUBSTRACT && LChildIs0)
+//		if (now->eOperator == MATH_SUB && LChildIs0)
 //		{
 //			TNode *LChild = now->left;
 //			TNode *RChild = now->right;
@@ -1619,7 +1468,7 @@
 //		//任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
 //		if (
 //			(now->eOperator == MATH_ADD && (LChildIs0 || RChildIs0)) ||
-//			(now->eOperator == MATH_SUBSTRACT && RChildIs0) ||
+//			(now->eOperator == MATH_SUB && RChildIs0) ||
 //			(now->eOperator == MATH_MULTIPLY && (LChildIs1 || RChildIs1)) ||
 //
 //			(now->eOperator == MATH_DIVIDE && RChildIs1) ||
@@ -1868,7 +1717,7 @@
 //		{
 //		case MATH_ADD:
 //			write_pos->eType = NODE_OPERATOR;
-//			write_pos->eOperator = MATH_SUBSTRACT;
+//			write_pos->eOperator = MATH_SUB;
 //
 //			write_pos->right = CopyNodeTree(brother);
 //			write_pos->right->parent = write_pos;
@@ -1890,7 +1739,7 @@
 //			write_pos->left->parent = write_pos;
 //			Solve(parent, write_pos->left);
 //			break;
-//		case MATH_SUBSTRACT://分左右
+//		case MATH_SUB://分左右
 //			if (bVarIsLeft)//被减数
 //			{
 //				write_pos->eType = NODE_OPERATOR;
@@ -1907,7 +1756,7 @@
 //			else
 //			{
 //				write_pos->eType = NODE_OPERATOR;
-//				write_pos->eOperator = MATH_SUBSTRACT;
+//				write_pos->eOperator = MATH_SUB;
 //
 //				write_pos->left = CopyNodeTree(brother);
 //				write_pos->left->parent = write_pos;
@@ -2262,7 +2111,7 @@
 //		return *this;
 //	}
 //
-//	TNode *Substract = NewNode(NODE_OPERATOR, MATH_SUBSTRACT);
+//	TNode *Substract = NewNode(NODE_OPERATOR, MATH_SUB);
 //	TNode *Value = NewNode(NODE_NUMBER);
 //	Value->value = value;
 //

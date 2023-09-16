@@ -15,16 +15,10 @@
 //
 //    void Release();
 //
-//    //运算符性质函数
-//    int GetOperateNum(enumMathOperator eOperator);
 //    static std::string EnumOperatorToTChar(enumMathOperator eOperator);
-//    bool isLeft2Right(enumMathOperator eOperator);
-//    bool inAssociativeLaws(enumMathOperator eOperator);
-//    int Rank(enumMathOperator eOperator);
 //
 //    bool isBaseOperator(char c);
 //    bool isDoubleChar(char c);
-//    bool isLegal(char c);
 //
 //    static enumMathOperator BaseOperatorCharToEnum(char c);
 //    static enumMathOperator Str2Function(std::string s);
