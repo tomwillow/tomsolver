@@ -27,13 +27,10 @@
 //    int iVarAppearedCount;
 //    TNode *LastVarNode;
 //    // TVariableTable SelfVariableTable;
-//    bool IsIntAndEven(double n);
 //    void InQueue2PostQueue(std::queue<TNode *> &InOrder, std::vector<TNode *> &PostOrder);
 //    void ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder);
 //    static std::string Node2Str(const TNode &node);
 //    void BuildExpressionTree(std::vector<TNode *> &PostOrder);
-//    void CalcNode(TNode *Operator, const TNode *Node1,
-//                  const TNode *Node2); //计算节点值，支持所有运算符和函数，结果存进Operator
 //    void Simplify(TNode *now);
 //    void GetNodeNum(TNode *now, int &n);
 //    int GetNodeNum(TNode *head);
@@ -48,7 +45,6 @@
 //    void CopyVariableTable(std::vector<std::string> &Dest, const std::vector<std::string> source);
 //    // void ReplaceNodeVariable(TNode *now, std::vector<std::string > &newVariableTable);
 //    bool CanCalc(TNode *now);
-//    void Calc(TNode *now);
 //    void LinkParent(TNode *child, TNode *ignore);
 //    TNode *NewNode(enumNodeType eType, enumMathOperator eOperator = MATH_NULL);
 //    void ReleaseVectorTNode(std::vector<TNode *> vec);

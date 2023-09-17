@@ -35,10 +35,59 @@ struct Node {
         return *this;
     }
 
+    Node(Node &&rhs) noexcept {
+        operator=(std::move(rhs));
+    }
+
+    Node &operator=(Node &&rhs) noexcept {
+        type = rhs.type;
+        op = rhs.op;
+        value = rhs.value;
+        varname = rhs.varname;
+        parent = rhs.parent;
+        left = std::move(rhs.left);
+        right = std::move(rhs.right);
+
+        rhs.parent = nullptr;
+        return *this;
+    }
+
+    ~Node() = default;
+
+    /**
+     * 把整个节点以中序遍历的顺序输出为字符串。
+     */
     std::string ToString() const noexcept {
         std::string ret;
         TraverseInOrder(ret);
         return ret;
+    }
+
+    /**
+     * 迭代计算
+     * @exception
+     */
+    double Vpa() {
+        double l, r;
+        if (left != nullptr)
+            l = left->Vpa();
+        if (right != nullptr)
+            r = right->Vpa();
+
+        if (type == NodeType::NUMBER) {
+            return value;
+        }
+
+        if (type == NodeType::VARIABLE) {
+            throw std::runtime_error("has variable. can not calculate to be a number");
+        }
+
+        if (type == NodeType::OPERATOR) {
+            return Calc(op, l, r);
+        }
+
+        throw std::runtime_error("unsupported node type");
+        return std::numeric_limits<double>::quiet_NaN();
     }
 
 private:
@@ -59,6 +108,9 @@ private:
         return ret;
     }
 
+    /**
+     * 节点转string。仅限本节点，不含子节点。
+     */
     std::string NodeToStr() const noexcept {
         switch (type) {
         case NodeType::NUMBER:
@@ -146,16 +198,16 @@ private:
 };
 
 /**
-* 重载std::ostream的<<操作符以输出一个Node节点。
-*/
+ * 重载std::ostream的<<操作符以输出一个Node节点。
+ */
 std::ostream &operator<<(std::ostream &out, const std::unique_ptr<Node> &n) noexcept {
     out << n->ToString();
     return out;
 }
 
 /**
-* 新建一个数值节点。
-*/
+ * 新建一个数值节点。
+ */
 std::unique_ptr<Node> Num(double num) noexcept {
     return std::make_unique<Node>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
 }
@@ -201,7 +253,7 @@ std::unique_ptr<Node> Var(const std::string &varname) {
 }
 
 /**
-* 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
+ * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
  */
 void CopyOrMoveTo(Node *parent, std::unique_ptr<Node> &child, std::unique_ptr<Node> &&n1) noexcept {
     n1->parent = parent;
@@ -217,7 +269,6 @@ void CopyOrMoveTo(Node *parent, std::unique_ptr<Node> &child, const std::unique_
     child = std::move(n1Clone);
 }
 
-
 template <typename T1, typename T2>
 std::unique_ptr<Node> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
     auto ret = std::make_unique<Node>(NodeType::OPERATOR, op, 0, "");
@@ -227,22 +278,24 @@ std::unique_ptr<Node> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
 }
 
 template <typename T1, typename T2>
-std::unique_ptr<Node> operator+(T1 &&n1, T2 &&n2) noexcept
-{
+std::unique_ptr<Node> operator+(T1 &&n1, T2 &&n2) noexcept {
     return OperatorSome(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
-//template <typename T>
-//std::unique_ptr<Node> operator-(T &&n1, T &&n2) noexcept {
-//    return OperatorSome(MathOperator::MATH_SUB, std::forward<T>(n1), std::forward<T>(n2));
-//}
-//
-//std::unique_ptr<Node> operator-(const std::unique_ptr<Node> &n1, double d) noexcept {
-//    return OperatorSome(MathOperator::MATH_SUB, n1, Num(d));
-//}
-//std::unique_ptr<Node> operator-(std::unique_ptr<Node> &&n1, double d) noexcept {
-//    return OperatorSome(MathOperator::MATH_SUB, n1, Num(d));
-//}
+template <typename T1, typename T2>
+std::unique_ptr<Node> operator-(T1 &&n1, T2 &&n2) noexcept {
+    return OperatorSome(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T1, typename T2>
+std::unique_ptr<Node> operator*(T1 &&n1, T2 &&n2) noexcept {
+    return OperatorSome(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T1, typename T2>
+std::unique_ptr<Node> operator/(T1 &&n1, T2 &&n2) noexcept {
+    return OperatorSome(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
+}
 
 //
 // class Matrix {

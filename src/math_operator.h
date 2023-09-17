@@ -4,8 +4,16 @@
 
 #include <string>
 #include <cassert>
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+#include <limits>
 
 namespace tomsolver {
+
+constexpr double PI = M_PI;
+
+constexpr double eps = std::numeric_limits<double>::epsilon();
 
 enum class MathOperator {
     MATH_NULL,
@@ -244,6 +252,129 @@ bool InAssociativeLaws(MathOperator eOperator) {
     }
     assert(0);
     return false;
+}
+
+
+/**
+* 是整数 且 为偶数
+* FIXME: 超出long long范围的处理
+*/
+ bool IsIntAndEven(double n)
+{
+	long long i = (long long)n;
+	if (abs(n - i) <= eps)
+		if (i % 2 == 0)
+			return true;
+	return false;
+}
+
+double Calc(MathOperator op, double v1, double v2) {
+    switch (op) {
+    case MathOperator::MATH_SQRT:
+        if (v1 < 0.0) {
+            throw MathError(ErrorType::ERROR_I, std::string("sqrt(") + std::to_string(v1) + std::string(")"));
+        }
+        return sqrt(v1);
+        break;
+    case MathOperator::MATH_SIN:
+        return sin(v1);
+        break;
+    case MathOperator::MATH_COS:
+        return cos(v1);
+        break;
+    case MathOperator::MATH_TAN: {
+        // x!=k*pi+pi/2 -> 2*x/pi != 2*k+1(odd)
+        double value = v1 * 2.0 / M_PI;
+        if (abs(value - (int)value) < eps && (int)value % 2 != 1) {
+            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN,
+                            std::string("tan(") + std::to_string(value) + std::string("")};
+        }
+        return tan(v1);
+        break;
+    }
+    case MathOperator::MATH_ARCSIN:
+        if (v1 < -1.0 || v1 > 1.0) {
+            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN,
+                            std::string("arcsin(") + std::to_string(v1) + std::string("")};
+        }
+        return asin(v1);
+        break;
+    case MathOperator::MATH_ARCCOS:
+        if (v1 < -1.0 || v1 > 1.0) {
+            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN,
+                            std::string("arccos(") + std::to_string(v1) + std::string("")};
+        }
+        return acos(v1);
+        break;
+    case MathOperator::MATH_ARCTAN:
+        return atan(v1);
+        break;
+    case MathOperator::MATH_LN:
+        if (v1 <= 0) {
+            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN, std::string("ln(") + std::to_string(v1) + std::string("")};
+        }
+        return log(v1);
+        break;
+    case MathOperator::MATH_LOG10:
+        if (v1 <= 0) // log(0)或log(负数)
+        {
+            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN,
+                            std::string("log10(") + std::to_string(v1) + std::string("")};
+        }
+        return log10(v1);
+        break;
+    case MathOperator::MATH_EXP:
+        return exp(v1);
+        break;
+    case MathOperator::MATH_POSITIVE:
+        break;
+    case MathOperator::MATH_NEGATIVE:
+        return -v1;
+        break;
+
+    case MathOperator::MATH_MOD: //%
+        if ((int)v2 == 0)
+            throw MathError{ErrorType::ERROR_DIVIDE_ZERO, std::to_string(v2)};
+        return (int)v1 % (int)v2;
+        break;
+    case MathOperator::MATH_AND: //&
+        return (int)v1 & (int)v2;
+        break;
+    case MathOperator::MATH_OR: //|
+        return (int)v1 | (int)v2;
+        break;
+
+    case MathOperator::MATH_POWER: //^
+        // 0^0
+        if (abs(v1) < eps && abs(v2) < eps) {
+            throw MathError{ErrorType::ERROR_ZERO_POWEROF_ZERO, ""};
+        }
+
+        //(-1)^0.5=i
+        if (v1 < 0 && IsIntAndEven(1.0 / v2)) {
+            throw MathError{ErrorType::ERROR_I,
+                            std::string("pow(") + std::to_string(v1) + "," + std::to_string(v2) + ""};
+        }
+        return pow(v1, v2);
+        break;
+
+    case MathOperator::MATH_MULTIPLY:
+        return v1 * v2;
+        break;
+    case MathOperator::MATH_DIVIDE:
+        if (abs(v2) < eps) {
+            throw MathError{ErrorType::ERROR_DIVIDE_ZERO, ""};
+        }
+        return v1 / v2;
+        break;
+
+    case MathOperator::MATH_ADD:
+        return v1 + v2;
+        break;
+    case MathOperator::MATH_SUB:
+        return v1 - v2;
+        break;
+    }
 }
 
 } // namespace tomsolver
