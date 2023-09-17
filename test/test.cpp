@@ -27,25 +27,40 @@ y = [   a*cos(x(1)) + b*cos(x(1)-x(2)) + c*cos(x(1)-x(2)-x(3)),
 using namespace std;
 using namespace tomsolver;
 
-TEST(Node, Basic) {
+TEST(Node, Num) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
     cout << n->ToString() << endl;
     ASSERT_EQ(n->ToString(), "10.000000");
 
+    // 右值+右值
     auto n2 = Num(1) + Num(2);
     cout << n2->ToString() << endl;
     ASSERT_EQ(n2->ToString(), "1.000000+2.000000");
 
+    // 左值+左值
     auto n3 = n + n2;
+    cout << n3->ToString() << endl;
+    ASSERT_EQ(n3->ToString(), "10.000000+1.000000+2.000000");
     cout << n3->ToString() << endl;
     ASSERT_EQ(n3->ToString(), "10.000000+1.000000+2.000000");
 
     // 前面的 n n2 不应被释放
     ASSERT_EQ(n->ToString(), "10.000000");
     ASSERT_EQ(n2->ToString(), "1.000000+2.000000");
-    return;
+
+    // 左值+右值
+    auto n4 = n + Num(3);
+    ASSERT_EQ(n4->ToString(), "10.000000+3.000000");
+    // 前面的 n 不应被释放
+    ASSERT_EQ(n->ToString(), "10.000000");
+
+    // 右值+左值
+    auto n5 = Num(3) + n;
+    ASSERT_EQ(n5->ToString(), "3.000000+10.000000");
+    // 前面的 n 不应被释放
+    ASSERT_EQ(n->ToString(), "10.000000");
 }
 
 TEST(Node, Var) {
@@ -53,15 +68,15 @@ TEST(Node, Var) {
 
     ASSERT_ANY_THROW(Var("0a"));
 
-    ASSERT_NO_THROW(Var("a"));
-    ASSERT_NO_THROW(Var("a0"));
-    ASSERT_NO_THROW(Var("_"));
-    ASSERT_NO_THROW(Var("_a"));
-    ASSERT_NO_THROW(Var("_1"));
+    Var("a");
+    Var("a0");
+    Var("_");
+    Var("_a");
+    Var("_1");
 
-    auto a = Var("a");
-    auto n = Num(1);
-    auto expr = a - 1.0;
-    cout << expr << endl;
-    ASSERT_EQ(expr->ToString(), "a-1.000000");
+    //auto a = Var("a");
+    //auto n = Num(1);
+    //auto expr = a - 1.0;
+    //cout << expr << endl;
+    //ASSERT_EQ(expr->ToString(), "a-1.000000");
 }

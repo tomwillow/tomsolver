@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include <vector>
-
+#include <type_traits>
 #include <memory>
 #include <string>
 #include <cassert>
@@ -17,14 +17,14 @@ enum class NodeType { NUMBER, OPERATOR, VARIABLE, FUNCTION };
 /* 单个元素 */
 struct Node {
 
-    Node(NodeType type, MathOperator op, double value, std::string varname)
+    Node(NodeType type, MathOperator op, double value, std::string varname) noexcept
         : type(type), op(op), value(value), varname(varname), parent(nullptr) {}
 
-    Node(const Node &rhs) {
+    Node(const Node &rhs) noexcept {
         operator=(rhs);
     }
 
-    Node &operator=(const Node &rhs) {
+    Node &operator=(const Node &rhs) noexcept {
         type = rhs.type;
         op = rhs.op;
         value = rhs.value;
@@ -136,18 +136,26 @@ private:
         }
     }
 
+    friend void CopyOrMoveTo(Node *parent, std::unique_ptr<Node> &child, std::unique_ptr<Node> &&n1) noexcept;
+    friend void CopyOrMoveTo(Node *parent, std::unique_ptr<Node> &child, const std::unique_ptr<Node> &n1) noexcept;
+
     friend std::ostream &operator<<(std::ostream &out, const std::unique_ptr<Node> &n) noexcept;
-    friend std::unique_ptr<Node> OperatorSome(MathOperator op, const std::unique_ptr<Node> &n1,
-                                              const std::unique_ptr<Node> &n2) noexcept;
-    friend std::unique_ptr<Node> OperatorSome(MathOperator op, std::unique_ptr<Node> &&n1,
-                                              std::unique_ptr<Node> &&n2) noexcept;
+
+    template <typename T1, typename T2>
+    friend std::unique_ptr<Node> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 };
 
+/**
+* 重载std::ostream的<<操作符以输出一个Node节点。
+*/
 std::ostream &operator<<(std::ostream &out, const std::unique_ptr<Node> &n) noexcept {
     out << n->ToString();
     return out;
 }
 
+/**
+* 新建一个数值节点。
+*/
 std::unique_ptr<Node> Num(double num) noexcept {
     return std::make_unique<Node>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
 }
@@ -182,8 +190,8 @@ bool VarNameIsLegal(const std::string &varname) noexcept {
 }
 
 /**
- *
- * @exception 名字不合法
+ * 新建一个变量节点。
+ * @exception runtime_error 名字不合法
  */
 std::unique_ptr<Node> Var(const std::string &varname) {
     if (!VarNameIsLegal(varname)) {
@@ -193,89 +201,49 @@ std::unique_ptr<Node> Var(const std::string &varname) {
 }
 
 /**
-* 二元操作符的运算，返回拷贝拼合后的节点
-*/
-std::unique_ptr<Node> OperatorSome(MathOperator op, const std::unique_ptr<Node> &n1,
-                                   const std::unique_ptr<Node> &n2) noexcept {
-    auto ret = std::make_unique<Node>(NodeType::OPERATOR, op, 0, "");
-    auto n1Clone = std::unique_ptr<Node>(new Node(*n1));
-    n1Clone->parent = ret.get();
-    ret->left = std::move(n1Clone);
-
-    auto n2Clone = std::make_unique<Node>(*n2);
-    n2Clone->parent = ret.get();
-    ret->right = std::move(n2Clone);
-    return ret;
+* 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
+ */
+void CopyOrMoveTo(Node *parent, std::unique_ptr<Node> &child, std::unique_ptr<Node> &&n1) noexcept {
+    n1->parent = parent;
+    child = std::move(n1);
 }
 
 /**
- * 二元操作符的运算，返回移动拼合后的节点
+ * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
  */
-    std::unique_ptr<Node> OperatorSome(MathOperator op, std::unique_ptr<Node> && n1,
-                                       std::unique_ptr<Node> && n2) noexcept {
-        auto ret = std::make_unique<Node>(NodeType::OPERATOR, op, 0, "");
-        n1->parent = ret.get();
-        ret->left = std::move(n1);
+void CopyOrMoveTo(Node *parent, std::unique_ptr<Node> &child, const std::unique_ptr<Node> &n1) noexcept {
+    auto n1Clone = std::unique_ptr<Node>(new Node(*n1));
+    n1Clone->parent = parent;
+    child = std::move(n1Clone);
+}
 
-        n2->parent = ret.get();
-        ret->right = std::move(n2);
-        return ret;
-    }
 
-    
-    std::unique_ptr<Node> operator+(const std::unique_ptr<Node> &n1, const std::unique_ptr<Node> &n2) noexcept {
-        return OperatorSome(MathOperator::MATH_ADD, n1, n2);
-    }
+template <typename T1, typename T2>
+std::unique_ptr<Node> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
+    auto ret = std::make_unique<Node>(NodeType::OPERATOR, op, 0, "");
+    CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
+    CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
+    return ret;
+}
 
-    std::unique_ptr<Node> operator+(std::unique_ptr<Node> &&n1, std::unique_ptr<Node> &&n2) noexcept {
-        return OperatorSome(MathOperator::MATH_ADD, n1, n2);
-    }
-    std::unique_ptr<Node> operator+(std::unique_ptr<Node> &&n1, double d) noexcept {
-        return OperatorSome(MathOperator::MATH_ADD, n1, Num(d));
-    }
+template <typename T1, typename T2>
+std::unique_ptr<Node> operator+(T1 &&n1, T2 &&n2) noexcept
+{
+    return OperatorSome(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
+}
 
-    std::unique_ptr<Node> operator-(const std::unique_ptr<Node> &n1, const std::unique_ptr<Node> &n2) noexcept {
-        return OperatorSome(MathOperator::MATH_SUB, n1, n2);
-    }
-
-    std::unique_ptr<Node> operator-(const std::unique_ptr<Node> &n1, double d) noexcept {
-        return OperatorSome(MathOperator::MATH_SUB, n1, Num(d));
-    }
-    std::unique_ptr<Node> operator-(std::unique_ptr<Node> &&n1, std::unique_ptr<Node> &&n2) noexcept {
-        return OperatorSome(MathOperator::MATH_SUB, n1, n2);
-    }
-    std::unique_ptr<Node> operator-(std::unique_ptr<Node> &&n1, double d) noexcept {
-        return OperatorSome(MathOperator::MATH_SUB, n1, Num(d));
-    }
-
-// Node operator*(const Node &n1, const Node &n2) {
-//    Func fn(Func::FuncType::MUL);
-//    fn.SetLeft(n1);
-//    fn.SetRight(n2);
-//    return fn;
+//template <typename T>
+//std::unique_ptr<Node> operator-(T &&n1, T &&n2) noexcept {
+//    return OperatorSome(MathOperator::MATH_SUB, std::forward<T>(n1), std::forward<T>(n2));
 //}
 //
-// class Var : public Node {
-// public:
-//    explicit Var(const std::string &varname) : varname(varname) {}
-//
-// private:
-//    std::string varname;
-//};
-//
-// class Func : public Node {
-// public:
-//    enum class FuncType { MUL, SIN, COS };
-//    Func(FuncType type) : type(type) {}
-//    Func(const std::string &funcName) {
-//        if (funcName == "sin") {
-//            type = FuncType::SIN;
-//        }
-//    }
-//
-// private:
-//    FuncType type;
-//};
+//std::unique_ptr<Node> operator-(const std::unique_ptr<Node> &n1, double d) noexcept {
+//    return OperatorSome(MathOperator::MATH_SUB, n1, Num(d));
+//}
+//std::unique_ptr<Node> operator-(std::unique_ptr<Node> &&n1, double d) noexcept {
+//    return OperatorSome(MathOperator::MATH_SUB, n1, Num(d));
+//}
+
 //
 // class Matrix {
 // public:
