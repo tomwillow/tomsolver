@@ -9,7 +9,7 @@
 using namespace std;
 using namespace tomsolver;
 
-TEST(Node, Num) {
+TEST(NodeImpl, Num) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -45,7 +45,7 @@ TEST(Node, Num) {
     ASSERT_EQ(n->ToString(), "10.000000");
 }
 
-TEST(Node, Var) {
+TEST(NodeImpl, Var) {
     MemoryLeakDetection mld;
 
     ASSERT_ANY_THROW(Var("0a"));
@@ -61,7 +61,7 @@ TEST(Node, Var) {
     ASSERT_EQ(expr->ToString(), "a-1.000000");
 }
 
-TEST(Node, AddEqual) {
+TEST(NodeImpl, AddEqual) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -77,7 +77,7 @@ TEST(Node, AddEqual) {
     ASSERT_EQ(n2->ToString(), "20.000000");
 }
 
-TEST(Node, SubEqual) {
+TEST(NodeImpl, SubEqual) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -93,7 +93,7 @@ TEST(Node, SubEqual) {
     ASSERT_EQ(n2->ToString(), "20.000000");
 }
 
-TEST(Node, MulEqual) {
+TEST(NodeImpl, MulEqual) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -109,7 +109,7 @@ TEST(Node, MulEqual) {
     ASSERT_EQ(n2->ToString(), "20.000000");
 }
 
-TEST(Node, DivEqual) {
+TEST(NodeImpl, DivEqual) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -125,7 +125,7 @@ TEST(Node, DivEqual) {
     ASSERT_EQ(n2->ToString(), "20.000000");
 }
 
-TEST(Node, Multiply) {
+TEST(NodeImpl, Multiply) {
     MemoryLeakDetection mld;
 
     {
@@ -147,7 +147,7 @@ TEST(Node, Multiply) {
     }
 }
 
-TEST(Node, Divide) {
+TEST(NodeImpl, Divide) {
     MemoryLeakDetection mld;
 
     {
@@ -172,7 +172,7 @@ TEST(Node, Divide) {
     ASSERT_THROW(expr->Vpa(), MathError);
 }
 
-TEST(Node, Random) {
+TEST(NodeImpl, Random) {
     MemoryLeakDetection mld;
 
     int maxCount = 100;
@@ -217,16 +217,17 @@ TEST(Node, Random) {
             }
         }
 
-        cout << node->ToString() << endl;
         double result = node->Vpa();
-        cout << "\t result = " << result << endl;
-        cout << "\t expected = " << v << endl;
+        //cout << node->ToString() << endl;
+        //cout << "\t result = " << result << endl;
+        //cout << "\t expected = " << v << endl;
         ASSERT_DOUBLE_EQ(result, v);
     }
 }
 
 TEST(Vec, Base)
 {
+    vector<Node> vec;
 }
 
 /*
