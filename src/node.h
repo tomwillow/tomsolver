@@ -14,6 +14,8 @@ namespace tomsolver {
 
 enum class NodeType { NUMBER, OPERATOR, VARIABLE, FUNCTION };
 
+namespace internal {
+
 /* 单个元素 */
 struct NodeImpl {
 
@@ -68,7 +70,7 @@ struct NodeImpl {
      * @exception
      */
     double Vpa() {
-        double l=0, r=0;
+        double l = 0, r = 0;
         if (left != nullptr)
             l = left->Vpa();
         if (right != nullptr)
@@ -190,8 +192,10 @@ private:
         }
     }
 
-    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept;
-    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std::unique_ptr<NodeImpl> &n1) noexcept;
+    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
+                             std::unique_ptr<NodeImpl> &&n1) noexcept;
+    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
+                             const std::unique_ptr<NodeImpl> &n1) noexcept;
 
     friend std::ostream &operator<<(std::ostream &out, const std::unique_ptr<NodeImpl> &n) noexcept;
 
@@ -199,21 +203,50 @@ private:
     friend std::unique_ptr<NodeImpl> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 };
 
-using Node = std::unique_ptr<NodeImpl>;
+/**
+ * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
+ */
+void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
+                  std::unique_ptr<NodeImpl> &&n1) noexcept {
+    n1->parent = parent;
+    child = std::move(n1);
+}
+
+/**
+ * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
+ */
+void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std::unique_ptr<NodeImpl> &n1) noexcept {
+    auto n1Clone = std::unique_ptr<NodeImpl>(new NodeImpl(*n1));
+    n1Clone->parent = parent;
+    child = std::move(n1Clone);
+}
 
 /**
  * 重载std::ostream的<<操作符以输出一个Node节点。
  */
-std::ostream &operator<<(std::ostream &out, const std::unique_ptr<NodeImpl> &n) noexcept {
+std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::NodeImpl> &n) noexcept {
     out << n->ToString();
     return out;
 }
 
+template <typename T1, typename T2>
+std::unique_ptr<NodeImpl> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
+    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
+    CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
+    CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
+    return ret;
+}
+
+} // namespace internal
+
+using Node = std::unique_ptr<internal::NodeImpl>;
+
+
 /**
  * 新建一个数值节点。
  */
-std::unique_ptr<NodeImpl> Num(double num) noexcept {
-    return std::make_unique<NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
+std::unique_ptr<internal::NodeImpl> Num(double num) noexcept {
+    return std::make_unique<internal::NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
 }
 
 /**
@@ -249,79 +282,55 @@ bool VarNameIsLegal(const std::string &varname) noexcept {
  * 新建一个变量节点。
  * @exception runtime_error 名字不合法
  */
-std::unique_ptr<NodeImpl> Var(const std::string &varname) {
+std::unique_ptr<internal::NodeImpl> Var(const std::string &varname) {
     if (!VarNameIsLegal(varname)) {
         throw std::runtime_error("Illegal varname: " + varname);
     }
-    return std::make_unique<NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, varname);
+    return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, varname);
 }
 
-/**
- * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
- */
-void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept {
-    n1->parent = parent;
-    child = std::move(n1);
-}
-
-/**
- * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
- */
-void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std::unique_ptr<NodeImpl> &n1) noexcept {
-    auto n1Clone = std::unique_ptr<NodeImpl>(new NodeImpl(*n1));
-    n1Clone->parent = parent;
-    child = std::move(n1Clone);
-}
 
 template <typename T1, typename T2>
-std::unique_ptr<NodeImpl> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
-    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
-    CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
-    CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
-    return ret;
-}
-
-template <typename T1, typename T2>
-std::unique_ptr<NodeImpl> operator+(T1 &&n1, T2 &&n2) noexcept {
-    return OperatorSome(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
+std::unique_ptr<internal::NodeImpl> operator+(T1 &&n1, T2 &&n2) noexcept {
+    return internal::OperatorSome(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::unique_ptr<NodeImpl>& operator+=(std::unique_ptr<NodeImpl> &n1, T &&n2) noexcept {
-    n1 = OperatorSome(MathOperator::MATH_ADD, n1, std::forward<T>(n2));
+std::unique_ptr<internal::NodeImpl> &operator+=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::OperatorSome(MathOperator::MATH_ADD, n1, std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::unique_ptr<NodeImpl> operator-(T1 &&n1, T2 &&n2) noexcept {
-    return OperatorSome(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
+std::unique_ptr<internal::NodeImpl> operator-(T1 &&n1, T2 &&n2) noexcept {
+    return internal::OperatorSome(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::unique_ptr<NodeImpl> &operator-=(std::unique_ptr<NodeImpl> &n1, T &&n2) noexcept {
-    n1 = OperatorSome(MathOperator::MATH_SUB, n1, std::forward<T>(n2));
+std::unique_ptr<internal::NodeImpl> &operator-=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::OperatorSome(MathOperator::MATH_SUB, n1, std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::unique_ptr<NodeImpl> operator*(T1 &&n1, T2 &&n2) noexcept {
-    return OperatorSome(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
+std::unique_ptr<internal::NodeImpl> operator*(T1 &&n1, T2 &&n2) noexcept {
+    return internal::OperatorSome(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::unique_ptr<NodeImpl> &operator*=(std::unique_ptr<NodeImpl> &n1, T &&n2) noexcept {
-    n1 = OperatorSome(MathOperator::MATH_MULTIPLY, n1, std::forward<T>(n2));
+std::unique_ptr<internal::NodeImpl> &operator*=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::OperatorSome(MathOperator::MATH_MULTIPLY, n1, std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::unique_ptr<NodeImpl> operator/(T1 &&n1, T2 &&n2) noexcept {
-    return OperatorSome(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
+std::unique_ptr<internal::NodeImpl> operator/(T1 &&n1, T2 &&n2) noexcept {
+    return internal::OperatorSome(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::unique_ptr<NodeImpl> &operator/=(std::unique_ptr<NodeImpl> &n1, T &&n2) noexcept {
-    n1 = OperatorSome(MathOperator::MATH_DIVIDE, n1, std::forward<T>(n2));
+std::unique_ptr<internal::NodeImpl> &operator/=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::OperatorSome(MathOperator::MATH_DIVIDE, n1, std::forward<T>(n2));
     return n1;
 }
 
