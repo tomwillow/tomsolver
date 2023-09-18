@@ -9,7 +9,7 @@
 using namespace std;
 using namespace tomsolver;
 
-TEST(NodeImpl, Num) {
+TEST(Node, Num) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -45,7 +45,7 @@ TEST(NodeImpl, Num) {
     ASSERT_EQ(n->ToString(), "10.000000");
 }
 
-TEST(NodeImpl, Var) {
+TEST(Node, Var) {
     MemoryLeakDetection mld;
 
     ASSERT_ANY_THROW(Var("0a"));
@@ -61,7 +61,7 @@ TEST(NodeImpl, Var) {
     ASSERT_EQ(expr->ToString(), "a-1.000000");
 }
 
-TEST(NodeImpl, AddEqual) {
+TEST(Node, AddEqual) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -77,7 +77,7 @@ TEST(NodeImpl, AddEqual) {
     ASSERT_EQ(n2->ToString(), "20.000000");
 }
 
-TEST(NodeImpl, SubEqual) {
+TEST(Node, SubEqual) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -93,7 +93,7 @@ TEST(NodeImpl, SubEqual) {
     ASSERT_EQ(n2->ToString(), "20.000000");
 }
 
-TEST(NodeImpl, MulEqual) {
+TEST(Node, MulEqual) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -109,7 +109,7 @@ TEST(NodeImpl, MulEqual) {
     ASSERT_EQ(n2->ToString(), "20.000000");
 }
 
-TEST(NodeImpl, DivEqual) {
+TEST(Node, DivEqual) {
     MemoryLeakDetection mld;
 
     auto n = Num(10);
@@ -125,7 +125,7 @@ TEST(NodeImpl, DivEqual) {
     ASSERT_EQ(n2->ToString(), "20.000000");
 }
 
-TEST(NodeImpl, Multiply) {
+TEST(Node, Multiply) {
     MemoryLeakDetection mld;
 
     {
@@ -147,7 +147,7 @@ TEST(NodeImpl, Multiply) {
     }
 }
 
-TEST(NodeImpl, Divide) {
+TEST(Node, Divide) {
     MemoryLeakDetection mld;
 
     {
@@ -172,7 +172,7 @@ TEST(NodeImpl, Divide) {
     ASSERT_THROW(expr->Vpa(), MathError);
 }
 
-TEST(NodeImpl, Random) {
+TEST(Node, Random) {
     MemoryLeakDetection mld;
 
     int maxCount = 100;

@@ -297,7 +297,7 @@ std::unique_ptr<internal::NodeImpl> operator+(T1 &&n1, T2 &&n2) noexcept {
 
 template <typename T>
 std::unique_ptr<internal::NodeImpl> &operator+=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::OperatorSome(MathOperator::MATH_ADD, n1, std::forward<T>(n2));
+    n1 = internal::OperatorSome(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
@@ -308,7 +308,7 @@ std::unique_ptr<internal::NodeImpl> operator-(T1 &&n1, T2 &&n2) noexcept {
 
 template <typename T>
 std::unique_ptr<internal::NodeImpl> &operator-=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::OperatorSome(MathOperator::MATH_SUB, n1, std::forward<T>(n2));
+    n1 = internal::OperatorSome(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
@@ -319,7 +319,7 @@ std::unique_ptr<internal::NodeImpl> operator*(T1 &&n1, T2 &&n2) noexcept {
 
 template <typename T>
 std::unique_ptr<internal::NodeImpl> &operator*=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::OperatorSome(MathOperator::MATH_MULTIPLY, n1, std::forward<T>(n2));
+    n1 = internal::OperatorSome(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
@@ -330,7 +330,7 @@ std::unique_ptr<internal::NodeImpl> operator/(T1 &&n1, T2 &&n2) noexcept {
 
 template <typename T>
 std::unique_ptr<internal::NodeImpl> &operator/=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::OperatorSome(MathOperator::MATH_DIVIDE, n1, std::forward<T>(n2));
+    n1 = internal::OperatorSome(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
