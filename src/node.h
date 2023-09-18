@@ -68,7 +68,7 @@ struct Node {
      * @exception
      */
     double Vpa() {
-        double l, r;
+        double l=0, r=0;
         if (left != nullptr)
             l = left->Vpa();
         if (right != nullptr)
@@ -83,6 +83,8 @@ struct Node {
         }
 
         if (type == NodeType::OPERATOR) {
+            assert((GetOperatorNum(op) == 1 && left != nullptr && right == nullptr) ||
+                   (GetOperatorNum(op) == 2 && left != nullptr && right != nullptr));
             return Calc(op, l, r);
         }
 
@@ -282,9 +284,21 @@ std::unique_ptr<Node> operator+(T1 &&n1, T2 &&n2) noexcept {
     return OperatorSome(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
+template <typename T>
+std::unique_ptr<Node>& operator+=(std::unique_ptr<Node> &n1, T &&n2) noexcept {
+    n1 = OperatorSome(MathOperator::MATH_ADD, n1, std::forward<T>(n2));
+    return n1;
+}
+
 template <typename T1, typename T2>
 std::unique_ptr<Node> operator-(T1 &&n1, T2 &&n2) noexcept {
     return OperatorSome(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+std::unique_ptr<Node> &operator-=(std::unique_ptr<Node> &n1, T &&n2) noexcept {
+    n1 = OperatorSome(MathOperator::MATH_SUB, n1, std::forward<T>(n2));
+    return n1;
 }
 
 template <typename T1, typename T2>
@@ -292,10 +306,23 @@ std::unique_ptr<Node> operator*(T1 &&n1, T2 &&n2) noexcept {
     return OperatorSome(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
+template <typename T>
+std::unique_ptr<Node> &operator*=(std::unique_ptr<Node> &n1, T &&n2) noexcept {
+    n1 = OperatorSome(MathOperator::MATH_MULTIPLY, n1, std::forward<T>(n2));
+    return n1;
+}
+
 template <typename T1, typename T2>
 std::unique_ptr<Node> operator/(T1 &&n1, T2 &&n2) noexcept {
     return OperatorSome(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
 }
+
+template <typename T>
+std::unique_ptr<Node> &operator/=(std::unique_ptr<Node> &n1, T &&n2) noexcept {
+    n1 = OperatorSome(MathOperator::MATH_DIVIDE, n1, std::forward<T>(n2));
+    return n1;
+}
+
 
 //
 // class Matrix {
