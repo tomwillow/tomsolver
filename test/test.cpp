@@ -185,32 +185,48 @@ TEST(NodeImpl, Random) {
     uniform_int_distribution<int> unifCount(1, maxCount);
     uniform_int_distribution<int> unifOp(0, ops.size() - 1);
     uniform_real_distribution<double> unifNum(-100.0, 100.0);
-     for (int i=0; i < 100; ++i)
-    {
+    for (int i = 0; i < 100; ++i) {
         double v = 1.0;
         auto node = Num(1.0);
 
         int count = unifCount(eng);
-        for (int j = 0; j < count; ++j)
-        {
+        for (int j = 0; j < count; ++j) {
             double num = unifNum(eng);
             auto op = ops[unifOp(eng)];
+
+            bool opOrOpEqual = unifCount(eng) % 2;
             switch (op) {
             case MathOperator::MATH_ADD:
                 v += num;
-                node += Num(num);
+                if (opOrOpEqual) {
+                    node = node + Num(num);
+                } else {
+                    node += Num(num);
+                }
                 break;
             case MathOperator::MATH_SUB:
                 v -= num;
-                node -= Num(num);
+                if (opOrOpEqual) {
+                    node = node - Num(num);
+                } else {
+                    node -= Num(num);
+                }
                 break;
             case MathOperator::MATH_MULTIPLY:
                 v *= num;
-                node *= Num(num);
+                if (opOrOpEqual) {
+                    node = node * Num(num);
+                } else {
+                    node *= Num(num);
+                }
                 break;
             case MathOperator::MATH_DIVIDE:
                 v /= num;
-                node /= Num(num);
+                if (opOrOpEqual) {
+                    node = node / Num(num);
+                } else {
+                    node /= Num(num);
+                }
                 break;
             default:
                 assert(0);
@@ -218,15 +234,14 @@ TEST(NodeImpl, Random) {
         }
 
         double result = node->Vpa();
-        //cout << node->ToString() << endl;
-        //cout << "\t result = " << result << endl;
-        //cout << "\t expected = " << v << endl;
+        // cout << node->ToString() << endl;
+        // cout << "\t result = " << result << endl;
+        // cout << "\t expected = " << v << endl;
         ASSERT_DOUBLE_EQ(result, v);
     }
 }
 
-TEST(Vec, Base)
-{
+TEST(Vec, Base) {
     vector<Node> vec;
 }
 
