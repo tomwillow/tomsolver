@@ -27,15 +27,18 @@ enum class ErrorType {
     ERROR_OVER_DETERMINED_EQUATIONS      //方程组过定义
 };
 
+std::string GetErrorInfo(ErrorType err);
+
 class MathError : public std::exception {
 public:
-    MathError(ErrorType errorType, const std::string &info) : errorType(errorType), info(info) {}
+    MathError(ErrorType errorType, const std::string &extInfo)
+        : errorType(errorType), errInfo(GetErrorInfo(errorType) + " ext: " + extInfo) {}
+
+    virtual const char *what() const override;
 
 private:
     ErrorType errorType;
-    std::string info;
+    std::string errInfo;
 };
-
-std::string GetErrorInfo(ErrorType err);
 
 } // namespace tomsolver

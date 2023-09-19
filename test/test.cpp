@@ -177,13 +177,14 @@ TEST(Node, Random) {
 
     int maxCount = 100;
 
-    default_random_engine eng(
-        static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count()));
+    auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
+    cout << "seed = " << seed << endl;
+    default_random_engine eng(seed);
 
     vector<MathOperator> ops{MathOperator::MATH_ADD, MathOperator::MATH_SUB, MathOperator::MATH_MULTIPLY,
                              MathOperator::MATH_DIVIDE};
     uniform_int_distribution<int> unifCount(1, maxCount);
-    uniform_int_distribution<int> unifOp(0, ops.size() - 1);
+    uniform_int_distribution<int> unifOp(0, static_cast<int>(ops.size()) - 1);
     uniform_real_distribution<double> unifNum(-100.0, 100.0);
     for (int i = 0; i < 100; ++i) {
         double v = 1.0;
@@ -239,6 +240,85 @@ TEST(Node, Random) {
         // cout << "\t expected = " << v << endl;
         ASSERT_DOUBLE_EQ(result, v);
     }
+}
+
+TEST(Node, DoNotStackOverFlow) {
+    MemoryLeakDetection mld;
+
+    int maxCount = 10000;
+
+    auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
+    cout << "seed = " << seed << endl;
+    default_random_engine eng(seed);
+
+    vector<MathOperator> ops{MathOperator::MATH_ADD, MathOperator::MATH_SUB, MathOperator::MATH_MULTIPLY,
+                             MathOperator::MATH_DIVIDE};
+    uniform_int_distribution<int> unifOp(0, static_cast<int>(ops.size()) - 1);
+    uniform_real_distribution<double> unifNum(-100.0, 100.0);
+    double v = 1.0;
+    auto node = Num(1.0);
+
+    for (int j = 0; j < maxCount;) {
+        double num = unifNum(eng);
+        auto op = ops[unifOp(eng)];
+
+        bool frontOrBack = unifOp(eng) % 2;
+        switch (op) {
+        case MathOperator::MATH_ADD:
+            if (frontOrBack) {
+                v = num + v;
+                node = Num(num) + std::move(node);
+            } else {
+                v += num;
+                node += Num(num);
+            }
+            break;
+        case MathOperator::MATH_SUB:
+            if (frontOrBack) {
+                v = num - v;
+                node = Num(num) - std::move(node);
+            } else {
+                v -= num;
+                node -= Num(num);
+            }
+            break;
+        case MathOperator::MATH_MULTIPLY:
+            if (frontOrBack) {
+                v = num * v;
+                node = Num(num) * std::move(node);
+            } else {
+                v *= num;
+                node *= Num(num);
+            }
+            break;
+        case MathOperator::MATH_DIVIDE:
+            if (frontOrBack) {
+                if (v == 0) {
+                    continue;
+                }
+                v = num / v;
+                node = Num(num) / std::move(node);
+            } else {
+                if (num == 0) {
+                    continue;
+                }
+                v /= num;
+                node /= Num(num);
+            }
+            break;
+        default:
+            assert(0);
+        }
+
+        ++j;
+    }
+
+    std::setlocale(LC_ALL, ".UTF8");
+    double result = node->Vpa();
+     //cout << node->ToString() << endl;
+    cout << "\t result = " << result << endl;
+    cout << "\t expected = " << v << endl;
+    ASSERT_DOUBLE_EQ(result, v);
 }
 
 TEST(Vec, Base) {

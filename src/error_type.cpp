@@ -49,6 +49,13 @@ std::string GetErrorInfo(ErrorType err) {
         assert(0);
         break;
     }
+    return u8"GetErrorInfo: bug";
+}
+
+
+const char *MathError::what() const
+{
+    return errInfo.c_str();
 }
 
 } // namespace tomsolver

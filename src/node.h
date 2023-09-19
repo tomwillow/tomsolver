@@ -8,11 +8,18 @@
 #include <type_traits>
 #include <memory>
 #include <string>
+#include <stack>
 #include <cassert>
 
 namespace tomsolver {
 
 enum class NodeType { NUMBER, OPERATOR, VARIABLE, FUNCTION };
+
+namespace internal {
+struct NodeImpl;
+}
+
+using Node = std::unique_ptr<internal::NodeImpl>;
 
 namespace internal {
 
@@ -54,7 +61,9 @@ struct NodeImpl {
         return *this;
     }
 
-    ~NodeImpl() = default;
+    ~NodeImpl() {
+        Release();
+    }
 
     /**
      * 把整个节点以中序遍历的顺序输出为字符串。
@@ -69,29 +78,8 @@ struct NodeImpl {
      * 迭代计算
      * @exception
      */
-    double Vpa() {
-        double l = 0, r = 0;
-        if (left != nullptr)
-            l = left->Vpa();
-        if (right != nullptr)
-            r = right->Vpa();
-
-        if (type == NodeType::NUMBER) {
-            return value;
-        }
-
-        if (type == NodeType::VARIABLE) {
-            throw std::runtime_error("has variable. can not calculate to be a number");
-        }
-
-        if (type == NodeType::OPERATOR) {
-            assert((GetOperatorNum(op) == 1 && left != nullptr && right == nullptr) ||
-                   (GetOperatorNum(op) == 2 && left != nullptr && right != nullptr));
-            return Calc(op, l, r);
-        }
-
-        throw std::runtime_error("unsupported node type");
-        return std::numeric_limits<double>::quiet_NaN();
+    double Vpa() const {
+        return VpaNonRecursively();
     }
 
 private:
@@ -192,6 +180,152 @@ private:
         }
     }
 
+    
+    /**
+     * 计算表达式数值。递归实现。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 不符合定义域, 除0等情况。
+     */
+    double VpaRecursively() const {
+        double l = 0, r = 0;
+        if (left != nullptr)
+            l = left->Vpa();
+        if (right != nullptr)
+            r = right->Vpa();
+
+        if (type == NodeType::NUMBER) {
+            return value;
+        }
+
+        if (type == NodeType::VARIABLE) {
+            throw std::runtime_error("has variable. can not calculate to be a number");
+        }
+
+        if (type == NodeType::OPERATOR) {
+            assert((GetOperatorNum(op) == 1 && left != nullptr && right == nullptr) ||
+                   (GetOperatorNum(op) == 2 && left != nullptr && right != nullptr));
+            return Calc(op, l, r);
+        }
+
+        throw std::runtime_error("unsupported node type");
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    /**
+     * 计算表达式数值。非递归实现。
+     * 性能弱于递归实现。但不会导致栈溢出。
+     * 根据benchmark，生成一组含4000个随机四则运算节点的表达式，生成1000次，Release下测试耗时3000ms。递归实现耗时2500ms。
+     * 粗略计算，即 1333 ops/ms。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 不符合定义域, 除0等情况。
+     */
+    double VpaNonRecursively() const {
+        std::stack<const NodeImpl*> stk;
+        std::stack<const NodeImpl *> revertedPostOrder;
+
+        // ==== Part I ====
+
+        // 借助一个栈，得到反向的后序遍历序列，结果保存在revertedPostOrder
+        stk.push(this);
+
+        while (1) {
+            if (stk.empty()) {
+                break;
+            }
+
+            auto f = stk.top();
+            stk.pop();
+
+            if (f->left) {
+                stk.push(f->left.get());
+            }
+
+            if (f->right) {
+                stk.push(f->right.get());
+            }
+
+            revertedPostOrder.push(f);
+        }
+
+        // ==== Part II ====
+        // revertedPostOrder的反向序列是一组逆波兰表达式，根据这组逆波兰表达式可以计算出表达式的值
+        // calcStk是用来计算值的临时栈，计算完成后calcStk的size应该为1
+        std::stack<double> calcStk;
+        while (!revertedPostOrder.empty())
+        {
+            auto f = revertedPostOrder.top();
+            revertedPostOrder.pop();
+
+            if (f->type == NodeType::NUMBER)
+            {
+                calcStk.push(f->value);
+                continue;
+            }
+
+            if (f->type == NodeType::OPERATOR) {
+                if (GetOperatorNum(f->op) == 1) {
+                    calcStk.top() = Calc(f->op, calcStk.top(), std::numeric_limits<double>::quiet_NaN());
+                    continue;
+                }
+
+                if (GetOperatorNum(f->op) == 2) {
+                    double r = calcStk.top();
+                    calcStk.pop();
+
+                    double &l = calcStk.top();
+                    calcStk.top() = Calc(f->op, l, r);
+                    continue;
+                }
+
+                assert(0 && "[VpaNonRecursively] unsupported operator num");
+            }
+
+            // 其他情况抛异常
+            throw std::runtime_error("wrong");
+        }
+
+        assert(calcStk.size() == 1);
+
+        return calcStk.top();
+    }
+
+    /**
+    * 释放整个节点树，除了自己。
+    * 实际是二叉树的非递归后序遍历。
+    */
+    void Release() noexcept {
+        std::stack<Node> stk;
+
+        if (left) {
+            stk.push(std::move(left));
+        }
+
+        if (right) {
+            stk.push(std::move(right));
+        }
+
+        while (1) {
+            if (stk.empty()) {
+                break;
+            }
+
+            auto f = std::move(stk.top());
+            stk.pop();
+
+            if (f->left) {
+                stk.push(std::move(f->left));
+            }
+
+            if (f->right) {
+                stk.push(std::move(f->right));
+            }
+
+            assert(f->left == nullptr && f->right == nullptr);
+
+            // 这里如果把f填入vector，最后翻转。得到的序列就是后序遍历。
+        }
+    }
+
     friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
                              std::unique_ptr<NodeImpl> &&n1) noexcept;
     friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
@@ -206,8 +340,7 @@ private:
 /**
  * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
  */
-void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
-                  std::unique_ptr<NodeImpl> &&n1) noexcept {
+void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept {
     n1->parent = parent;
     child = std::move(n1);
 }
@@ -238,9 +371,6 @@ std::unique_ptr<NodeImpl> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexce
 }
 
 } // namespace internal
-
-using Node = std::unique_ptr<internal::NodeImpl>;
-
 
 /**
  * 新建一个数值节点。
@@ -289,7 +419,6 @@ std::unique_ptr<internal::NodeImpl> Var(const std::string &varname) {
     return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, varname);
 }
 
-
 template <typename T1, typename T2>
 std::unique_ptr<internal::NodeImpl> operator+(T1 &&n1, T2 &&n2) noexcept {
     return internal::OperatorSome(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
@@ -333,7 +462,6 @@ std::unique_ptr<internal::NodeImpl> &operator/=(std::unique_ptr<internal::NodeIm
     n1 = internal::OperatorSome(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
     return n1;
 }
-
 
 //
 // class Matrix {

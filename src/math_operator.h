@@ -378,13 +378,13 @@ double Calc(MathOperator op, double v1, double v2) {
         ret = v1 * v2;
         break;
     case MathOperator::MATH_DIVIDE:
-        if (GetConfig().checkDomain && abs(v2) < eps) {
+        if (GetConfig().checkDomain && abs(v2) ==0) {
             throw MathError{ErrorType::ERROR_DIVIDE_ZERO, ""};
         }
         ret = v1 / v2;
         break;
     default:
-        assert(0);
+        assert(0 && "[Calc] bug.");
         break;
     }
 
