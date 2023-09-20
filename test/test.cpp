@@ -172,81 +172,7 @@ TEST(Node, Divide) {
     ASSERT_THROW(expr->Vpa(), MathError);
 }
 
-TEST(Node, Random) {
-    MemoryLeakDetection mld;
-
-    int maxCount = 100;
-
-    auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
-    cout << "seed = " << seed << endl;
-    default_random_engine eng(seed);
-
-    vector<MathOperator> ops{MathOperator::MATH_ADD, MathOperator::MATH_SUB, MathOperator::MATH_MULTIPLY,
-                             MathOperator::MATH_DIVIDE};
-    uniform_int_distribution<int> unifCount(1, maxCount);
-    uniform_int_distribution<int> unifOp(0, static_cast<int>(ops.size()) - 1);
-    uniform_real_distribution<double> unifNum(-100.0, 100.0);
-    for (int i = 0; i < 100; ++i) {
-        double v = 1.0;
-        auto node = Num(1.0);
-
-        int count = unifCount(eng);
-        for (int j = 0; j < count; ++j) {
-            double num = unifNum(eng);
-            auto op = ops[unifOp(eng)];
-
-            bool opOrOpEqual = unifCount(eng) % 2;
-            switch (op) {
-            case MathOperator::MATH_ADD:
-                v += num;
-                if (opOrOpEqual) {
-                    node = node + Num(num);
-                } else {
-                    node += Num(num);
-                }
-                break;
-            case MathOperator::MATH_SUB:
-                v -= num;
-                if (opOrOpEqual) {
-                    node = node - Num(num);
-                } else {
-                    node -= Num(num);
-                }
-                break;
-            case MathOperator::MATH_MULTIPLY:
-                v *= num;
-                if (opOrOpEqual) {
-                    node = node * Num(num);
-                } else {
-                    node *= Num(num);
-                }
-                break;
-            case MathOperator::MATH_DIVIDE:
-                v /= num;
-                if (opOrOpEqual) {
-                    node = node / Num(num);
-                } else {
-                    node /= Num(num);
-                }
-                break;
-            default:
-                assert(0);
-            }
-        }
-
-        double result = node->Vpa();
-        // cout << node->ToString() << endl;
-        // cout << "\t result = " << result << endl;
-        // cout << "\t expected = " << v << endl;
-        ASSERT_DOUBLE_EQ(result, v);
-    }
-}
-
-TEST(Node, DoNotStackOverFlow) {
-    MemoryLeakDetection mld;
-
-    int maxCount = 10000;
-
+std::pair<Node,double> CreateRandomExpresionTree(int len) {
     auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
     cout << "seed = " << seed << endl;
     default_random_engine eng(seed);
@@ -258,7 +184,7 @@ TEST(Node, DoNotStackOverFlow) {
     double v = 1.0;
     auto node = Num(1.0);
 
-    for (int j = 0; j < maxCount;) {
+    for (int j = 0; j < len;) {
         double num = unifNum(eng);
         auto op = ops[unifOp(eng)];
 
@@ -312,6 +238,42 @@ TEST(Node, DoNotStackOverFlow) {
 
         ++j;
     }
+    return {std::move(node), v};
+}
+
+TEST(Node, Random) {
+    MemoryLeakDetection mld;
+
+    int maxCount = 100;
+
+    auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
+    cout << "seed = " << seed << endl;
+    default_random_engine eng(seed);
+
+    uniform_int_distribution<int> unifCount(1, maxCount);
+    for (int i = 0; i < 100; ++i) {
+        int count = unifCount(eng);
+
+        auto pr = CreateRandomExpresionTree(count);
+        Node &node = pr.first;
+        double v = pr.second;
+
+        double result = node->Vpa();
+        // cout << node->ToString() << endl;
+        // cout << "\t result = " << result << endl;
+        // cout << "\t expected = " << v << endl;
+        ASSERT_DOUBLE_EQ(result, v);
+    }
+}
+
+TEST(Node, DoNotStackOverFlow) {
+    MemoryLeakDetection mld;
+
+    GetConfig().checkDomain = false;
+
+    auto pr = CreateRandomExpresionTree(10000);
+    Node &node = pr.first;
+    double v = pr.second;
 
     std::setlocale(LC_ALL, ".UTF8");
     double result = node->Vpa();
@@ -319,6 +281,8 @@ TEST(Node, DoNotStackOverFlow) {
     cout << "\t result = " << result << endl;
     cout << "\t expected = " << v << endl;
     ASSERT_DOUBLE_EQ(result, v);
+
+    GetConfig().checkDomain = true;
 }
 
 TEST(Vec, Base) {
