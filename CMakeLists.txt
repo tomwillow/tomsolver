@@ -57,3 +57,6 @@ target_link_libraries(TomSolverTest PUBLIC
 # 设置MT/MTd
 #set_property(TARGET TomSolverTest PROPERTY
 #  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+include(GoogleTest)
+gtest_discover_tests(TomSolverTest)
