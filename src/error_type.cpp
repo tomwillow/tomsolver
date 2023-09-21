@@ -53,7 +53,7 @@ std::string GetErrorInfo(ErrorType err) {
 }
 
 
-const char *MathError::what() const
+const char *MathError::what() const noexcept
 {
     return errInfo.c_str();
 }

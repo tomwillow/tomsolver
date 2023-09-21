@@ -34,7 +34,7 @@ public:
     MathError(ErrorType errorType, const std::string &extInfo)
         : errorType(errorType), errInfo(GetErrorInfo(errorType) + " ext: " + extInfo) {}
 
-    virtual const char *what() const override;
+    virtual const char *what() const noexcept override;
 
 private:
     ErrorType errorType;
