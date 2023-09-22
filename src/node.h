@@ -333,8 +333,11 @@ private:
 
     friend std::ostream &operator<<(std::ostream &out, const std::unique_ptr<NodeImpl> &n) noexcept;
 
+    template <typename T>
+    friend std::unique_ptr<NodeImpl> UnaryOperator(MathOperator op, T &&n) noexcept;
+
     template <typename T1, typename T2>
-    friend std::unique_ptr<NodeImpl> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
+    friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 };
 
 
@@ -353,8 +356,15 @@ void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std:
  */
 std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::NodeImpl> &n) noexcept;
 
+template <typename T>
+std::unique_ptr<NodeImpl> UnaryOperator(MathOperator op, T &&n) noexcept {
+    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
+    CopyOrMoveTo(ret.get(), ret->left, std::forward<T>(n));
+    return ret;
+}
+
 template <typename T1, typename T2>
-std::unique_ptr<NodeImpl> OperatorSome(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
+std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
     auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
     CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
     CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
@@ -388,45 +398,45 @@ std::unique_ptr<internal::NodeImpl> Var(const std::string &varname);
 
 template <typename T1, typename T2>
 std::unique_ptr<internal::NodeImpl> operator+(T1 &&n1, T2 &&n2) noexcept {
-    return internal::OperatorSome(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
+    return internal::BinaryOperator(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
 std::unique_ptr<internal::NodeImpl> &operator+=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::OperatorSome(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
+    n1 = internal::BinaryOperator(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
 std::unique_ptr<internal::NodeImpl> operator-(T1 &&n1, T2 &&n2) noexcept {
-    return internal::OperatorSome(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
+    return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
 std::unique_ptr<internal::NodeImpl> &operator-=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::OperatorSome(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
+    n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
 std::unique_ptr<internal::NodeImpl> operator*(T1 &&n1, T2 &&n2) noexcept {
-    return internal::OperatorSome(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
+    return internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
 std::unique_ptr<internal::NodeImpl> &operator*=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::OperatorSome(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
+    n1 = internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
 std::unique_ptr<internal::NodeImpl> operator/(T1 &&n1, T2 &&n2) noexcept {
-    return internal::OperatorSome(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
+    return internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
 std::unique_ptr<internal::NodeImpl> &operator/=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::OperatorSome(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
+    n1 = internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
