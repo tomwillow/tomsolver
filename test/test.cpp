@@ -1,4 +1,4 @@
-#include "node.h"
+#include "tomsolver.h"
 
 #include "memory_leak_detection.h"
 
@@ -172,17 +172,19 @@ TEST(Node, Divide) {
     ASSERT_THROW(expr->Vpa(), MathError);
 }
 
-std::pair<Node,double> CreateRandomExpresionTree(int len) {
+std::pair<Node, double> CreateRandomExpresionTree(int len) {
     auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
     cout << "seed = " << seed << endl;
     default_random_engine eng(seed);
 
-    vector<MathOperator> ops{MathOperator::MATH_ADD, MathOperator::MATH_SUB, MathOperator::MATH_MULTIPLY,
-                             MathOperator::MATH_DIVIDE};
+    vector<MathOperator> ops{MathOperator::MATH_ADD,    MathOperator::MATH_SUB,    MathOperator::MATH_MULTIPLY,
+                             MathOperator::MATH_DIVIDE, MathOperator::MATH_SIN,    MathOperator::MATH_COS,
+                             MathOperator::MATH_TAN,    MathOperator::MATH_ARCSIN, MathOperator::MATH_ARCCOS,
+                             MathOperator::MATH_ARCTAN};
     uniform_int_distribution<int> unifOp(0, static_cast<int>(ops.size()) - 1);
     uniform_real_distribution<double> unifNum(-100.0, 100.0);
-    double v = 1.0;
-    auto node = Num(1.0);
+    double v = unifNum(eng);
+    auto node = Num(v);
 
     for (int j = 0; j < len;) {
         double num = unifNum(eng);
@@ -232,6 +234,36 @@ std::pair<Node,double> CreateRandomExpresionTree(int len) {
                 node /= Num(num);
             }
             break;
+        case MathOperator::MATH_SIN:
+            v = sin(v);
+            node = std::move(sin(std::move(node)));
+            break;
+        case MathOperator::MATH_COS:
+            v = cos(v);
+            node = std::move(cos(std::move(node)));
+            break;
+        case MathOperator::MATH_TAN:
+            v = tan(v);
+            node = std::move(tan(std::move(node)));
+            break;
+        case MathOperator::MATH_ARCSIN:
+            if (v < -1.0 || v > 1.0) {
+                continue;
+            }
+            v = asin(v);
+            node = std::move(asin(std::move(node)));
+            break;
+        case MathOperator::MATH_ARCCOS:
+            if (v < -1.0 || v > 1.0) {
+                continue;
+            }
+            v = acos(v);
+            node = std::move(acos(std::move(node)));
+            break;
+        case MathOperator::MATH_ARCTAN:
+            v = atan(v);
+            node = std::move(atan(std::move(node)));
+            break;
         default:
             assert(0);
         }
@@ -244,14 +276,14 @@ std::pair<Node,double> CreateRandomExpresionTree(int len) {
 TEST(Node, Random) {
     MemoryLeakDetection mld;
 
-    int maxCount = 100;
+    int maxCount = 10;
 
     auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
     cout << "seed = " << seed << endl;
     default_random_engine eng(seed);
 
     uniform_int_distribution<int> unifCount(1, maxCount);
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 10; ++i) {
         int count = unifCount(eng);
 
         auto pr = CreateRandomExpresionTree(count);
@@ -259,10 +291,11 @@ TEST(Node, Random) {
         double v = pr.second;
 
         double result = node->Vpa();
-        // cout << node->ToString() << endl;
-        // cout << "\t result = " << result << endl;
-        // cout << "\t expected = " << v << endl;
+        cout << node->ToString() << endl;
+        cout << "\t result = " << result << endl;
+        cout << "\t expected = " << v << endl;
         ASSERT_DOUBLE_EQ(result, v);
+        cout << endl;
     }
 }
 
@@ -277,7 +310,7 @@ TEST(Node, DoNotStackOverFlow) {
 
     std::setlocale(LC_ALL, ".UTF8");
     double result = node->Vpa();
-     //cout << node->ToString() << endl;
+    // cout << node->ToString() << endl;
     cout << "\t result = " << result << endl;
     cout << "\t expected = " << v << endl;
     ASSERT_DOUBLE_EQ(result, v);

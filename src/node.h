@@ -13,7 +13,7 @@
 
 namespace tomsolver {
 
-enum class NodeType { NUMBER, OPERATOR, VARIABLE, FUNCTION };
+enum class NodeType { NUMBER, OPERATOR, VARIABLE };
 
 namespace internal {
 struct NodeImpl;
@@ -90,6 +90,7 @@ private:
     NodeImpl *parent;
     std::unique_ptr<NodeImpl> left, right;
 
+    // TODO: to non-recursively
     std::unique_ptr<NodeImpl> CopyTree(const std::unique_ptr<NodeImpl> &rhs) const noexcept {
         if (rhs == nullptr) {
             return nullptr;
@@ -116,6 +117,7 @@ private:
         return "";
     }
 
+    // TODO: to non-recursively
     void TraverseInOrder(std::string &output) const noexcept {
         switch (type) {
         case NodeType::NUMBER:
@@ -127,13 +129,13 @@ private:
         int has_parenthesis = 0;
         if (GetOperatorNum(op) == 1) //一元运算符：函数和取负
         {
-            if (type == NodeType::FUNCTION) {
+            //if (type == NodeType::FUNCTION) {
                 output += NodeToStr() + "(";
                 has_parenthesis = 1;
-            } else {
-                output += "(" + NodeToStr();
-                has_parenthesis = 1;
-            }
+            //} else {
+            //    output += "(" + NodeToStr();
+            //    has_parenthesis = 1;
+            //}
         } else {
             //非一元运算符才输出，即一元运算符的输出顺序已改变
             if (type == NodeType::OPERATOR) //本级为运算符

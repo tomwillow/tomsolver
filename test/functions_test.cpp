@@ -10,10 +10,31 @@
 using namespace std;
 using namespace tomsolver;
 
-TEST(Function, Sin)
-{
+TEST(Function, Trigonometric) {
     MemoryLeakDetection mld;
 
-    ASSERT_DOUBLE_EQ(sin(Num(0))->Vpa(), 0);
-    ASSERT_DOUBLE_EQ(sin(Num(PI/2.0))->Vpa(), 1.0);
+    int count = 100;
+
+    auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
+    cout << "seed = " << seed << endl;
+    default_random_engine eng(seed);
+    uniform_real_distribution<double> unifNum;
+
+    for (int i = 0; i < count; ++i) {
+        double num = unifNum(eng);
+        ASSERT_DOUBLE_EQ(sin(Num(num))->Vpa(), sin(num));
+        ASSERT_DOUBLE_EQ(cos(Num(num))->Vpa(), cos(num));
+        ASSERT_DOUBLE_EQ(tan(Num(num))->Vpa(), tan(num));
+        ASSERT_DOUBLE_EQ(asin(Num(num))->Vpa(), asin(num));
+        ASSERT_DOUBLE_EQ(acos(Num(num))->Vpa(), acos(num));
+        ASSERT_DOUBLE_EQ(atan(Num(num))->Vpa(), atan(num));
+    }
+}
+
+TEST(Function, ToString) {
+    MemoryLeakDetection mld;
+
+    Node f = Var("r") * sin(Var("omega") / Num(2.0) + Var("phi")) + Var("c");
+
+    ASSERT_EQ(f->ToString(), "r*sin(omega/2.000000+phi)+c");
 }
