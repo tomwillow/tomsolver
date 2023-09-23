@@ -297,6 +297,8 @@ double NodeImpl::VpaNonRecursively() const {
 }
 
 void NodeImpl::Release() noexcept {
+    // 后序遍历。因为要在左右儿子都没有的情况下删除节点。
+
     std::stack<Node> stk;
 
     if (left) {
@@ -312,7 +314,7 @@ void NodeImpl::Release() noexcept {
             break;
         }
 
-        auto f = std::move(stk.top());
+        Node f = std::move(stk.top());
         stk.pop();
 
         if (f->left) {
@@ -326,6 +328,8 @@ void NodeImpl::Release() noexcept {
         assert(f->left == nullptr && f->right == nullptr);
 
         // 这里如果把f填入vector，最后翻转。得到的序列就是后序遍历。
+
+        // 这里f会被自动释放。
     }
 }
 
@@ -346,7 +350,6 @@ std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs)
         ret->right->parent = ret.get();
     }
     return ret;
-    return std::unique_ptr<NodeImpl>();
 }
 
 std::unique_ptr<NodeImpl> Move(std::unique_ptr<NodeImpl> &rhs) noexcept {
