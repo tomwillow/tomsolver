@@ -263,7 +263,7 @@
 //	case MATH_MOD:
 //		return "%";
 //	default:
-//		throw MathError{ ErrorType::ERROR_WRONG_MATH_OPERATOR, std::string("value:" + to_string(eOperator)) };
+//		throw MathError{ ErrorType::ERROR_WRONG_MATH_OPERATOR, std::string("value:" + ToString(eOperator)) };
 //	}
 //}
 //
@@ -389,9 +389,9 @@
 //	{
 //	case NODE_NUMBER:
 //		if (abs(node.value - (long long)node.value) < MIN_DOUBLE)
-//			return to_string((long long)node.value);
+//			return ToString((long long)node.value);
 //		else
-//			return to_string(node.value);
+//			return ToString(node.value);
 //		break;
 //	case NODE_VARIABLE:
 //		return node.varname;
@@ -459,7 +459,7 @@
 //	for (auto c : expression)
 //		if (!isLegal(c))
 //		{
-//			throw MathError{ ErrorType::ERROR_ILLEGALCHAR, std::string("WRONG CHAR:") + to_string(c) };
+//			throw MathError{ ErrorType::ERROR_ILLEGALCHAR, std::string("WRONG CHAR:") + ToString(c) };
 //		}
 //
 //	//粗切分：利用operator切分

@@ -36,5 +36,6 @@ TEST(Function, ToString) {
 
     Node f = Var("r") * sin(Var("omega") / Num(2.0) + Var("phi")) + Var("c");
 
-    ASSERT_EQ(f->ToString(), "r*sin(omega/2.000000+phi)+c");
+    ASSERT_EQ(f->ToString(), "r*sin(omega/2+phi)+c");
+
 }

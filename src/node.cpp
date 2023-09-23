@@ -2,6 +2,7 @@
 
 #include "node.h"
 
+#include "config.h"
 #include "error_type.h"
 #include "math_operator.h"
 
@@ -66,7 +67,7 @@ NodeImpl::~NodeImpl() {
 
 std::string NodeImpl::ToString() const noexcept {
     std::string ret;
-    TraverseInOrder(ret);
+    ToStringRecursively(ret);
     return ret;
 }
 
@@ -125,8 +126,8 @@ void NodeImpl::CheckOperatorNum() const noexcept {
 
 std::string NodeImpl::NodeToStr() const noexcept {
     switch (type) {
-    case NodeType::NUMBER:
-        return std::to_string(value);
+    case NodeType::NUMBER: 
+        return tomsolver::ToString(value);
     case NodeType::VARIABLE:
         return varname;
     case NodeType::OPERATOR:
@@ -136,7 +137,7 @@ std::string NodeImpl::NodeToStr() const noexcept {
     return "";
 }
 
-void NodeImpl::TraverseInOrder(std::string &output) const noexcept {
+void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
     switch (type) {
     case NodeType::NUMBER:
     case NodeType::VARIABLE:
@@ -181,7 +182,7 @@ void NodeImpl::TraverseInOrder(std::string &output) const noexcept {
 
     if (left != nullptr) //左遍历
     {
-        left->TraverseInOrder(output);
+        left->ToStringRecursively(output);
     }
 
     if (GetOperatorNum(op) != 1) //非一元运算符才输出，即一元运算符的输出顺序已改变
@@ -191,7 +192,7 @@ void NodeImpl::TraverseInOrder(std::string &output) const noexcept {
 
     if (right != nullptr) //右遍历
     {
-        right->TraverseInOrder(output);
+        right->ToStringRecursively(output);
     }
 
     //回到本级时补齐右括号，包住前面的东西
@@ -199,6 +200,8 @@ void NodeImpl::TraverseInOrder(std::string &output) const noexcept {
         output += ")";
     }
 }
+
+void NodeImpl::ToStringNonRecursively(std::string &output) const noexcept {}
 
 double NodeImpl::VpaRecursively() const {
     double l = 0, r = 0;

@@ -1,10 +1,13 @@
-#include <iostream>
+#pragma once
 
 #include "windows.h"
 #define _CRTDBG_MAP_ALLOC // to get more details
 #include <stdlib.h>
 #include <crtdbg.h> //for malloc and free
 
+#include <gtest/gtest.h>
+
+#include <iostream>
 #include <cassert>
 
 class MemoryLeakDetection final {
@@ -24,12 +27,11 @@ public:
             // OutputDebugString(TEXT("-----------_CrtDumpMemoryLeaks ---------"));
             _CrtDumpMemoryLeaks();
 
-            assert(0 && "Memory leak is detected! See debug output for detail.");
+            EXPECT_TRUE(0 && "Memory leak is detected! See debug output for detail.");
         }
     }
 
-    void SetBreakAlloc(long index) const noexcept
-    {
+    void SetBreakAlloc(long index) const noexcept {
         _CrtSetBreakAlloc(index);
     }
 

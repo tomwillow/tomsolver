@@ -1,15 +1,11 @@
 #pragma once
 
 #include "math_operator.h"
+#include "config.h"
 
 #include <cassert>
 
 namespace tomsolver {
-
-Config &GetConfig() noexcept {
-    static Config config;
-    return config;
-}
 
 std::string MathOperatorToStr(MathOperator op) {
     switch (op) {

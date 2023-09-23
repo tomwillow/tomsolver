@@ -14,13 +14,6 @@ constexpr double PI = M_PI;
 
 constexpr double eps = std::numeric_limits<double>::epsilon();
 
-struct Config {
-    bool throwOnInvalidValue = true;
-    bool checkDomain = true;
-};
-
-Config &GetConfig() noexcept;
-
 enum class MathOperator {
     MATH_NULL,
     //一元

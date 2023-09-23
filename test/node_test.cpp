@@ -14,36 +14,36 @@ TEST(Node, Num) {
 
     auto n = Num(10);
     cout << n->ToString() << endl;
-    ASSERT_EQ(n->ToString(), "10.000000");
+    ASSERT_EQ(n->ToString(), "10");
 
     // 右值+右值
     auto n2 = Num(1) + Num(2);
     cout << n2->ToString() << endl;
-    ASSERT_EQ(n2->ToString(), "1.000000+2.000000");
+    ASSERT_EQ(n2->ToString(), "1+2");
 
     // 左值+左值
     auto n3 = n + n2;
     n3->CheckParent();
     cout << n3->ToString() << endl;
-    ASSERT_EQ(n3->ToString(), "10.000000+1.000000+2.000000");
+    ASSERT_EQ(n3->ToString(), "10+1+2");
     cout << n3->ToString() << endl;
-    ASSERT_EQ(n3->ToString(), "10.000000+1.000000+2.000000");
+    ASSERT_EQ(n3->ToString(), "10+1+2");
 
     // 前面的 n n2 不应被释放
-    ASSERT_EQ(n->ToString(), "10.000000");
-    ASSERT_EQ(n2->ToString(), "1.000000+2.000000");
+    ASSERT_EQ(n->ToString(), "10");
+    ASSERT_EQ(n2->ToString(), "1+2");
 
     // 左值+右值
     auto n4 = n + Num(3);
-    ASSERT_EQ(n4->ToString(), "10.000000+3.000000");
+    ASSERT_EQ(n4->ToString(), "10+3");
     // 前面的 n 不应被释放
-    ASSERT_EQ(n->ToString(), "10.000000");
+    ASSERT_EQ(n->ToString(), "10");
 
     // 右值+左值
     auto n5 = Num(3) + n;
-    ASSERT_EQ(n5->ToString(), "3.000000+10.000000");
+    ASSERT_EQ(n5->ToString(), "3+10");
     // 前面的 n 不应被释放
-    ASSERT_EQ(n->ToString(), "10.000000");
+    ASSERT_EQ(n->ToString(), "10");
 
     n->CheckParent();
     n2->CheckParent();
@@ -64,7 +64,7 @@ TEST(Node, Var) {
 
     auto expr = Var("a") - Num(1);
     cout << expr << endl;
-    ASSERT_EQ(expr->ToString(), "a-1.000000");
+    ASSERT_EQ(expr->ToString(), "a-1");
 
     expr->CheckParent();
 }
@@ -101,14 +101,14 @@ TEST(Node, AddEqual) {
     auto n = Num(10);
 
     n += Num(1);
-    ASSERT_EQ(n->ToString(), "10.000000+1.000000");
+    ASSERT_EQ(n->ToString(), "10+1");
 
     auto n2 = Num(20);
     n += n2;
-    ASSERT_EQ(n->ToString(), "10.000000+1.000000+20.000000");
+    ASSERT_EQ(n->ToString(), "10+1+20");
 
     // 前面的 n2 不应被释放
-    ASSERT_EQ(n2->ToString(), "20.000000");
+    ASSERT_EQ(n2->ToString(), "20");
 
     n->CheckParent();
     n2->CheckParent();
@@ -120,14 +120,14 @@ TEST(Node, SubEqual) {
     auto n = Num(10);
 
     n -= Num(1);
-    ASSERT_EQ(n->ToString(), "10.000000-1.000000");
+    ASSERT_EQ(n->ToString(), "10-1");
 
     auto n2 = Num(20);
     n -= n2;
-    ASSERT_EQ(n->ToString(), "10.000000-1.000000-20.000000");
+    ASSERT_EQ(n->ToString(), "10-1-20");
 
     // 前面的 n2 不应被释放
-    ASSERT_EQ(n2->ToString(), "20.000000");
+    ASSERT_EQ(n2->ToString(), "20");
 
     n->CheckParent();
     n2->CheckParent();
@@ -139,14 +139,14 @@ TEST(Node, MulEqual) {
     auto n = Num(10);
 
     n *= Num(1);
-    ASSERT_EQ(n->ToString(), "10.000000*1.000000");
+    ASSERT_EQ(n->ToString(), "10*1");
 
     auto n2 = Num(20);
     n *= n2;
-    ASSERT_EQ(n->ToString(), "10.000000*1.000000*20.000000");
+    ASSERT_EQ(n->ToString(), "10*1*20");
 
     // 前面的 n2 不应被释放
-    ASSERT_EQ(n2->ToString(), "20.000000");
+    ASSERT_EQ(n2->ToString(), "20");
 
     n->CheckParent();
     n2->CheckParent();
@@ -158,14 +158,14 @@ TEST(Node, DivEqual) {
     auto n = Num(10);
 
     n /= Num(1);
-    ASSERT_EQ(n->ToString(), "10.000000/1.000000");
+    ASSERT_EQ(n->ToString(), "10/1");
 
     auto n2 = Num(20);
     n /= n2;
-    ASSERT_EQ(n->ToString(), "10.000000/1.000000/20.000000");
+    ASSERT_EQ(n->ToString(), "10/1/20");
 
     // 前面的 n2 不应被释放
-    ASSERT_EQ(n2->ToString(), "20.000000");
+    ASSERT_EQ(n2->ToString(), "20");
 
     n->CheckParent();
     n2->CheckParent();

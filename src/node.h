@@ -82,7 +82,10 @@ private:
     std::string NodeToStr() const noexcept;
 
     // TODO: to non-recursively
-    void TraverseInOrder(std::string &output) const noexcept;
+    void ToStringRecursively(std::string &output) const noexcept;
+
+    // TODO: to non-recursively
+    void ToStringNonRecursively(std::string &output) const noexcept;
 
     /**
      * 计算表达式数值。递归实现。
