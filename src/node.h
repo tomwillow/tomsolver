@@ -39,8 +39,18 @@ struct NodeImpl {
         value = rhs.value;
         varname = rhs.varname;
         parent = rhs.parent;
-        left = CopyTree(rhs.left);
-        right = CopyTree(rhs.right);
+        if (rhs.left) {
+            left = Clone(rhs.left);
+            left->parent = this;
+        } else {
+            left = nullptr;
+        }
+        if (rhs.right) {
+            right = Clone(rhs.right);
+            right->parent = this;
+        } else {
+            right = nullptr;
+        }
         return *this;
     }
 
@@ -82,6 +92,36 @@ struct NodeImpl {
         return VpaNonRecursively();
     }
 
+    void CheckParent() const noexcept {
+        std::stack<const NodeImpl *> stk;
+
+        CheckOperatorNum();
+        if (right) {
+            stk.push(right.get());
+        }
+        if (left) {
+            stk.push(left.get());
+        }
+        while (!stk.empty()) {
+            const NodeImpl *f = stk.top();
+            stk.pop();
+
+            assert(f->parent);
+            bool isLeftChild = f->parent->left.get() == f;
+            bool isRightChild = f->parent->right.get() == f;
+            assert(isLeftChild || isRightChild);
+
+            f->CheckOperatorNum();
+
+            if (f->right) {
+                stk.push(f->right.get());
+            }
+            if (f->left) {
+                stk.push(f->left.get());
+            }
+        }
+    }
+
 private:
     NodeType type;
     MathOperator op;
@@ -90,15 +130,22 @@ private:
     NodeImpl *parent;
     std::unique_ptr<NodeImpl> left, right;
 
-    // TODO: to non-recursively
-    std::unique_ptr<NodeImpl> CopyTree(const std::unique_ptr<NodeImpl> &rhs) const noexcept {
-        if (rhs == nullptr) {
-            return nullptr;
+    void CheckOperatorNum() const noexcept
+    {
+        if (type != NodeType::OPERATOR)
+            return;
+
+        if (GetOperatorNum(op) == 1) {
+            assert(left);
+            assert(right == nullptr);
+            return;
         }
-        auto ret = std::make_unique<NodeImpl>(rhs->type, rhs->op, rhs->value, rhs->varname);
-        ret->left = CopyTree(rhs->left);
-        ret->right = CopyTree(rhs->right);
-        return ret;
+        if (GetOperatorNum(op) == 2) {
+            assert(left);
+            assert(right);
+            return;
+        }
+        assert(0);
     }
 
     /**
@@ -129,9 +176,9 @@ private:
         int has_parenthesis = 0;
         if (GetOperatorNum(op) == 1) //一元运算符：函数和取负
         {
-            //if (type == NodeType::FUNCTION) {
-                output += NodeToStr() + "(";
-                has_parenthesis = 1;
+            // if (type == NodeType::FUNCTION) {
+            output += NodeToStr() + "(";
+            has_parenthesis = 1;
             //} else {
             //    output += "(" + NodeToStr();
             //    has_parenthesis = 1;
@@ -182,7 +229,6 @@ private:
         }
     }
 
-    
     /**
      * 计算表达式数值。递归实现。
      * @exception runtime_error 如果有变量存在，则无法计算
@@ -222,7 +268,7 @@ private:
      * @exception MathError 不符合定义域, 除0等情况。
      */
     double VpaNonRecursively() const {
-        std::stack<const NodeImpl*> stk;
+        std::stack<const NodeImpl *> stk;
         std::stack<const NodeImpl *> revertedPostOrder;
 
         // ==== Part I ====
@@ -253,13 +299,11 @@ private:
         // revertedPostOrder的反向序列是一组逆波兰表达式，根据这组逆波兰表达式可以计算出表达式的值
         // calcStk是用来计算值的临时栈，计算完成后calcStk的size应该为1
         std::stack<double> calcStk;
-        while (!revertedPostOrder.empty())
-        {
+        while (!revertedPostOrder.empty()) {
             auto f = revertedPostOrder.top();
             revertedPostOrder.pop();
 
-            if (f->type == NodeType::NUMBER)
-            {
+            if (f->type == NodeType::NUMBER) {
                 calcStk.push(f->value);
                 continue;
             }
@@ -292,9 +336,9 @@ private:
     }
 
     /**
-    * 释放整个节点树，除了自己。
-    * 实际是二叉树的非递归后序遍历。
-    */
+     * 释放整个节点树，除了自己。
+     * 实际是二叉树的非递归后序遍历。
+     */
     void Release() noexcept {
         std::stack<Node> stk;
 
@@ -328,6 +372,8 @@ private:
         }
     }
 
+    friend std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+
     friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
                              std::unique_ptr<NodeImpl> &&n1) noexcept;
     friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
@@ -342,6 +388,24 @@ private:
     friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 };
 
+// TODO: to non-recursively
+inline std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noexcept {
+    auto ret = std::make_unique<NodeImpl>(rhs->type, rhs->op, rhs->value, rhs->varname);
+    if (rhs->left) {
+        ret->left = Clone(rhs->left);
+        ret->left->parent = ret.get();
+    }
+
+    if (rhs->right) {
+        ret->right = Clone(rhs->right);
+        ret->right->parent = ret.get();
+    }
+    return ret;
+}
+
+inline std::unique_ptr<NodeImpl> Move(std::unique_ptr<NodeImpl> &rhs) noexcept {
+    return std::move(rhs);
+}
 
 /**
  * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
