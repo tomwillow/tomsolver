@@ -110,7 +110,6 @@ private:
      */
     void Release() noexcept;
 
-    friend std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noexcept;
     friend std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
 
     friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
@@ -127,16 +126,7 @@ private:
     friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 };
 
-// TODO: to non-recursively
-std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noexcept;
-
-// TODO: to non-recursively
 std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
-
-/**
- * 对节点进行移动。等同于std::move。
- */
-std::unique_ptr<NodeImpl> Move(std::unique_ptr<NodeImpl> &rhs) noexcept;
 
 /**
  * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
@@ -171,6 +161,14 @@ std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noex
 }
 
 } // namespace internal
+
+// TODO: to non-recursively
+Node Clone(const Node &rhs) noexcept;
+
+/**
+ * 对节点进行移动。等同于std::move。
+ */
+Node Move(Node &rhs) noexcept;
 
 /**
  * 新建一个数值节点。

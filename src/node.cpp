@@ -340,11 +340,6 @@ void NodeImpl::Release() noexcept {
     }
 }
 
-// TODO: to non-recursively
-std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noexcept {
-    return CloneRecursively(rhs);
-}
-
 std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept {
     auto ret = std::make_unique<NodeImpl>(rhs->type, rhs->op, rhs->value, rhs->varname);
     if (rhs->left) {
@@ -357,10 +352,6 @@ std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs)
         ret->right->parent = ret.get();
     }
     return ret;
-}
-
-std::unique_ptr<NodeImpl> Move(std::unique_ptr<NodeImpl> &rhs) noexcept {
-    return std::move(rhs);
 }
 
 void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept {
@@ -380,6 +371,15 @@ std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::Node
 }
 
 } // namespace internal
+
+// TODO: to non-recursively
+Node Clone(const Node &rhs) noexcept {
+    return internal::CloneRecursively(rhs);
+}
+
+Node Move(Node &rhs) noexcept {
+    return std::move(rhs);
+}
 
 std::unique_ptr<internal::NodeImpl> Num(double num) noexcept {
     return std::make_unique<internal::NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
