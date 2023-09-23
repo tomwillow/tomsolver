@@ -19,11 +19,16 @@ namespace internal {
 struct NodeImpl;
 }
 
+/**
+* 表达式节点。
+*/
 using Node = std::unique_ptr<internal::NodeImpl>;
 
 namespace internal {
 
-/* 单个元素 */
+/**
+ * 单个节点的实现。通常应该以std::unique_ptr包裹。
+ */
 struct NodeImpl {
 
     NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
@@ -77,6 +82,10 @@ struct NodeImpl {
 
     /**
      * 把整个节点以中序遍历的顺序输出为字符串。
+     * 例如：
+     *      Node n = (Var("a") + Num(1)) * Var("b");
+     *   则
+     *      n->ToString() == "(a+1.000000)*b"
      */
     std::string ToString() const noexcept {
         std::string ret;
