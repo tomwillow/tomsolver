@@ -76,7 +76,8 @@ double NodeImpl::Vpa() const {
 }
 
 void NodeImpl::CheckParent() const noexcept {
-    // 使用二叉树数的非递归前序遍历。
+    // 前序遍历。非递归实现。
+
     std::stack<const NodeImpl *> stk;
 
     CheckOperatorNum();
@@ -138,6 +139,8 @@ std::string NodeImpl::NodeToStr() const noexcept {
 }
 
 void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
+    // 中序遍历。递归实现。
+
     switch (type) {
     case NodeType::NUMBER:
     case NodeType::VARIABLE:
@@ -204,6 +207,8 @@ void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
 void NodeImpl::ToStringNonRecursively(std::string &output) const noexcept {}
 
 double NodeImpl::VpaRecursively() const {
+    // 后序遍历。递归实现。
+
     double l = 0, r = 0;
     if (left != nullptr)
         l = left->Vpa();
@@ -229,6 +234,8 @@ double NodeImpl::VpaRecursively() const {
 }
 
 double NodeImpl::VpaNonRecursively() const {
+    // 后序遍历。非递归实现。
+
     std::stack<const NodeImpl *> stk;
     std::stack<const NodeImpl *> revertedPostOrder;
 
