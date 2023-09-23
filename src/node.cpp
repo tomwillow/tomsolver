@@ -126,7 +126,7 @@ void NodeImpl::CheckOperatorNum() const noexcept {
 
 std::string NodeImpl::NodeToStr() const noexcept {
     switch (type) {
-    case NodeType::NUMBER: 
+    case NodeType::NUMBER:
         return tomsolver::ToString(value);
     case NodeType::VARIABLE:
         return varname;
@@ -331,6 +331,10 @@ void NodeImpl::Release() noexcept {
 
 // TODO: to non-recursively
 std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noexcept {
+    return CloneRecursively(rhs);
+}
+
+std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept {
     auto ret = std::make_unique<NodeImpl>(rhs->type, rhs->op, rhs->value, rhs->varname);
     if (rhs->left) {
         ret->left = Clone(rhs->left);
@@ -342,6 +346,7 @@ std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noexcept {
         ret->right->parent = ret.get();
     }
     return ret;
+    return std::unique_ptr<NodeImpl>();
 }
 
 std::unique_ptr<NodeImpl> Move(std::unique_ptr<NodeImpl> &rhs) noexcept {

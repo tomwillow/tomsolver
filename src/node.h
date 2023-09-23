@@ -111,6 +111,7 @@ private:
     void Release() noexcept;
 
     friend std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+    friend std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
 
     friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
                              std::unique_ptr<NodeImpl> &&n1) noexcept;
@@ -128,6 +129,9 @@ private:
 
 // TODO: to non-recursively
 std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+
+// TODO: to non-recursively
+std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
 
 /**
  * 对节点进行移动。等同于std::move。

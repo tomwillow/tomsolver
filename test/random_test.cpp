@@ -139,15 +139,20 @@ TEST(Node, Random) {
 TEST(Node, DoNotStackOverFlow) {
     MemoryLeakDetection mld;
 
+    std::setlocale(LC_ALL, ".UTF8");
+
+    // 关掉定义域检查
     GetConfig().checkDomain = false;
 
+    // 构造一个随机的长表达式
     auto pr = CreateRandomExpresionTree(10000);
     Node &node = pr.first;
     double v = pr.second;
 
-    std::setlocale(LC_ALL, ".UTF8");
+    // Node n2 = Clone(node); TODO
+
     double result = node->Vpa();
-    // cout << node->ToString() << endl;
+    // cout << node->ToString() << endl; TODO
     cout << "\t result = " << result << endl;
     cout << "\t expected = " << v << endl;
     ASSERT_DOUBLE_EQ(result, v);
