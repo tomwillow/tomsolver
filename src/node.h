@@ -85,14 +85,19 @@ struct NodeImpl {
     }
 
     /**
-     * 迭代计算
-     * @exception
+     * 计算出整个表达式的数值。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 不符合定义域, 除0等情况。
      */
     double Vpa() const {
         return VpaNonRecursively();
     }
 
+    /**
+    * 检查整个节点数的parent指针是否正确。
+    */
     void CheckParent() const noexcept {
+        // 使用二叉树数的非递归前序遍历。
         std::stack<const NodeImpl *> stk;
 
         CheckOperatorNum();
@@ -106,6 +111,7 @@ struct NodeImpl {
             const NodeImpl *f = stk.top();
             stk.pop();
 
+            // 检查
             assert(f->parent);
             bool isLeftChild = f->parent->left.get() == f;
             bool isRightChild = f->parent->right.get() == f;
@@ -129,9 +135,11 @@ private:
     std::string varname;
     NodeImpl *parent;
     std::unique_ptr<NodeImpl> left, right;
-
-    void CheckOperatorNum() const noexcept
-    {
+    
+    /**
+    * 本节点如果是OPERATOR，检查操作数数量和left, right指针是否匹配。
+    */
+    void CheckOperatorNum() const noexcept {
         if (type != NodeType::OPERATOR)
             return;
 
@@ -403,17 +411,22 @@ inline std::unique_ptr<NodeImpl> Clone(const std::unique_ptr<NodeImpl> &rhs) noe
     return ret;
 }
 
+/**
+* 对节点进行移动。等同于std::move。
+*/
 inline std::unique_ptr<NodeImpl> Move(std::unique_ptr<NodeImpl> &rhs) noexcept {
     return std::move(rhs);
 }
 
 /**
  * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
+ * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
  */
 void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept;
 
 /**
  * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
+ * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
  */
 void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std::unique_ptr<NodeImpl> &n1) noexcept;
 
@@ -445,15 +458,8 @@ std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noex
 std::unique_ptr<internal::NodeImpl> Num(double num) noexcept;
 
 /**
- * 有效性检查（返回0则出现异常字符）
+ * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
  */
-// bool IsLegal(char c) {
-//	if (isDoubleChar(c)) return true;
-//	if (isBaseOperator(c)) return true;
-//	if (IsCharAlpha(c) || c == '_') return true;
-//	return false;
-//}
-
 bool VarNameIsLegal(const std::string &varname) noexcept;
 
 /**
