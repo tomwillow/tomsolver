@@ -354,13 +354,52 @@ std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs)
     return ret;
 }
 
+std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept {
+    // 前序遍历。非递归实现。
+
+    struct Item {
+        const NodeImpl *rhsCur;
+        const NodeImpl *parent;
+        std::unique_ptr<NodeImpl> &childRefOfParent;
+    };
+
+    auto ret = std::make_unique<NodeImpl>(rhs->type, rhs->op, rhs->value, rhs->varname);
+    std::stack<Item> stk;
+
+    if (rhs->right) {
+        stk.push({rhs->right.get(), ret.get(), ret->right});
+    }
+    if (rhs->left) {
+        stk.push({rhs->left.get(), ret.get(), ret->left});
+    }
+    while (!stk.empty()) {
+        Item item = stk.top();
+        const NodeImpl *rhsCur = item.rhsCur;
+        stk.pop();
+
+        // 复制
+        auto clonedNode = std::make_unique<NodeImpl>(rhsCur->type, rhsCur->op, rhsCur->value, rhsCur->varname);
+        clonedNode->parent = item.parent;
+        item.childRefOfParent = std::move(clonedNode);
+        std::unique_ptr<NodeImpl> &cur = item.childRefOfParent;
+
+        if (rhsCur->right) {
+            stk.push({rhsCur->right.get(), cur.get(), cur->right});
+        }
+        if (rhsCur->left) {
+            stk.push({rhsCur->left.get(), cur.get(), cur->left});
+        }
+    }
+    return ret;
+}
+
 void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept {
     n1->parent = parent;
     child = std::move(n1);
 }
 
 void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std::unique_ptr<NodeImpl> &n1) noexcept {
-    auto n1Clone = std::unique_ptr<NodeImpl>(new NodeImpl(*n1));
+    auto n1Clone = std::make_unique<NodeImpl>(*n1);
     n1Clone->parent = parent;
     child = std::move(n1Clone);
 }
@@ -374,7 +413,7 @@ std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::Node
 
 // TODO: to non-recursively
 Node Clone(const Node &rhs) noexcept {
-    return internal::CloneRecursively(rhs);
+    return internal::CloneNonRecursively(rhs);
 }
 
 Node Move(Node &rhs) noexcept {

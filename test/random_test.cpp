@@ -149,13 +149,15 @@ TEST(Node, DoNotStackOverFlow) {
     Node &node = pr.first;
     double v = pr.second;
 
-    // Node n2 = Clone(node); TODO
-
     double result = node->Vpa();
     // cout << node->ToString() << endl; TODO
     cout << "\t result = " << result << endl;
     cout << "\t expected = " << v << endl;
     ASSERT_DOUBLE_EQ(result, v);
+
+    // clone
+    Node n2 = Clone(node);
+    ASSERT_DOUBLE_EQ(result, n2->Vpa());
 
     GetConfig().checkDomain = true;
 }

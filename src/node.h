@@ -68,7 +68,7 @@ private:
     MathOperator op;
     double value;
     std::string varname;
-    NodeImpl *parent;
+    const NodeImpl *parent;
     std::unique_ptr<NodeImpl> left, right;
 
     /**
@@ -111,6 +111,7 @@ private:
     void Release() noexcept;
 
     friend std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+    friend std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
 
     friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
                              std::unique_ptr<NodeImpl> &&n1) noexcept;
@@ -127,6 +128,8 @@ private:
 };
 
 std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+
+std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
 
 /**
  * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
