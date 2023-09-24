@@ -80,7 +80,6 @@ TEST(Node, Clone) {
 
     ASSERT_EQ(n->ToString(), "a+b*c");
     ASSERT_EQ(n2->ToString(), "a+b*c");
-
 }
 
 TEST(Node, Move) {
@@ -112,6 +111,13 @@ TEST(Node, AddEqual) {
 
     n->CheckParent();
     n2->CheckParent();
+}
+
+TEST(Node, Sub) {
+    MemoryLeakDetection mld;
+
+    Node n = Num(10) - Num(-10);
+    ASSERT_EQ(n->ToString(), "10-(-10)");
 }
 
 TEST(Node, SubEqual) {

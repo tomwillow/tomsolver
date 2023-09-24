@@ -143,6 +143,13 @@ void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
 
     switch (type) {
     case NodeType::NUMBER:
+        // 如果当前节点是数值且小于0，且前面是-运算符，那么加括号
+        if (value < 0 && parent != nullptr && parent->right.get() == this && parent->op == MathOperator::MATH_SUB) {
+            output += "(" + NodeToStr() + ")";
+        } else {
+            output += NodeToStr();
+        }
+        return;
     case NodeType::VARIABLE:
         output += NodeToStr();
         return;
@@ -151,13 +158,13 @@ void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
     int has_parenthesis = 0;
     if (GetOperatorNum(op) == 1) //一元运算符：函数和取负
     {
-        // if (type == NodeType::FUNCTION) {
-        output += NodeToStr() + "(";
-        has_parenthesis = 1;
-        //} else {
-        //    output += "(" + NodeToStr();
-        //    has_parenthesis = 1;
-        //}
+        if (op == MathOperator::MATH_POSITIVE || op == MathOperator::MATH_NEGATIVE) {
+            output += "(" + NodeToStr();
+            has_parenthesis = 1;
+        } else {
+            output += NodeToStr() + "(";
+            has_parenthesis = 1;
+        }
     } else {
         //非一元运算符才输出，即一元运算符的输出顺序已改变
         if (type == NodeType::OPERATOR) //本级为运算符
@@ -411,7 +418,6 @@ std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::Node
 
 } // namespace internal
 
-// TODO: to non-recursively
 Node Clone(const Node &rhs) noexcept {
     return internal::CloneNonRecursively(rhs);
 }
