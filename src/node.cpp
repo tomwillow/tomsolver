@@ -358,9 +358,9 @@ std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &r
     // 前序遍历。非递归实现。
 
     struct Item {
-        const NodeImpl *rhsCur;
-        const NodeImpl *parent;
-        std::unique_ptr<NodeImpl> &childRefOfParent;
+        const NodeImpl *rhsCur;                      // 当前遍历的rhs树的节点
+        const NodeImpl *parent;                      // 当前克隆节点应该连接的父节点
+        std::unique_ptr<NodeImpl> &childRefOfParent; // 当前克隆节点对应的父节点的left或者right成员的引用
     };
 
     auto ret = std::make_unique<NodeImpl>(rhs->type, rhs->op, rhs->value, rhs->varname);

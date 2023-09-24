@@ -127,11 +127,19 @@ TEST(Node, Random) {
         Node &node = pr.first;
         double v = pr.second;
 
+        node->CheckParent();
+
         double result = node->Vpa();
         cout << node->ToString() << endl;
         cout << "\t result = " << result << endl;
         cout << "\t expected = " << v << endl;
         ASSERT_DOUBLE_EQ(result, v);
+
+        // clone
+        Node n2 = Clone(node);
+        ASSERT_DOUBLE_EQ(result, n2->Vpa());
+        n2->CheckParent();
+
         cout << endl;
     }
 }
@@ -154,10 +162,6 @@ TEST(Node, DoNotStackOverFlow) {
     cout << "\t result = " << result << endl;
     cout << "\t expected = " << v << endl;
     ASSERT_DOUBLE_EQ(result, v);
-
-    // clone
-    Node n2 = Clone(node);
-    ASSERT_DOUBLE_EQ(result, n2->Vpa());
 
     GetConfig().checkDomain = true;
 }
