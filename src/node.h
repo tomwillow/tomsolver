@@ -233,6 +233,17 @@ std::unique_ptr<internal::NodeImpl> &operator/=(std::unique_ptr<internal::NodeIm
     return n1;
 }
 
+template <typename T1, typename T2>
+std::unique_ptr<internal::NodeImpl> operator^(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_POWER, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+std::unique_ptr<internal::NodeImpl> &operator^=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_POWER, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
 //
 // class Matrix {
 // public:
