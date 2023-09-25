@@ -81,10 +81,8 @@ private:
      */
     std::string NodeToStr() const noexcept;
 
-    // TODO: to non-recursively
     void ToStringRecursively(std::string &output) const noexcept;
 
-    // TODO: to non-recursively
     void ToStringNonRecursively(std::string &output) const noexcept;
 
     /**
@@ -165,7 +163,6 @@ std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noex
 
 } // namespace internal
 
-// TODO: to non-recursively
 Node Clone(const Node &rhs) noexcept;
 
 /**
