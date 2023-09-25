@@ -58,6 +58,8 @@ struct NodeImpl {
      */
     double Vpa() const;
 
+    void Simplify() noexcept;
+
     /**
      * 检查整个节点数的parent指针是否正确。
      */

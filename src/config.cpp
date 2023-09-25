@@ -9,7 +9,7 @@ std::string ToString(double value) noexcept {
     int ret = -1;
 
     // 绝对值过大 或者 绝对值过小，应该使用科学计数法来表示
-    if (std::abs(value) >= 1.0e16 || std::abs(value) <= 1.0e-16) {
+    if ((std::abs(value) >= 1.0e16 || std::abs(value) <= 1.0e-16) && value != 0.0) {
         ret = sprintf(buf, "%.16e", value);
 
         int state = 0;

@@ -14,6 +14,7 @@ using namespace tomsolver;
 TEST(ToString, Base) {
     MemoryLeakDetection mld;
 
+    ASSERT_EQ(ToString(0.0), "0");
     ASSERT_EQ(ToString(1.0), "1");
     ASSERT_EQ(ToString(0.1), "0.1");
     ASSERT_EQ(ToString(0.12), "0.12");
