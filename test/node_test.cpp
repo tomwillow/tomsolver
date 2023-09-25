@@ -189,6 +189,14 @@ TEST(Node, Multiply) {
     }
 
     {
+        auto expr = (Var("a") + Var("b")) * Var("c");
+        cout << expr << endl;
+        ASSERT_EQ(expr->ToString(), "(a+b)*c");
+
+        expr->CheckParent();
+    }
+
+    {
         auto expr = Num(1) + Num(2) * Num(3);
         cout << expr << " = " << expr->Vpa() << endl;
         ASSERT_DOUBLE_EQ(expr->Vpa(), 7.0);

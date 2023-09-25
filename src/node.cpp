@@ -67,7 +67,7 @@ NodeImpl::~NodeImpl() {
 
 std::string NodeImpl::ToString() const noexcept {
     std::string ret;
-    ToStringRecursively(ret);
+    ToStringNonRecursively(ret);
     return ret;
 }
 
@@ -211,7 +211,92 @@ void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
     }
 }
 
-void NodeImpl::ToStringNonRecursively(std::string &output) const noexcept {}
+void NodeImpl::ToStringNonRecursively(std::string &output) const noexcept {
+    // 中序遍历。非递归实现。
+    std::stack<const NodeImpl *> stk;
+    const NodeImpl *cur = this;
+
+    NodeImpl rightParenthesis(NodeType::OPERATOR, MathOperator::MATH_RIGHT_PARENTHESIS, 0, "");
+
+    auto AddLeftLine = [&](const NodeImpl *cur) {
+        while (cur) {
+            if (cur->type != NodeType::OPERATOR) {
+                stk.push(cur);
+                cur = cur->left.get();
+                continue;
+            }
+
+            // 一元运算符的特殊处理：直接输出 "sin(" ，并且把一个右括号入栈。让退栈时这个右括号能包裹住现在的子树。
+            if (GetOperatorNum(cur->op) == 1) {
+                output += cur->NodeToStr() + "(";
+
+                // not push this op
+
+                // push ')'
+                stk.push(&rightParenthesis);
+
+                cur = cur->left.get();
+                continue;
+            }
+
+            // 二元运算符的特殊处理：
+            const NodeImpl *curParent = cur->parent;
+            if (curParent != nullptr) {
+                if ((GetOperatorNum(curParent->op) == 2 && //父运算符存在，为二元，
+                     (Rank(curParent->op) > Rank(cur->op)  //父级优先级高于本级->加括号
+
+                      || ( //两级优先级相等
+                             Rank(curParent->op) == Rank(cur->op) &&
+                             (
+                                 //本级为父级的右子树 且父级不满足结合律->加括号
+                                 (InAssociativeLaws(curParent->op) == false && cur == curParent->right.get()) ||
+                                 //两级都是右结合
+                                 (InAssociativeLaws(curParent->op) == false && IsLeft2Right(cur->op) == false)))))
+
+                    //||
+
+                    ////父运算符存在，为除号，且本级为分子，则添加括号
+                    //(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
+                ) {
+                    output += "(";
+
+                    // push ')'
+                    stk.push(&rightParenthesis);
+
+                    stk.push(cur);
+                    cur = cur->left.get();
+                    continue;
+                }
+            }
+
+            stk.push(cur);
+            cur = cur->left.get();
+        }
+    };
+    AddLeftLine(cur);
+
+    while (!stk.empty()) {
+        cur = stk.top();
+        stk.pop();
+
+        // output
+
+        // 负数的特殊处理
+        // 如果当前节点是数值且小于0，且前面是-运算符，那么加括号
+        if (cur->type == NodeType::NUMBER && cur->value < 0 && cur->parent != nullptr &&
+            cur->parent->right.get() == cur && cur->parent->op == MathOperator::MATH_SUB) {
+            output += "(" + cur->NodeToStr() + ")";
+        } else {
+            output += cur->NodeToStr();
+        }
+
+        if (cur->right) {
+            cur = cur->right.get();
+            AddLeftLine(cur);
+            continue;
+        }
+    }
+}
 
 double NodeImpl::VpaRecursively() const {
     // 后序遍历。递归实现。

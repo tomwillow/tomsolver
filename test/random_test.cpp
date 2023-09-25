@@ -157,8 +157,14 @@ TEST(Node, DoNotStackOverFlow) {
     Node &node = pr.first;
     double v = pr.second;
 
+    // clone，不应爆栈
+    Node n2 = Clone(node);
+
     double result = node->Vpa();
-    // cout << node->ToString() << endl; TODO
+
+    // 输出表达式字符串，不应爆栈
+    string s = node->ToString();
+
     cout << "\t result = " << result << endl;
     cout << "\t expected = " << v << endl;
     ASSERT_DOUBLE_EQ(result, v);
