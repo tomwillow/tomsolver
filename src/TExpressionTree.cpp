@@ -8,22 +8,22 @@
 //
 //#include <cassert>
 //
-//using namespace std;
+// using namespace std;
 //
-//namespace tomsolver {
+// namespace tomsolver {
 //
-//TExpressionTree::TExpressionTree()
+// TExpressionTree::TExpressionTree()
 //{
 //	Reset();
 //}
 //
 //
-//TExpressionTree::~TExpressionTree()
+// TExpressionTree::~TExpressionTree()
 //{
 //	Release();
 //}
 //
-//void TExpressionTree::Reset()
+// void TExpressionTree::Reset()
 //{
 //	head = NULL;
 //	pVariableTable = NULL;
@@ -31,14 +31,14 @@
 //	iVarAppearedCount = 0;
 //}
 //
-//void TExpressionTree::Release()
+// void TExpressionTree::Release()
 //{
 //	DeleteNode(head);
 //	head = NULL;
 //}
 //
 ////删除node指向对象 可删除任意位置节点，如被删节点存在父节点则父节点左右儿子置0
-//void TExpressionTree::DeleteNode(TNode *node)
+// void TExpressionTree::DeleteNode(TNode *node)
 //{
 //	if (node != NULL)
 //	{
@@ -55,7 +55,7 @@
 //}
 //
 ////遍历删除节点 未处理父节点，未判断左右儿子是否存在
-//void TExpressionTree::DeleteNodeTraversal(TNode *node)
+// void TExpressionTree::DeleteNodeTraversal(TNode *node)
 //{
 //	if (node->left != NULL)
 //		DeleteNode(node->left);
@@ -66,7 +66,7 @@
 //}
 //
 ////将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
-//void TExpressionTree::BuildExpressionTree(std::vector<TNode *> &PostOrder)
+// void TExpressionTree::BuildExpressionTree(std::vector<TNode *> &PostOrder)
 //{
 //	std::stack<TNode *> tempStack;
 //	//逐个识别PostOrder序列，构建表达式树
@@ -141,7 +141,7 @@
 //
 //
 ///* 是基本运算符()+-* /^&|% */
-//bool TExpressionTree::isBaseOperator(char c)
+// bool TExpressionTree::isBaseOperator(char c)
 //{
 //	switch (c)
 //	{
@@ -159,7 +159,7 @@
 //	return false;
 //}
 //
-//TExpressionTree::enumMathOperator TExpressionTree::Str2Function(std::string s)
+// TExpressionTree::enumMathOperator TExpressionTree::Str2Function(std::string s)
 //{
 //	if (s == "sin")
 //	{
@@ -206,7 +206,7 @@
 //
 //
 ///*  */
-//TExpressionTree::enumMathOperator TExpressionTree::BaseOperatorCharToEnum(char c) {
+// TExpressionTree::enumMathOperator TExpressionTree::BaseOperatorCharToEnum(char c) {
 //	switch (c)
 //	{
 //	case '(':
@@ -234,7 +234,7 @@
 //	}
 //}
 ///*  */
-//std::string TExpressionTree::EnumOperatorToTChar(TExpressionTree::enumMathOperator eOperator)
+// std::string TExpressionTree::EnumOperatorToTChar(TExpressionTree::enumMathOperator eOperator)
 //{
 //	switch (eOperator)
 //	{
@@ -270,7 +270,7 @@
 //
 //
 ///* 字符是0-9或. */
-//bool TExpressionTree::isDoubleChar(char c) {
+// bool TExpressionTree::isDoubleChar(char c) {
 //	if ((c >= '0' && c <= '9') || c == '.')
 //		return true;
 //	else
@@ -279,7 +279,7 @@
 //
 //
 ///*由in order队列得到post order队列*/
-//void TExpressionTree::InQueue2PostQueue(std::queue<TNode *> &InOrder, std::vector<TNode *> &PostOrder)
+// void TExpressionTree::InQueue2PostQueue(std::queue<TNode *> &InOrder, std::vector<TNode *> &PostOrder)
 //{
 //	int parenthesis_num = 0;
 //	std::stack<TNode *> temp;
@@ -329,7 +329,8 @@
 //					//pop所有取正取负
 //					while (temp.size() > 0)
 //					{
-//						if (temp.top()->eOperator == MATH_POSITIVE || temp.top()->eOperator == MATH_NEGATIVE)
+//						if (temp.top()->eOperator == MATH_POSITIVE || temp.top()->eOperator ==
+//MATH_NEGATIVE)
 //						{
 //							PostOrder.push_back(temp.top());
 //							temp.pop();
@@ -342,21 +343,24 @@
 //				}
 //				else//InOrder.front()不是括号
 //				{
-//					if (InOrder.front()->eOperator == MATH_POSITIVE || InOrder.front()->eOperator == MATH_NEGATIVE)
+//					if (InOrder.front()->eOperator == MATH_POSITIVE || InOrder.front()->eOperator ==
+//MATH_NEGATIVE)
 //					{
 //						temp.push(InOrder.front());
 //						InOrder.pop();
 //					}
 //					else//不是括号也不是正负号
 //					{
-//						if (temp.size() > 0 && isLeft2Right(temp.top()->eOperator) == true)//左结合
-//							while (temp.size() > 0 && Rank(InOrder.front()->eOperator) <= Rank(temp.top()->eOperator))//临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
+//						if (temp.size() > 0 && isLeft2Right(temp.top()->eOperator) ==
+//true)//左结合 							while (temp.size() > 0 && Rank(InOrder.front()->eOperator) <=
+//Rank(temp.top()->eOperator))//临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
 //							{
 //								PostOrder.push_back(temp.top());//符号进入post队列
 //								temp.pop();
 //							}
 //						else//右结合
-//							while (temp.size() > 0 && Rank(InOrder.front()->eOperator) < Rank(temp.top()->eOperator))//临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
+//							while (temp.size() > 0 && Rank(InOrder.front()->eOperator) <
+//Rank(temp.top()->eOperator))//临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
 //							{
 //								PostOrder.push_back(temp.top());//符号进入post队列
 //								temp.pop();
@@ -383,7 +387,7 @@
 //	}
 //}
 //
-//std::string TExpressionTree::Node2Str(const TNode &node)
+// std::string TExpressionTree::Node2Str(const TNode &node)
 //{
 //	switch (node.eType)
 //	{
@@ -408,7 +412,7 @@
 //}
 //
 //
-//void TExpressionTree::GetNodeNum(TNode *now, int &n)
+// void TExpressionTree::GetNodeNum(TNode *now, int &n)
 //{
 //	if (now->left != NULL)
 //		GetNodeNum(now->left, n);
@@ -417,7 +421,7 @@
 //	n++;
 //}
 //
-//int TExpressionTree::GetNodeNum(TNode *head)
+// int TExpressionTree::GetNodeNum(TNode *head)
 //{
 //	int num = 0;
 //	if (head != 0)
@@ -429,7 +433,7 @@
 //		return 0;
 //}
 //
-//std::string  TExpressionTree::OutputStr()
+// std::string  TExpressionTree::OutputStr()
 //{
 //	std::string temp;
 //
@@ -438,7 +442,7 @@
 //	return temp;
 //}
 //
-//void TExpressionTree::ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder)
+// void TExpressionTree::ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder)
 //{
 //	if (expression.empty())
 //	{
@@ -547,7 +551,8 @@
 //						throw MathError{ ErrorType::ERROR_NOT_LINK_VARIABLETABLE, "" };
 //						return;
 //					}
-//					if (!IsCharAlpha(Data[i].s[0]) && Data[i].s[0] != '_')//变量名首字符需为下划线或字母
+//					if (!IsCharAlpha(Data[i].s[0]) && Data[i].s[0] !=
+//'_')//变量名首字符需为下划线或字母
 //					{
 //						ReleaseVectorTNode(PreInOrder);
 //						throw MathError{ ErrorType::ERROR_INVALID_VARNAME, Data[i].s };
@@ -556,7 +561,8 @@
 //
 //
 //					//
-//					if (pVariableTable->FindVariableTable(Data[i].s) == pVariableTable->VariableTable.end())
+//					if (pVariableTable->FindVariableTable(Data[i].s) ==
+//pVariableTable->VariableTable.end())
 //					{
 //						ReleaseVectorTNode(PreInOrder);
 //						throw MathError{ ErrorType::ERROR_UNDEFINED_VARIABLE, Data[i].s };
@@ -572,7 +578,8 @@
 //					//if (SelfVariableTable.FindVariableTable(tempTChar) == NULL)
 //					//{
 //					//	SelfVariableTable.VariableTable.push_back(tempTChar);
-//					//	SelfVariableTable.VariableValue.push_back(pVariableTable->GetValueFromVarPoint(tempTChar));
+//					//
+//SelfVariableTable.VariableValue.push_back(pVariableTable->GetValueFromVarPoint(tempTChar));
 //					//}
 //					iVarAppearedCount++;
 //					LastVarNode = tempNode;
@@ -631,7 +638,7 @@
 //
 //
 ////复制节点树，返回新节点树头节点
-//TExpressionTree::TNode *TExpressionTree::CopyNodeTree(TNode *oldNode)
+// TExpressionTree::TNode *TExpressionTree::CopyNodeTree(TNode *oldNode)
 //{
 //	TNode *newNode = new TNode;
 //	newNode->eType = oldNode->eType;
@@ -653,7 +660,7 @@
 //	return newNode;
 //}
 //
-//TExpressionTree::TNode *TExpressionTree::NewNode(enumNodeType eType, enumMathOperator eOperator)
+// TExpressionTree::TNode *TExpressionTree::NewNode(enumNodeType eType, enumMathOperator eOperator)
 //{
 //	TNode *newNode = new TNode;
 //	newNode->eType = eType;
@@ -661,484 +668,8 @@
 //	return newNode;
 //}
 //
-////未完成求导：tan,arcsin,arccos,arctan
-//void TExpressionTree::Diff(TNode *now, std::string var)
-//{
-//	switch (now->eType)
-//	{
-//	case NODE_VARIABLE:
-//		now->eType = NODE_NUMBER;
-//		if (now->varname == var)
-//			now->value = 1;
-//		else
-//			now->value = 0;
-//		return;
-//	case NODE_NUMBER:
-//		now->value = 0;
-//		return;
-//	case NODE_OPERATOR://当前为运算符节点
-//		switch (now->eOperator)
-//		{
-//		case MATH_POSITIVE:
-//		case MATH_NEGATIVE:
-//			if (now->left != NULL)
-//				Diff(now->left, var);
-//			return;
-//		case MATH_ADD:
-//		case MATH_SUB:
-//			if (now->left != NULL)
-//				Diff(now->left, var);
-//			if (now->right != NULL)
-//				Diff(now->right, var);
-//			return;
-//		case MATH_MULTIPLY:
-//			if (now->left->eType == NODE_NUMBER || now->right->eType == NODE_NUMBER)//两个操作数中有一个是数字
-//			{
-//				if (now->left->eType == NODE_NUMBER)
-//					Diff(now->right, var);
-//				else
-//					Diff(now->left, var);
-//			}
-//			else
-//			{
-//				TNode *plus;
-//				plus = new TNode;
-//				plus->eType = NODE_OPERATOR;
-//				plus->eOperator = MATH_ADD;
-//				if (now != head)
-//				{
-//					//plus上下行连接
-//					if (now->parent->left == now)
-//						now->parent->left = plus;
-//					if (now->parent->right == now)
-//						now->parent->right = plus;
-//					plus->parent = now->parent;
-//				}
-//				else
-//				{
-//					head = plus;
-//				}
-//				now->parent = plus;
-//				plus->left = now;
 //
-//				//加入右节点
-//				TNode *newRight;
-//				newRight = CopyNodeTree(now);
-//
-//				plus->right = newRight;
-//				newRight->parent = plus;
-//
-//				Diff(plus->left->left, var);
-//				Diff(plus->right->right, var);
-//			}
-//			return;
-//		case MATH_DIVIDE:
-//			if (now->right->eType == NODE_NUMBER)// f(x)/number = f'(x)/number
-//			{
-//				Diff(now->left, var);
-//			}
-//			else
-//			{
-//				TNode *divide = now;
-//				TNode *u1 = now->left;
-//				TNode *v1 = now->right;
-//
-//				//创建减号
-//				TNode *substract;
-//				substract = NewNode(NODE_OPERATOR, MATH_SUB);
-//
-//				//创建2个乘号
-//				TNode *multiply1, *multiply2;
-//				multiply1 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//				multiply2 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//
-//				//创建乘方
-//				TNode *power;
-//				power = NewNode(NODE_OPERATOR, MATH_POWER);
-//
-//				//连接除号下面2个节点：-, ^
-//				divide->left = substract;
-//				substract->parent = divide;
-//				divide->right = power;
-//				power->parent = divide;
-//
-//				//连接减号下面2个节点
-//				substract->left = multiply1;
-//				multiply1->parent = substract;
-//				substract->right = multiply2;
-//				multiply2->parent = substract;
-//
-//				//连接乘号1下面2个节点：u1, v1
-//				multiply1->left = u1;
-//				u1->parent = multiply1;
-//				multiply1->right = v1;
-//				v1->parent = multiply1;
-//
-//				//创建u2, v2
-//				TNode *u2, *v2;
-//				u2 = CopyNodeTree(u1);
-//				v2 = CopyNodeTree(v1);
-//
-//				//连接乘号2下面的u2, v2
-//				multiply2->left = u2;
-//				u2->parent = multiply2;
-//				multiply2->right = v2;
-//				v2->parent = multiply2;
-//
-//				//创建v3, 2
-//				TNode *v3, *num2;
-//				v3 = CopyNodeTree(v1);
-//				num2 = NewNode(NODE_NUMBER);
-//				num2->value = 2;
-//
-//				//连接^下面的v3和2
-//				power->left = v3;
-//				v3->parent = power;
-//				power->right = num2;
-//				num2->parent = power;
-//
-//				Diff(u1, var);
-//				Diff(v2, var);
-//
-//			}
-//			return;
-//		case MATH_POWER:
-//		{
-//			bool LChildIsNumber = now->left->eType == NODE_NUMBER;
-//			bool RChildIsNumber = now->right->eType == NODE_NUMBER;
-//			if (LChildIsNumber && RChildIsNumber)
-//			{
-//				delete now->left;
-//				delete now->right;
-//				now->left = NULL;
-//				now->right = NULL;
-//				now->eType = NODE_NUMBER;
-//				now->eOperator = MATH_NULL;
-//				now->value = 0.0;
-//				return;
-//			}
-//
-//			TNode *multiply1 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//			TNode *multiply2 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//			TNode *power = now;
-//			TNode *u = now->left;
-//			TNode *v = now->right;
-//			TNode *u2 = CopyNodeTree(u);
-//			TNode *v2 = CopyNodeTree(v);
-//
-//			if (power == head)
-//			{
-//				head = multiply1;
-//			}
-//			else
-//			{
-//				if (power->parent->left == power)
-//					power->parent->left = multiply1;
-//				if (power->parent->right == power)
-//					power->parent->right = multiply1;
-//				multiply1->parent = power->parent;
-//			}
-//
-//			if (RChildIsNumber)
-//				v->value -= 1.0;
-//
-//			multiply1->left = power;
-//			power->parent = multiply1;
-//
-//			multiply1->right = multiply2;
-//			multiply2->parent = multiply1;
-//
-//			multiply2->left = v2;
-//			v2->parent = multiply2;
-//
-//			if (RChildIsNumber)
-//			{
-//				multiply2->right = u2;
-//				u2->parent = multiply2;
-//				Diff(u2, var);
-//				return;
-//			}
-//			else
-//			{
-//				TNode *ln = NewNode(NODE_FUNCTION, MATH_LN);
-//
-//				multiply2->right = ln;
-//				ln->parent = multiply2;
-//
-//				ln->left = u2;
-//				u2->parent = ln;
-//
-//				Diff(multiply2, var);
-//				return;
-//			}
-//			return;
-//		}
-//		}
-//		break;
-//	case NODE_FUNCTION:
-//	{
-//		//不考虑定义域
-//		//函数内为数字则导为0
-//		if (now->left->eType == NODE_NUMBER)
-//		{
-//			now->eType = NODE_NUMBER;
-//			now->eOperator = MATH_NULL;
-//			now->value = 0;
-//			DeleteNode(now->left);
-//			now->left = NULL;
-//			return;
-//		}
-//
-//		TNode *function = now;
-//		switch (function->eOperator)
-//		{
-//		case MATH_SQRT:
-//		{
-//			//转化为幂求导
-//			TNode *u = function->left;
-//			TNode *power = NewNode(NODE_OPERATOR, MATH_POWER);
-//			TNode *num1half = NewNode(NODE_NUMBER);
-//			num1half->value = 0.5;
-//
-//			power->left = u;
-//			u->parent = power;
-//
-//			power->right = num1half;
-//			num1half->parent = power;
-//
-//			if (function == head)
-//				head = power;
-//			else
-//			{
-//				if (function->parent->left == function)
-//					function->parent->left = power;
-//				if (function->parent->right == function)
-//					function->parent->right = power;
-//				power->parent = function->parent;
-//			}
-//
-//			delete function;
-//			Diff(power, var);
-//
-//			return;
-//		}
-//		case MATH_LN:
-//		case MATH_LOG10:
-//		{
-//			TNode *divide = NewNode(NODE_OPERATOR, MATH_DIVIDE);
-//			TNode *num1 = NewNode(NODE_NUMBER);
-//			num1->value = 1.0;
-//
-//			divide->left = num1;
-//			num1->parent = divide;
-//
-//			TNode *u = function->left;
-//
-//			if (function->eOperator == MATH_LN)//ln(x)=1/x
-//			{
-//				divide->right = u;
-//				u->parent = divide;
-//			}
-//			else
-//			{
-//				//log10(x)=1/(x*ln(10))
-//				TNode *multiply2 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//
-//				divide->right = multiply2;
-//				multiply2->parent = divide;
-//
-//				multiply2->left = u;
-//				u->parent = multiply2;
-//
-//				TNode *ln = NewNode(NODE_FUNCTION, MATH_LN);
-//
-//				multiply2->right = ln;
-//				ln->parent = multiply2;
-//
-//				TNode *num10 = NewNode(NODE_NUMBER);
-//				num10->value = 10.0;
-//
-//				ln->left = num10;
-//				num10->parent = ln;
-//			}
-//
-//			TNode *top = divide;
-//			TNode *u2 = NULL;
-//			if (u->eType != NODE_VARIABLE)
-//			{
-//				TNode *multiply1 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//				u2 = CopyNodeTree(u);
-//
-//				multiply1->left = divide;
-//				divide->parent = multiply1;
-//
-//				multiply1->right = u2;
-//				u2->parent = multiply1;
-//
-//				top = multiply1;
-//			}
-//
-//			if (function == head)
-//			{
-//				head = top;
-//			}
-//			else
-//			{
-//				if (function->parent->left == function)
-//				{
-//					function->parent->left = top;
-//					top->parent = function->parent;
-//				}
-//				if (function->parent->right == function)
-//				{
-//					function->parent->right = top;
-//					top->parent = function->parent;
-//				}
-//			}
-//			delete function;
-//
-//			if (u->eType != NODE_VARIABLE)
-//				Diff(u2, var);
-//
-//		}
-//		return;
-//		case MATH_EXP:
-//		{
-//			if (function->left->eType == NODE_VARIABLE)//e^x=e^x
-//				return;
-//			TNode *multiply = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//			TNode *u2 = CopyNodeTree(function->left);
-//
-//			if (function == head)
-//			{
-//				head = multiply;
-//			}
-//			else
-//			{
-//				if (function->parent->left == function)
-//				{
-//					function->parent->left = multiply;
-//					multiply->parent = function->parent;
-//				}
-//				if (function->parent->right == function)
-//				{
-//					function->parent->right = multiply;
-//					multiply->parent = function->parent;
-//				}
-//			}
-//
-//			multiply->left = function;
-//			function->parent = multiply;
-//
-//			multiply->right = u2;
-//			u2->parent = multiply;
-//
-//			Diff(u2, var);
-//		}
-//		return;
-//		case MATH_COS:
-//		{
-//			TNode *negative = new TNode;
-//			negative->eType = NODE_OPERATOR;
-//			negative->eOperator = MATH_NEGATIVE;
-//
-//			//连接上一级和负号
-//			if (function != head)
-//			{
-//				if (function->parent->left == function)
-//				{
-//					function->parent->left = negative;
-//					negative->parent = function->parent;
-//				}
-//				if (function->parent->right == function)
-//				{
-//					function->parent->right = negative;
-//					negative->parent = function->parent;
-//				}
-//			}
-//			else
-//			{
-//				head = negative;
-//				negative->parent = NULL;
-//			}
-//
-//			TNode *multiply = new TNode;
-//			multiply->eType = NODE_OPERATOR;
-//			multiply->eOperator = MATH_MULTIPLY;
-//
-//			//连接负号和乘号
-//			negative->left = multiply;
-//			multiply->parent = negative;
-//
-//			//连接乘号和function
-//			multiply->left = function;
-//			function->parent = multiply;
-//
-//			//变更function
-//			function->eOperator = MATH_SIN;
-//
-//			//复制u2并连接乘号
-//			TNode *u2 = CopyNodeTree(function->left);
-//			multiply->right = u2;
-//			u2->parent = multiply;
-//
-//			Diff(u2, var);
-//		}
-//		return;
-//		case MATH_SIN:
-//		{
-//			TNode *multiply = new TNode;
-//			multiply->eType = NODE_OPERATOR;
-//			multiply->eOperator = MATH_MULTIPLY;
-//
-//			//连接上一级和乘号
-//			if (function != head)
-//			{
-//				if (function->parent->left == function)
-//				{
-//					function->parent->left = multiply;
-//					multiply->parent = function->parent;
-//				}
-//				if (function->parent->right == function)
-//				{
-//					function->parent->right = multiply;
-//					multiply->parent = function->parent;
-//				}
-//			}
-//			else
-//			{
-//				head = multiply;
-//				multiply->parent = NULL;
-//			}
-//
-//			//连接乘号和function
-//			multiply->left = function;
-//			function->parent = multiply;
-//
-//			//变更function
-//			function->eOperator = MATH_COS;
-//
-//			//复制u2并连接乘号
-//			TNode *u2 = CopyNodeTree(function->left);
-//			multiply->right = u2;
-//			u2->parent = multiply;
-//
-//			Diff(u2, var);
-//		}
-//		//case MATH_ARCTAN:
-//		//{
-//		//	TNode *multiply = new TNode()
-//		//}
-//		return;
-//		default:
-//                    throw MathError(ErrorType::ERROR_WRONG_MATH_OPERATOR,
-//                                             std::string("未完成的运算符") + Function2Str(now->eOperator));
-//		}
-//	}
-//	}
-//}
-//
-//std::string  TExpressionTree::Diff(std::string var, int n, bool bOutput)
+// std::string  TExpressionTree::Diff(std::string var, int n, bool bOutput)
 //{
 //	if (pVariableTable->FindVariableTable(var) == pVariableTable->VariableTable.end())
 //		throw MathError{ ErrorType::ERROR_UNDEFINED_VARIABLE, var };
@@ -1150,7 +681,7 @@
 //	return OutputStr();
 //}
 //
-//void TExpressionTree::LinkParent(TNode *child, TNode *ignore)
+// void TExpressionTree::LinkParent(TNode *child, TNode *ignore)
 //{
 //	if (ignore == head)
 //	{
@@ -1167,7 +698,7 @@
 //	}
 //}
 //
-//void TExpressionTree::Simplify(TNode *now)
+// void TExpressionTree::Simplify(TNode *now)
 //{
 //	//左遍历
 //	if (now->left != NULL)
@@ -1368,7 +899,7 @@
 //
 //}
 //
-//void  TExpressionTree::Simplify(bool bOutput)
+// void  TExpressionTree::Simplify(bool bOutput)
 //{
 //	Simplify(head);
 //}
@@ -1392,12 +923,12 @@
 ////		now->varname = temp;
 ////}
 //
-//void TExpressionTree::GetVariablePos(const std::string var, std::vector<TNode *> &VarsPos)
+// void TExpressionTree::GetVariablePos(const std::string var, std::vector<TNode *> &VarsPos)
 //{
 //	GetVariablePos(head, var, VarsPos);
 //}
 //
-//void TExpressionTree::GetVariablePos(TNode *now, const std::string var, std::vector<TNode *> &VarsPos)
+// void TExpressionTree::GetVariablePos(TNode *now, const std::string var, std::vector<TNode *> &VarsPos)
 //{
 //	if (now->eType == NODE_VARIABLE && now->varname == var)
 //		VarsPos.push_back(now);
@@ -1407,7 +938,7 @@
 //		GetVariablePos(now->right, var, VarsPos);
 //}
 //
-//void TExpressionTree::CopyVariableTable(std::vector<std::string > &Dest, const std::vector<std::string > source)
+// void TExpressionTree::CopyVariableTable(std::vector<std::string > &Dest, const std::vector<std::string > source)
 //{
 //	Dest.clear();
 //	for (auto sz : source)
@@ -1415,7 +946,7 @@
 //}
 //
 ////替换 VarsVector变量 NumsVector数字
-//void  TExpressionTree::Subs(std::vector<std::string > VarsVector, std::vector<double> NumsVector, bool output)
+// void  TExpressionTree::Subs(std::vector<std::string > VarsVector, std::vector<double> NumsVector, bool output)
 //{
 //	if (VarsVector.size() == NumsVector.size())//替换与被替换元素数目相等
 //	{
@@ -1441,11 +972,9 @@
 //					//连接到新节点
 //					if (VarsPos[j] != head)
 //					{
-//						if (VarsPos[j]->parent->left != NULL && VarsPos[j]->parent->left == VarsPos[j])
-//							VarsPos[j]->parent->left = newNode;
-//						if (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right == VarsPos[j])
-//							VarsPos[j]->parent->right = newNode;
-//						newNode->parent = VarsPos[j]->parent;
+//						if (VarsPos[j]->parent->left != NULL && VarsPos[j]->parent->left ==
+//VarsPos[j]) 							VarsPos[j]->parent->left = newNode; 						if (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right ==
+//VarsPos[j]) 							VarsPos[j]->parent->right = newNode; 						newNode->parent = VarsPos[j]->parent;
 //					}
 //					else
 //						head = newNode;
@@ -1460,7 +989,7 @@
 //		throw MathError{ ErrorType::ERROR_SUBS_NOT_EQUAL, "" };
 //}
 //
-//void TExpressionTree::Subs_inner(TNode *node, std::string ptVar, double value)
+// void TExpressionTree::Subs_inner(TNode *node, std::string ptVar, double value)
 //{
 //	if (node->eType == NODE_VARIABLE && node->varname == ptVar)
 //	{
@@ -1477,13 +1006,13 @@
 //}
 //
 ////替换  var变量指针 value数字
-//void  TExpressionTree::Subs(std::string ptVar, double value, bool output)
+// void  TExpressionTree::Subs(std::string ptVar, double value, bool output)
 //{
 //	Subs_inner(head, ptVar, value);
 //}
 //
 ////替换  vars变量串 nums数字串 以空格分隔，支持表达式替换
-//void  TExpressionTree::Subs(const std::string vars, const std::string nums, bool output)
+// void  TExpressionTree::Subs(const std::string vars, const std::string nums, bool output)
 //{
 //	if (vars.empty() || nums.empty())
 //	{
@@ -1518,11 +1047,9 @@
 //					//连接到新节点
 //					if (VarsPos[j] != head)
 //					{
-//						if (VarsPos[j]->parent->left != NULL && VarsPos[j]->parent->left == VarsPos[j])
-//							VarsPos[j]->parent->left = newNode;
-//						if (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right == VarsPos[j])
-//							VarsPos[j]->parent->right = newNode;
-//						newNode->parent = VarsPos[j]->parent;
+//						if (VarsPos[j]->parent->left != NULL && VarsPos[j]->parent->left ==
+//VarsPos[j]) 							VarsPos[j]->parent->left = newNode; 						if (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right ==
+//VarsPos[j]) 							VarsPos[j]->parent->right = newNode; 						newNode->parent = VarsPos[j]->parent;
 //					}
 //					else
 //						head = newNode;
@@ -1538,18 +1065,18 @@
 //
 //}
 //
-//void  TExpressionTree::LinkVariableTable(TVariableTable *p)
+// void  TExpressionTree::LinkVariableTable(TVariableTable *p)
 //{
 //	pVariableTable = p;
 //}
 //
-//void  TExpressionTree::Read(double num, bool bOutput)
+// void  TExpressionTree::Read(double num, bool bOutput)
 //{
 //	head = NewNode(NODE_NUMBER);
 //	head->value = num;
 //}
 //
-//void TExpressionTree::Solve(TNode *now, TNode *&write_pos)
+// void TExpressionTree::Solve(TNode *now, TNode *&write_pos)
 //{
 //	TNode *parent = now->parent;
 //	if (parent != NULL)
@@ -1709,7 +1236,7 @@
 //}
 //
 ////求解单变量方程 不验证可求解性，需提前调用HasOnlyOneVar确认
-//std::string  TExpressionTree::Solve(std::string &var, double &value)
+// std::string  TExpressionTree::Solve(std::string &var, double &value)
 //{
 //	TExpressionTree Result;
 //
@@ -1728,7 +1255,7 @@
 //}
 //
 ////读之前不清零，请自行处理
-//void  TExpressionTree::Read(std::string expression, bool bOutput)
+// void  TExpressionTree::Read(std::string expression, bool bOutput)
 //{
 //	std::queue<TNode *> InOrder;
 //	std::vector<TNode *> PostOrder;
@@ -1738,7 +1265,7 @@
 //	BuildExpressionTree(PostOrder);
 //}
 //
-//bool TExpressionTree::CanCalc(TNode *now)
+// bool TExpressionTree::CanCalc(TNode *now)
 //{
 //	if (now->left != NULL)
 //		if (CanCalc(now->left) == false)
@@ -1752,13 +1279,13 @@
 //	return true;
 //}
 //
-//bool TExpressionTree::CanCalc()
+// bool TExpressionTree::CanCalc()
 //{
 //	return CanCalc(head);
 //}
 //
 ////计算表达式值 operateHeadNode决定是否操作本身的节点
-//double TExpressionTree::Value(bool operateHeadNode)
+// double TExpressionTree::Value(bool operateHeadNode)
 //{
 //	TNode *pNode = NULL;
 //	if (operateHeadNode)
@@ -1786,7 +1313,7 @@
 //}
 //
 ////复制出一棵临时树计算值
-//std::string  TExpressionTree::Calc(double *result)
+// std::string  TExpressionTree::Calc(double *result)
 //{
 //	if (CanCalc())
 //	{
@@ -1805,7 +1332,7 @@
 //		return OutputStr();
 //}
 //
-//TExpressionTree &TExpressionTree::operator=(const TExpressionTree &expr)
+// TExpressionTree &TExpressionTree::operator=(const TExpressionTree &expr)
 //{
 //	Release();
 //	Reset();
@@ -1814,13 +1341,13 @@
 //	return *this;
 //}
 //
-//void TExpressionTree::ReleaseVectorTNode(std::vector<TNode *> vec)
+// void TExpressionTree::ReleaseVectorTNode(std::vector<TNode *> vec)
 //{
 //	for (auto pNode : vec)
 //		delete pNode;
 //}
 //
-//void TExpressionTree::Vpa_inner(TNode *now)
+// void TExpressionTree::Vpa_inner(TNode *now)
 //{
 //	if (now->left != NULL)
 //		Vpa_inner(now->left);
@@ -1835,19 +1362,19 @@
 //}
 //
 ////仅将变量表内置数值代入，不进行计算
-//void  TExpressionTree::Vpa(bool bOutput)
+// void  TExpressionTree::Vpa(bool bOutput)
 //{
 //	Vpa_inner(head);
 //}
 //
-//bool TExpressionTree::IsSingleVar()//检查是否为一元
+// bool TExpressionTree::IsSingleVar()//检查是否为一元
 //{
 //	//return SelfVariableTable.VariableTable.size() == 1;
 //	return true;
 //}
 //
 //
-//void TExpressionTree::CheckOnlyOneVar(TNode *now)//只有一个变量（实时验证）
+// void TExpressionTree::CheckOnlyOneVar(TNode *now)//只有一个变量（实时验证）
 //{
 //	if (now->eType == NODE_VARIABLE)
 //	{
@@ -1861,19 +1388,19 @@
 //		CheckOnlyOneVar(now->right);
 //}
 //
-//bool TExpressionTree::CheckOnlyOneVar()//只有一个变量（实时验证）
+// bool TExpressionTree::CheckOnlyOneVar()//只有一个变量（实时验证）
 //{
 //	iVarAppearedCount = 0;
 //	CheckOnlyOneVar(head);
 //	return HasOnlyOneVar();
 //}
 //
-//bool TExpressionTree::HasOnlyOneVar()//只有一个变量
+// bool TExpressionTree::HasOnlyOneVar()//只有一个变量
 //{
 //	return iVarAppearedCount == 1;
 //}
 //
-//TExpressionTree &TExpressionTree::operator*(double value)
+// TExpressionTree &TExpressionTree::operator*(double value)
 //{
 //	if (head == NULL)
 //	{
@@ -1896,7 +1423,7 @@
 //	return *this;
 //}
 //
-//TExpressionTree &TExpressionTree::operator+(double value)
+// TExpressionTree &TExpressionTree::operator+(double value)
 //{
 //	if (head == NULL)
 //	{
@@ -1919,7 +1446,7 @@
 //	return *this;
 //}
 //
-//TExpressionTree &TExpressionTree::operator-(double value)
+// TExpressionTree &TExpressionTree::operator-(double value)
 //{
 //	if (head == NULL)
 //	{
@@ -1942,7 +1469,7 @@
 //	return *this;
 //}
 //
-//TExpressionTree &TExpressionTree::operator+(const TExpressionTree &expr)
+// TExpressionTree &TExpressionTree::operator+(const TExpressionTree &expr)
 //{
 //	if (head == NULL)
 //		head = CopyNodeTree(expr.head);

@@ -6,10 +6,10 @@
 //#include <queue>
 //#include <stack>
 //
-//namespace tomsolver {
+// namespace tomsolver {
 //
-//class TExpressionTree {
-//private:
+// class TExpressionTree {
+// private:
 //#define MAX_VAR_NAME 32 //同时也是浮点数转字符串的最大长度
 //#define MIN_DOUBLE 1e-6
 //
@@ -36,7 +36,6 @@
 //    int GetNodeNum(TNode *head);
 //    void DeleteNode(TNode *node);
 //    void DeleteNodeTraversal(TNode *node);
-//    void Diff(TNode *now, std::string var);
 //    TNode *CopyNodeTree(TNode *oldNode);
 //    // std::string  FindVariableTableFrom(const std::string varstr, std::vector<std::string >
 //    // newVariableTable);//查找变量是否在变量表中，没有则返回NULL
@@ -53,7 +52,7 @@
 //    void CheckOnlyOneVar(TNode *now);
 //    void Subs_inner(TNode *node, std::string ptVar, double value);
 //
-//public:
+// public:
 //    TNode *head;
 //    void Reset();
 //    void Vpa(bool bOutput);
