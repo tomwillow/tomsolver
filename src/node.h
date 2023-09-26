@@ -42,6 +42,8 @@ struct NodeImpl {
 
     ~NodeImpl();
 
+    bool Equal(const std::unique_ptr<NodeImpl> &rhs) const noexcept;
+
     /**
      * 把整个节点以中序遍历的顺序输出为字符串。
      * 例如：

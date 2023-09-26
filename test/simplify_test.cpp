@@ -21,4 +21,6 @@ TEST(Simplify, Base) {
     n2->Simplify();
 
     ASSERT_EQ(n2->ToString(), "7");
+
+    ASSERT_TRUE(n2->Equal(Num(7)));
 }

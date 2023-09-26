@@ -63,6 +63,71 @@ NodeImpl::~NodeImpl() {
     Release();
 }
 
+bool NodeImpl::Equal(const std::unique_ptr<NodeImpl> &rhs) const noexcept {
+    // 前序遍历。非递归实现。
+    if (this == rhs.get()) {
+        return true;
+    }
+
+    struct Item {
+        const NodeImpl *lhs;
+        const NodeImpl *rhs;
+    };
+    std::stack<Item> stk;
+
+    auto IsSame = [](const Item &item) -> bool {
+        return item.lhs->type == item.rhs->type && item.lhs->op == item.rhs->op && item.lhs->value == item.rhs->value &&
+               item.lhs->varname == item.rhs->varname;
+    };
+    if (!IsSame({this, rhs.get()})) {
+        return false;
+    }
+
+    if (right && rhs->right) {
+        stk.push({right.get(), rhs->right.get()});
+    } else {
+        if (right == nullptr && rhs->right == nullptr) {
+        } else {
+            return false;
+        }
+    }
+    if (left && rhs->left) {
+        stk.push({left.get(), rhs->left.get()});
+    } else {
+        if (left == nullptr && rhs->left == nullptr) {
+        } else {
+            return false;
+        }
+    }
+    while (!stk.empty()) {
+        Item item = stk.top();
+        stk.pop();
+
+        // 检查
+        if (!IsSame(item)) {
+            return false;
+        }
+
+        if (item.lhs->right && item.rhs->right) {
+            stk.push({item.lhs->right.get(), item.rhs->right.get()});
+        } else {
+            if (item.lhs->right == nullptr && item.rhs->right == nullptr) {
+            } else {
+                return false;
+            }
+        }
+        if (item.lhs->left && item.rhs->left) {
+            stk.push({item.lhs->left.get(), item.rhs->left.get()});
+        } else {
+            if (item.lhs->left == nullptr && item.rhs->left == nullptr) {
+            } else {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 std::string NodeImpl::ToString() const noexcept {
     std::string ret;
     ToStringNonRecursively(ret);

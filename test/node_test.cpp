@@ -245,3 +245,17 @@ TEST(Node, Divide) {
 
     expr->CheckParent();
 }
+
+TEST(Node, Equal) {
+    MemoryLeakDetection mld;
+
+    Node n = Var("a") + Var("b") * Var("c");
+    Node n2 = Clone(n);
+
+    ASSERT_TRUE(n->Equal(n));
+    ASSERT_TRUE(n->Equal(n2));
+    ASSERT_TRUE(n2->Equal(n));
+
+    ASSERT_TRUE(n->Equal(Var("a") + Var("b") * Var("c")));
+    ASSERT_TRUE((Var("a") + Var("b") * Var("c"))->Equal(n));
+}
