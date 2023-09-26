@@ -1,5 +1,3 @@
-#pragma once
-
 #include "node.h"
 
 #include "config.h"
@@ -156,7 +154,7 @@ void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
     }
 
     int has_parenthesis = 0;
-    if (GetOperatorNum(op) == 1) //一元运算符：函数和取负
+    if (GetOperatorNum(op) == 1) // 一元运算符：函数和取负
     {
         if (op == MathOperator::MATH_POSITIVE || op == MathOperator::MATH_NEGATIVE) {
             output += "(" + NodeToStr();
@@ -166,18 +164,18 @@ void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
             has_parenthesis = 1;
         }
     } else {
-        //非一元运算符才输出，即一元运算符的输出顺序已改变
-        if (type == NodeType::OPERATOR) //本级为运算符
+        // 非一元运算符才输出，即一元运算符的输出顺序已改变
+        if (type == NodeType::OPERATOR) // 本级为运算符
             if (parent != nullptr)
-                if ((GetOperatorNum(parent->op) == 2 && //父运算符存在，为二元，
-                     (Rank(parent->op) > Rank(op)       //父级优先级高于本级->加括号
+                if ((GetOperatorNum(parent->op) == 2 && // 父运算符存在，为二元，
+                     (Rank(parent->op) > Rank(op)       // 父级优先级高于本级->加括号
 
-                      || ( //两级优先级相等
+                      || ( // 两级优先级相等
                              Rank(parent->op) == Rank(op) &&
                              (
-                                 //本级为父级的右子树 且父级不满足结合律->加括号
+                                 // 本级为父级的右子树 且父级不满足结合律->加括号
                                  (InAssociativeLaws(parent->op) == false && this == parent->right.get()) ||
-                                 //两级都是右结合
+                                 // 两级都是右结合
                                  (InAssociativeLaws(parent->op) == false && IsLeft2Right(op) == false)))))
 
                     //||
@@ -190,22 +188,22 @@ void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
                 }
     }
 
-    if (left != nullptr) //左遍历
+    if (left != nullptr) // 左遍历
     {
         left->ToStringRecursively(output);
     }
 
-    if (GetOperatorNum(op) != 1) //非一元运算符才输出，即一元运算符的输出顺序已改变
+    if (GetOperatorNum(op) != 1) // 非一元运算符才输出，即一元运算符的输出顺序已改变
     {
         output += NodeToStr();
     }
 
-    if (right != nullptr) //右遍历
+    if (right != nullptr) // 右遍历
     {
         right->ToStringRecursively(output);
     }
 
-    //回到本级时补齐右括号，包住前面的东西
+    // 回到本级时补齐右括号，包住前面的东西
     if (has_parenthesis) {
         output += ")";
     }
@@ -242,15 +240,15 @@ void NodeImpl::ToStringNonRecursively(std::string &output) const noexcept {
             // 二元运算符的特殊处理：
             const NodeImpl *curParent = cur->parent;
             if (curParent != nullptr) {
-                if ((GetOperatorNum(curParent->op) == 2 && //父运算符存在，为二元，
-                     (Rank(curParent->op) > Rank(cur->op)  //父级优先级高于本级->加括号
+                if ((GetOperatorNum(curParent->op) == 2 && // 父运算符存在，为二元，
+                     (Rank(curParent->op) > Rank(cur->op)  // 父级优先级高于本级->加括号
 
-                      || ( //两级优先级相等
+                      || ( // 两级优先级相等
                              Rank(curParent->op) == Rank(cur->op) &&
                              (
-                                 //本级为父级的右子树 且父级不满足结合律->加括号
+                                 // 本级为父级的右子树 且父级不满足结合律->加括号
                                  (InAssociativeLaws(curParent->op) == false && cur == curParent->right.get()) ||
-                                 //两级都是右结合
+                                 // 两级都是右结合
                                  (InAssociativeLaws(curParent->op) == false && IsLeft2Right(cur->op) == false)))))
 
                     //||

@@ -1,5 +1,3 @@
-#pragma once
-
 #include "math_operator.h"
 #include "config.h"
 
@@ -12,12 +10,12 @@ std::string MathOperatorToStr(MathOperator op) {
     case MathOperator::MATH_NULL:
         assert(0);
         return "";
-    //一元
+    // 一元
     case MathOperator::MATH_POSITIVE:
         return "+";
     case MathOperator::MATH_NEGATIVE:
         return "-";
-    //函数
+    // 函数
     case MathOperator::MATH_SIN:
         return "sin";
     case MathOperator::MATH_COS:
@@ -38,7 +36,7 @@ std::string MathOperatorToStr(MathOperator op) {
         return "log10";
     case MathOperator::MATH_EXP:
         return "exp";
-    //二元
+    // 二元
     case MathOperator::MATH_ADD:
         return "+";
     case MathOperator::MATH_SUB:
@@ -65,7 +63,7 @@ std::string MathOperatorToStr(MathOperator op) {
 
 int GetOperatorNum(MathOperator op) noexcept {
     switch (op) {
-    case MathOperator::MATH_POSITIVE: //正负号
+    case MathOperator::MATH_POSITIVE: // 正负号
     case MathOperator::MATH_NEGATIVE:
 
     case MathOperator::MATH_SIN:
@@ -113,7 +111,7 @@ int Rank(MathOperator op) noexcept {
     case MathOperator::MATH_EXP:
         return 15;
 
-    case MathOperator::MATH_POSITIVE: //除了函数，所有运算符均可将正负号挤出
+    case MathOperator::MATH_POSITIVE: // 除了函数，所有运算符均可将正负号挤出
     case MathOperator::MATH_NEGATIVE:
         return 14;
 
@@ -135,7 +133,7 @@ int Rank(MathOperator op) noexcept {
     case MathOperator::MATH_SUB:
         return 5;
 
-    case MathOperator::MATH_LEFT_PARENTHESIS: //左右括号优先级小是为了不被其余任何运算符挤出
+    case MathOperator::MATH_LEFT_PARENTHESIS: // 左右括号优先级小是为了不被其余任何运算符挤出
     case MathOperator::MATH_RIGHT_PARENTHESIS:
         return 0;
     }
@@ -154,11 +152,11 @@ bool IsLeft2Right(MathOperator eOperator) noexcept {
     case MathOperator::MATH_SUB:
         return true;
 
-    case MathOperator::MATH_POSITIVE: //正负号为右结合
+    case MathOperator::MATH_POSITIVE: // 正负号为右结合
     case MathOperator::MATH_NEGATIVE:
     case MathOperator::MATH_POWER: //^
         return false;
-        //函数和括号不计结合性
+        // 函数和括号不计结合性
     }
     assert(0);
     return false;
@@ -167,7 +165,7 @@ bool IsLeft2Right(MathOperator eOperator) noexcept {
 bool InAssociativeLaws(MathOperator eOperator) noexcept {
     switch (eOperator) {
 
-    case MathOperator::MATH_POSITIVE: //正负号
+    case MathOperator::MATH_POSITIVE: // 正负号
     case MathOperator::MATH_NEGATIVE:
 
     case MathOperator::MATH_SQRT:

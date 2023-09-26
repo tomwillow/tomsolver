@@ -1,5 +1,3 @@
-#pragma once
-
 #include "node.h"
 
 #include "config.h"
@@ -25,11 +23,11 @@ void NodeImpl::Simplify() noexcept {
         return;
     }
 
-    //左遍历
+    // 左遍历
     if (left != nullptr)
         left->Simplify();
 
-    //右遍历
+    // 右遍历
     if (right != nullptr)
         right->Simplify();
 
