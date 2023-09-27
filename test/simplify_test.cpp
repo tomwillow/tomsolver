@@ -1,5 +1,6 @@
 #include "tomsolver.h"
 
+#include "helper.h"
 #include "memory_leak_detection.h"
 
 #include <gtest/gtest.h>
@@ -23,4 +24,20 @@ TEST(Simplify, Base) {
     ASSERT_EQ(n2->ToString(), "7");
 
     ASSERT_TRUE(n2->Equal(Num(7)));
+}
+
+TEST(Simplify, DoNotStackOverFlow) {
+    MemoryLeakDetection mld;
+
+    // 关掉定义域检查
+    GetConfig().checkDomain = false;
+
+    // 构造一个随机的长表达式
+    auto pr = CreateRandomExpresionTree(100000);
+    Node &node = pr.first;
+    double v = pr.second;
+
+    node->Simplify();
+
+    GetConfig().checkDomain = true;
 }
