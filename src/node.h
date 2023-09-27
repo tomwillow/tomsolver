@@ -60,7 +60,7 @@ struct NodeImpl {
      */
     double Vpa() const;
 
-    void Simplify() noexcept;
+    NodeImpl &Simplify() noexcept;
 
     /**
      * 检查整个节点数的parent指针是否正确。
@@ -127,6 +127,8 @@ private:
 
     template <typename T1, typename T2>
     friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
+
+    friend void SimplifyInner(std::unique_ptr<NodeImpl> &node) noexcept;
 };
 
 std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;

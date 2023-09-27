@@ -1,53 +1,68 @@
-#include "node.h"
-
-#include "config.h"
-#include "error_type.h"
-#include "math_operator.h"
+#include "simplify.h"
 
 #include <iostream>
-
-#include <vector>
-#include <type_traits>
-#include <memory>
-#include <string>
 #include <stack>
+#include <algorithm>
 #include <cassert>
 
 namespace tomsolver {
 
 namespace internal {
 
-// TODO 非递归
-void NodeImpl::Simplify() noexcept {
-    if (type != NodeType::OPERATOR) {
-        return;
+NodeImpl &NodeImpl::Simplify() noexcept {
+    // 后序遍历。非递归实现。
+
+    std::stack<NodeImpl *> stk;
+    std::deque<NodeImpl *> revertedPostOrder;
+
+    // ==== Part I ====
+
+    // 借助一个栈，得到反向的后序遍历序列，结果保存在revertedPostOrder
+    if (type == NodeType::OPERATOR) {
+        stk.push(this);
     }
 
-    // 左遍历
-    if (left != nullptr)
-        left->Simplify();
+    while (1) {
+        if (stk.empty()) {
+            break;
+        }
 
-    // 右遍历
-    if (right != nullptr)
-        right->Simplify();
+        auto f = stk.top();
+        stk.pop();
 
-    // 计算出来
-    if (GetOperatorNum(op) == 1 && left->type == NodeType::NUMBER) {
-        type = NodeType::NUMBER;
-        value = Calc(op, left->value, 0);
-        op = MathOperator::MATH_NULL;
-        left = nullptr;
-        return;
+        if (f->left && f->left->type == NodeType::OPERATOR) {
+            stk.push(f->left.get());
+        }
+
+        if (f->right && f->right->type == NodeType::OPERATOR) {
+            stk.push(f->right.get());
+        }
+
+        revertedPostOrder.push_back(f);
     }
 
-    if (GetOperatorNum(op) == 2 && left->type == NodeType::NUMBER && right->type == NodeType::NUMBER) {
-        type = NodeType::NUMBER;
-        value = Calc(op, left->value, right->value);
-        op = MathOperator::MATH_NULL;
-        left = nullptr;
-        right = nullptr;
-        return;
-    }
+    // ==== Part II ====
+    std::for_each(revertedPostOrder.rbegin(), revertedPostOrder.rend(), [](NodeImpl *n) {
+        // 计算出来
+        if (GetOperatorNum(n->op) == 1 && n->left->type == NodeType::NUMBER) {
+            n->type = NodeType::NUMBER;
+            n->value = Calc(n->op, n->left->value, 0);
+            n->op = MathOperator::MATH_NULL;
+            n->left = nullptr;
+            return;
+        }
+
+        if (GetOperatorNum(n->op) == 2 && n->left->type == NodeType::NUMBER && n->right->type == NodeType::NUMBER) {
+            n->type = NodeType::NUMBER;
+            n->value = Calc(n->op, n->left->value, n->right->value);
+            n->op = MathOperator::MATH_NULL;
+            n->left = nullptr;
+            n->right = nullptr;
+            return;
+        }
+    });
+
+    return *this;
 
     // if (GetOperateNum(now->eOperator) == 2) {
 
@@ -166,5 +181,16 @@ void NodeImpl::Simplify() noexcept {
 }
 
 } // namespace internal
+
+Node Simplify(const Node &node) noexcept {
+    Node cloned = Clone(node);
+    return Simplify(std::move(cloned));
+}
+
+Node Simplify(Node &&node) noexcept {
+    Node n = std::move(node);
+    n->Simplify();
+    return n;
+}
 
 } // namespace tomsolver
