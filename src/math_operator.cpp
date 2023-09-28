@@ -30,8 +30,10 @@ std::string MathOperatorToStr(MathOperator op) {
         return "atan";
     case MathOperator::MATH_SQRT:
         return "sqrt";
-    case MathOperator::MATH_LN:
-        return "ln";
+    case MathOperator::MATH_LOG:
+        return "log";
+    case MathOperator::MATH_LOG2:
+        return "log2";
     case MathOperator::MATH_LOG10:
         return "log10";
     case MathOperator::MATH_EXP:
@@ -73,7 +75,8 @@ int GetOperatorNum(MathOperator op) noexcept {
     case MathOperator::MATH_ARCCOS:
     case MathOperator::MATH_ARCTAN:
     case MathOperator::MATH_SQRT:
-    case MathOperator::MATH_LN:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
     case MathOperator::MATH_LOG10:
     case MathOperator::MATH_EXP:
         return 1;
@@ -106,7 +109,8 @@ int Rank(MathOperator op) noexcept {
     case MathOperator::MATH_ARCCOS:
     case MathOperator::MATH_ARCTAN:
     case MathOperator::MATH_SQRT:
-    case MathOperator::MATH_LN:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
     case MathOperator::MATH_LOG10:
     case MathOperator::MATH_EXP:
         return 15;
@@ -175,7 +179,8 @@ bool InAssociativeLaws(MathOperator eOperator) noexcept {
     case MathOperator::MATH_ARCSIN:
     case MathOperator::MATH_ARCCOS:
     case MathOperator::MATH_ARCTAN:
-    case MathOperator::MATH_LN:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
     case MathOperator::MATH_LOG10:
     case MathOperator::MATH_EXP:
 
@@ -248,11 +253,17 @@ double Calc(MathOperator op, double v1, double v2) {
         }
         ret = sqrt(v1);
         break;
-    case MathOperator::MATH_LN:
+    case MathOperator::MATH_LOG:
         if (v1 <= 0) {
-            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN, std::string("ln(") + std::to_string(v1) + std::string("")};
+            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN, std::string("log(") + std::to_string(v1) + std::string("")};
         }
         ret = log(v1);
+        break;
+    case MathOperator::MATH_LOG2:
+        if (v1 <= 0) {
+            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN, std::string("log2(") + std::to_string(v1) + std::string("")};
+        }
+        ret = log2(v1);
         break;
     case MathOperator::MATH_LOG10:
         if (v1 <= 0) // log(0)或log(负数)

@@ -28,7 +28,8 @@ enum class MathOperator {
     MATH_ARCCOS,
     MATH_ARCTAN,
     MATH_SQRT,
-    MATH_LN,
+    MATH_LOG,
+    MATH_LOG2,
     MATH_LOG10,
     MATH_EXP,
 

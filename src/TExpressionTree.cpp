@@ -191,7 +191,7 @@
 //	}
 //        if (s == "ln")
 //	{
-//		return MATH_LN;
+//		return MATH_LOG;
 //	}
 //        if (s == "log10")
 //	{
@@ -330,7 +330,7 @@
 //					while (temp.size() > 0)
 //					{
 //						if (temp.top()->eOperator == MATH_POSITIVE || temp.top()->eOperator ==
-//MATH_NEGATIVE)
+// MATH_NEGATIVE)
 //						{
 //							PostOrder.push_back(temp.top());
 //							temp.pop();
@@ -344,7 +344,7 @@
 //				else//InOrder.front()不是括号
 //				{
 //					if (InOrder.front()->eOperator == MATH_POSITIVE || InOrder.front()->eOperator ==
-//MATH_NEGATIVE)
+// MATH_NEGATIVE)
 //					{
 //						temp.push(InOrder.front());
 //						InOrder.pop();
@@ -352,15 +352,15 @@
 //					else//不是括号也不是正负号
 //					{
 //						if (temp.size() > 0 && isLeft2Right(temp.top()->eOperator) ==
-//true)//左结合 							while (temp.size() > 0 && Rank(InOrder.front()->eOperator) <=
-//Rank(temp.top()->eOperator))//临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
+// true)//左结合 							while (temp.size() > 0 && Rank(InOrder.front()->eOperator)
+// <= Rank(temp.top()->eOperator))//临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
 //							{
 //								PostOrder.push_back(temp.top());//符号进入post队列
 //								temp.pop();
 //							}
 //						else//右结合
 //							while (temp.size() > 0 && Rank(InOrder.front()->eOperator) <
-//Rank(temp.top()->eOperator))//临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
+// Rank(temp.top()->eOperator))//临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
 //							{
 //								PostOrder.push_back(temp.top());//符号进入post队列
 //								temp.pop();
@@ -562,7 +562,7 @@
 //
 //					//
 //					if (pVariableTable->FindVariableTable(Data[i].s) ==
-//pVariableTable->VariableTable.end())
+// pVariableTable->VariableTable.end())
 //					{
 //						ReleaseVectorTNode(PreInOrder);
 //						throw MathError{ ErrorType::ERROR_UNDEFINED_VARIABLE, Data[i].s };
@@ -579,7 +579,7 @@
 //					//{
 //					//	SelfVariableTable.VariableTable.push_back(tempTChar);
 //					//
-//SelfVariableTable.VariableValue.push_back(pVariableTable->GetValueFromVarPoint(tempTChar));
+// SelfVariableTable.VariableValue.push_back(pVariableTable->GetValueFromVarPoint(tempTChar));
 //					//}
 //					iVarAppearedCount++;
 //					LastVarNode = tempNode;
@@ -973,8 +973,9 @@
 //					if (VarsPos[j] != head)
 //					{
 //						if (VarsPos[j]->parent->left != NULL && VarsPos[j]->parent->left ==
-//VarsPos[j]) 							VarsPos[j]->parent->left = newNode; 						if (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right ==
-//VarsPos[j]) 							VarsPos[j]->parent->right = newNode; 						newNode->parent = VarsPos[j]->parent;
+// VarsPos[j]) 							VarsPos[j]->parent->left = newNode; 						if
+// (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right == VarsPos[j])
+// VarsPos[j]->parent->right = newNode; 						newNode->parent = VarsPos[j]->parent;
 //					}
 //					else
 //						head = newNode;
@@ -1048,8 +1049,9 @@
 //					if (VarsPos[j] != head)
 //					{
 //						if (VarsPos[j]->parent->left != NULL && VarsPos[j]->parent->left ==
-//VarsPos[j]) 							VarsPos[j]->parent->left = newNode; 						if (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right ==
-//VarsPos[j]) 							VarsPos[j]->parent->right = newNode; 						newNode->parent = VarsPos[j]->parent;
+// VarsPos[j]) 							VarsPos[j]->parent->left = newNode; 						if
+// (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right == VarsPos[j])
+// VarsPos[j]->parent->right = newNode; 						newNode->parent = VarsPos[j]->parent;
 //					}
 //					else
 //						head = newNode;

@@ -28,6 +28,11 @@ TEST(Function, Trigonometric) {
         ASSERT_DOUBLE_EQ(asin(Num(num))->Vpa(), asin(num));
         ASSERT_DOUBLE_EQ(acos(Num(num))->Vpa(), acos(num));
         ASSERT_DOUBLE_EQ(atan(Num(num))->Vpa(), atan(num));
+        ASSERT_DOUBLE_EQ(sqrt(Num(num))->Vpa(), sqrt(num));
+        ASSERT_DOUBLE_EQ(log(Num(num))->Vpa(), log(num));
+        ASSERT_DOUBLE_EQ(log2(Num(num))->Vpa(), log2(num));
+        ASSERT_DOUBLE_EQ(log10(Num(num))->Vpa(), log10(num));
+        ASSERT_DOUBLE_EQ(exp(Num(num))->Vpa(), exp(num));
     }
 }
 

@@ -44,7 +44,8 @@ public:
         case MathOperator::MATH_ARCCOS:
         case MathOperator::MATH_ARCTAN:
         case MathOperator::MATH_SQRT:
-        case MathOperator::MATH_LN:
+        case MathOperator::MATH_LOG:
+        case MathOperator::MATH_LOG2:
         case MathOperator::MATH_LOG10:
         case MathOperator::MATH_EXP:
             assert(0);
@@ -270,7 +271,7 @@ public:
 //			}
 //			else
 //			{
-//				TNode *ln = NewNode(NODE_FUNCTION, MATH_LN);
+//				TNode *ln = NewNode(NODE_FUNCTION, MATH_LOG);
 //
 //				multiply2->right = ln;
 //				ln->parent = multiply2;
@@ -332,7 +333,7 @@ public:
 //
 //			return;
 //		}
-//		case MATH_LN:
+//		case MATH_LOG:
 //		case MATH_LOG10:
 //		{
 //			TNode *divide = NewNode(NODE_OPERATOR, MATH_DIVIDE);
@@ -344,7 +345,7 @@ public:
 //
 //			TNode *u = function->left;
 //
-//			if (function->eOperator == MATH_LN)//ln(x)=1/x
+//			if (function->eOperator == MATH_LOG)//ln(x)=1/x
 //			{
 //				divide->right = u;
 //				u->parent = divide;
@@ -360,7 +361,7 @@ public:
 //				multiply2->left = u;
 //				u->parent = multiply2;
 //
-//				TNode *ln = NewNode(NODE_FUNCTION, MATH_LN);
+//				TNode *ln = NewNode(NODE_FUNCTION, MATH_LOG);
 //
 //				multiply2->right = ln;
 //				ln->parent = multiply2;
