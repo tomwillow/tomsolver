@@ -39,6 +39,22 @@ public:
     }
 
     static void DiffOnceOperator(NodeImpl *&node, const std::string &varname, std::queue<NodeImpl *> &q) noexcept {
+        // 调用前提：node是1元操作符
+        // 如果node的成员是数字，那么整个node变为数字节点，value=1，且返回true
+        // 例如： sin(1)' = 0
+        auto CullNumberMember = [&]() -> bool {
+            assert(GetOperatorNum(node->op) == 1);
+            assert(node->left);
+            if (node->left->type == NodeType::NUMBER) {
+                node->left = nullptr;
+                node->type = NodeType::NUMBER;
+                node->op = MathOperator::MATH_NULL;
+                node->value = 0.0;
+                return true;
+            }
+            return false;
+        };
+
         switch (node->op) {
         case MathOperator::MATH_NULL:
         case MathOperator::MATH_POSITIVE:
@@ -47,7 +63,73 @@ public:
             return;
 
         // 函数
-        case MathOperator::MATH_SIN:
+        case MathOperator::MATH_SIN: {
+            if (CullNumberMember()) {
+                return;
+            }
+
+            // sin(u)' = cos(u) * u'
+
+            Node leftCos = std::unique_ptr<NodeImpl>(node); // node现在强行被2个unique_ptr持有
+            leftCos->op = MathOperator::MATH_COS;
+
+            Node u = Clone(node->left);
+
+            Node mul = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_MULTIPLY, 0, "");
+            mul->parent = node->parent;
+
+            mul->left = std::move(leftCos);
+            leftCos->parent = mul.get();
+
+            mul->right = std::move(u);
+            u->parent = mul.get();
+
+            node = mul.release(); // 现在原来的node所属的unique_ptr持有mul了
+
+            q.push(node->right.get());
+
+            //		case MATH_SIN:
+            //		{
+            //			TNode *multiply = new TNode;
+            //			multiply->eType = NODE_OPERATOR;
+            //			multiply->eOperator = MATH_MULTIPLY;
+            //
+            //			//连接上一级和乘号
+            //			if (function != head)
+            //			{
+            //				if (function->parent->left == function)
+            //				{
+            //					function->parent->left = multiply;
+            //					multiply->parent = function->parent;
+            //				}
+            //				if (function->parent->right == function)
+            //				{
+            //					function->parent->right = multiply;
+            //					multiply->parent = function->parent;
+            //				}
+            //			}
+            //			else
+            //			{
+            //				head = multiply;
+            //				multiply->parent = NULL;
+            //			}
+            //
+            //			//连接乘号和function
+            //			multiply->left = function;
+            //			function->parent = multiply;
+            //
+            //			//变更function
+            //			function->eOperator = MATH_COS;
+            //
+            //			//复制u2并连接乘号
+            //			TNode *u2 = CopyNodeTree(function->left);
+            //			multiply->right = u2;
+            //			u2->parent = multiply;
+            //
+            //			Diff(u2, var);
+            //		}
+            break;
+        }
         case MathOperator::MATH_COS:
         case MathOperator::MATH_TAN:
         case MathOperator::MATH_ARCSIN:
@@ -64,6 +146,7 @@ public:
         // 二元
         case MathOperator::MATH_ADD:
         case MathOperator::MATH_SUB:
+            // (u + v)' = u' + v'
             if (node->left) {
                 q.push(node->left.get());
             }
@@ -86,21 +169,22 @@ public:
 
             // (uv)' = u' * v + u * v'
             NodeImpl *mulLeftRaw = node;
-            Node mulLeft = std::unique_ptr<NodeImpl>(mulLeftRaw);
+            Node mulLeft = std::unique_ptr<NodeImpl>(mulLeftRaw); // node现在强行被2个unique_ptr持有
             Node mulRight = Clone(mulLeft);
 
             Node addNode = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_ADD, 0, "");
+            addNode->parent = node->parent;
 
-            addNode->left = std::move(mulLeft);
             mulLeft->parent = addNode.get();
+            addNode->left = std::move(mulLeft);
 
-            addNode->right = std::move(mulRight);
             mulRight->parent = addNode.get();
+            addNode->right = std::move(mulRight);
 
-            node = addNode.release();
+            node = addNode.release(); // 现在原来的node所属的unique_ptr持有addNode了
 
-            q.push(mulLeft->left.get());
-            q.push(mulRight->right.get());
+            q.push(node->left->left.get());
+            q.push(node->right->right.get());
             return;
         }
         case MathOperator::MATH_DIVIDE:
@@ -488,46 +572,6 @@ public:
 //			Diff(u2, var);
 //		}
 //		return;
-//		case MATH_SIN:
-//		{
-//			TNode *multiply = new TNode;
-//			multiply->eType = NODE_OPERATOR;
-//			multiply->eOperator = MATH_MULTIPLY;
-//
-//			//连接上一级和乘号
-//			if (function != head)
-//			{
-//				if (function->parent->left == function)
-//				{
-//					function->parent->left = multiply;
-//					multiply->parent = function->parent;
-//				}
-//				if (function->parent->right == function)
-//				{
-//					function->parent->right = multiply;
-//					multiply->parent = function->parent;
-//				}
-//			}
-//			else
-//			{
-//				head = multiply;
-//				multiply->parent = NULL;
-//			}
-//
-//			//连接乘号和function
-//			multiply->left = function;
-//			function->parent = multiply;
-//
-//			//变更function
-//			function->eOperator = MATH_COS;
-//
-//			//复制u2并连接乘号
-//			TNode *u2 = CopyNodeTree(function->left);
-//			multiply->right = u2;
-//			u2->parent = multiply;
-//
-//			Diff(u2, var);
-//		}
 //		//case MATH_ARCTAN:
 //		//{
 //		//	TNode *multiply = new TNode()
