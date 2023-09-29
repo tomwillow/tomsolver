@@ -1,5 +1,7 @@
 #include "diff.h"
 
+#include <queue>
+
 namespace tomsolver {
 
 namespace internal {
@@ -7,28 +9,36 @@ namespace internal {
 class DiffFunctions {
 public:
     static void DiffOnce(std::unique_ptr<NodeImpl> &node, const std::string &varname) noexcept {
-        switch (node->type) {
-        case NodeType::VARIABLE:
-            node->type = NodeType::NUMBER;
-            if (node->varname == varname) {
-                node->value = 1;
-            } else {
-                node->value = 0;
+        std::queue<NodeImpl *> q;
+        q.push(node.get());
+
+        while (!q.empty()) {
+            NodeImpl *f = q.front();
+            q.pop();
+
+            switch (f->type) {
+            case NodeType::VARIABLE:
+                f->type = NodeType::NUMBER;
+                if (f->varname == varname) {
+                    f->value = 1;
+                } else {
+                    f->value = 0;
+                }
+                f->varname = "";
+                break;
+            case NodeType::NUMBER:
+                f->value = 0;
+                break;
+            case NodeType::OPERATOR:
+                DiffOnceOperator(f, varname, q);
+                break;
+            default:
+                assert(0);
             }
-            node->varname = "";
-            return;
-        case NodeType::NUMBER:
-            node->value = 0;
-            return;
-        case NodeType::OPERATOR:
-            DiffOnceOperator(node, varname);
-            return;
-        default:
-            assert(0);
         }
     }
 
-    static void DiffOnceOperator(std::unique_ptr<NodeImpl> &node, const std::string &varname) noexcept {
+    static void DiffOnceOperator(NodeImpl *&node, const std::string &varname, std::queue<NodeImpl *> &q) noexcept {
         switch (node->op) {
         case MathOperator::MATH_NULL:
         case MathOperator::MATH_POSITIVE:
@@ -55,13 +65,44 @@ public:
         case MathOperator::MATH_ADD:
         case MathOperator::MATH_SUB:
             if (node->left) {
-                DiffOnce(node->left, varname);
+                q.push(node->left.get());
             }
             if (node->right) {
-                DiffOnce(node->right, varname);
+                q.push(node->right.get());
             }
             return;
-        case MathOperator::MATH_MULTIPLY:
+        case MathOperator::MATH_MULTIPLY: {
+            bool leftIsNumber = node->left->type == NodeType::NUMBER;
+            bool rightIsNumber = node->right->type == NodeType::NUMBER;
+            //两个操作数中有一个是数字
+            if (leftIsNumber) {
+                q.push(node->right.get());
+                return;
+            }
+            if (rightIsNumber) {
+                q.push(node->left.get());
+                return;
+            }
+
+            // (uv)' = u' * v + u * v'
+            NodeImpl *mulLeftRaw = node;
+            Node mulLeft = std::unique_ptr<NodeImpl>(mulLeftRaw);
+            Node mulRight = Clone(mulLeft);
+
+            Node addNode = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_ADD, 0, "");
+
+            addNode->left = std::move(mulLeft);
+            mulLeft->parent = addNode.get();
+
+            addNode->right = std::move(mulRight);
+            mulRight->parent = addNode.get();
+
+            node = addNode.release();
+
+            q.push(mulLeft->left.get());
+            q.push(mulRight->right.get());
+            return;
+        }
         case MathOperator::MATH_DIVIDE:
         case MathOperator::MATH_POWER:
             assert(0);
@@ -93,55 +134,6 @@ public:
 //		case MATH_NEGATIVE:
 //			if (now->left != NULL)
 //				Diff(now->left, var);
-//			return;
-//		case MATH_ADD:
-//		case MATH_SUB:
-//			if (now->left != NULL)
-//				Diff(now->left, var);
-//			if (now->right != NULL)
-//				Diff(now->right, var);
-//			return;
-//		case MATH_MULTIPLY:
-//			if (now->left->eType == NODE_NUMBER || now->right->eType ==
-// NODE_NUMBER)//两个操作数中有一个是数字
-//			{
-//				if (now->left->eType == NODE_NUMBER)
-//					Diff(now->right, var);
-//				else
-//					Diff(now->left, var);
-//			}
-//			else
-//			{
-//				TNode *plus;
-//				plus = new TNode;
-//				plus->eType = NODE_OPERATOR;
-//				plus->eOperator = MATH_ADD;
-//				if (now != head)
-//				{
-//					//plus上下行连接
-//					if (now->parent->left == now)
-//						now->parent->left = plus;
-//					if (now->parent->right == now)
-//						now->parent->right = plus;
-//					plus->parent = now->parent;
-//				}
-//				else
-//				{
-//					head = plus;
-//				}
-//				now->parent = plus;
-//				plus->left = now;
-//
-//				//加入右节点
-//				TNode *newRight;
-//				newRight = CopyNodeTree(now);
-//
-//				plus->right = newRight;
-//				newRight->parent = plus;
-//
-//				Diff(plus->left->left, var);
-//				Diff(plus->right->right, var);
-//			}
 //			return;
 //		case MATH_DIVIDE:
 //			if (now->right->eType == NODE_NUMBER)// f(x)/number = f'(x)/number

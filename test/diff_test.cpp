@@ -21,4 +21,13 @@ TEST(Diff, Base) {
     // diff(a+b, a) == 1
     Node n2 = n + Var("b");
     ASSERT_TRUE(Diff(n2, "a")->Equal(Num(1)));
+
+    // diff(5*a, a) == 5
+    ASSERT_TRUE(Diff(Num(5) * Var("a"), "a")->Equal(Num(5)));
+
+    // diff(b*5, b) == 5
+    ASSERT_TRUE(Diff(Var("b") * Num(5), "b")->Equal(Num(5)));
+
+    //// diff(a*b, a) ==
+    // ASSERT_TRUE(Diff(Var("b") * Num(5), "b")->Equal(Num(5)));
 }
