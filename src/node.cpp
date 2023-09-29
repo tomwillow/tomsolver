@@ -53,7 +53,11 @@ NodeImpl &NodeImpl::operator=(NodeImpl &&rhs) noexcept {
     varname = rhs.varname;
     parent = rhs.parent;
     left = std::move(rhs.left);
+    if (left)
+        left->parent = this;
     right = std::move(rhs.right);
+    if (right)
+        right->parent = this;
 
     rhs.parent = nullptr;
     return *this;

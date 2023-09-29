@@ -26,7 +26,7 @@ TEST(Simplify, Base) {
     ASSERT_TRUE(n2->Equal(Num(7)));
 }
 
-TEST(Simplify, Vars) {
+TEST(Simplify, Add) {
     MemoryLeakDetection mld;
 
     {
@@ -42,11 +42,22 @@ TEST(Simplify, Vars) {
         ASSERT_EQ(n->ToString(), "x");
         n->CheckParent();
     }
+}
+
+TEST(Simplify, Multiply) {
+    MemoryLeakDetection mld;
 
     {
         Node n = Var("x") * Num(1) * Var("y") * Var("z");
         n->Simplify();
         ASSERT_EQ(n->ToString(), "x*y*z");
+        n->CheckParent();
+    }
+
+    {
+        Node n = cos(Var("x")) * Num(1);
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "cos(x)");
         n->CheckParent();
     }
 
