@@ -8,9 +8,9 @@ namespace internal {
 
 class DiffFunctions {
 public:
-    static void DiffOnce(std::unique_ptr<NodeImpl> &node, const std::string &varname) noexcept {
+    static void DiffOnce(std::unique_ptr<NodeImpl> &root, const std::string &varname) noexcept {
         std::queue<NodeImpl *> q;
-        q.push(node.get());
+        q.push(root.get());
 
         while (!q.empty()) {
             NodeImpl *f = q.front();
@@ -30,7 +30,7 @@ public:
                 f->value = 0;
                 break;
             case NodeType::OPERATOR:
-                DiffOnceOperator(f, varname, q);
+                DiffOnceOperator(root, f, varname, q);
                 break;
             default:
                 assert(0);
@@ -38,7 +38,8 @@ public:
         }
     }
 
-    static void DiffOnceOperator(NodeImpl *&node, const std::string &varname, std::queue<NodeImpl *> &q) noexcept {
+    static void DiffOnceOperator(std::unique_ptr<NodeImpl> &root, NodeImpl *&node, const std::string &varname,
+                                 std::queue<NodeImpl *> &q) noexcept {
         // 调用前提：node是1元操作符
         // 如果node的成员是数字，那么整个node变为数字节点，value=1，且返回true
         // 例如： sin(1)' = 0
@@ -75,18 +76,31 @@ public:
 
             Node u = Clone(node->left);
 
+            q.push(u.get());
+
             Node mul = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_MULTIPLY, 0, "");
             mul->parent = node->parent;
 
-            mul->left = std::move(leftCos);
             leftCos->parent = mul.get();
+            mul->left = std::move(leftCos);
 
-            mul->right = std::move(u);
             u->parent = mul.get();
+            mul->right = std::move(u);
 
-            node = mul.release(); // 现在原来的node所属的unique_ptr持有mul了
-
-            q.push(node->right.get());
+            //连接父级
+            NodeImpl *p = const_cast<NodeImpl *>(mul->parent);
+            if (p) {
+                if (p->left.get() == node) {
+                    p->left.release(); // 放弃对node的持有，现在node只被mulLeft持有
+                    p->left = std::move(mul);
+                } else {
+                    p->right.release(); // 放弃对node的持有，现在node只被mulLeft持有
+                    p->right = std::move(mul);
+                }
+            } else {
+                root.release(); // 放弃对node的持有，现在node只被mulLeft持有
+                root = std::move(mul);
+            }
 
             //		case MATH_SIN:
             //		{
@@ -181,10 +195,23 @@ public:
             mulRight->parent = addNode.get();
             addNode->right = std::move(mulRight);
 
-            node = addNode.release(); // 现在原来的node所属的unique_ptr持有addNode了
+            q.push(addNode->left->left.get());
+            q.push(addNode->right->right.get());
 
-            q.push(node->left->left.get());
-            q.push(node->right->right.get());
+            //连接父级
+            NodeImpl *p = const_cast<NodeImpl *>(addNode->parent);
+            if (p) {
+                if (p->left.get() == node) {
+                    p->left.release(); // 放弃对node的持有，现在node只被mulLeft持有
+                    p->left = std::move(addNode);
+                } else {
+                    p->right.release(); // 放弃对node的持有，现在node只被mulLeft持有
+                    p->right = std::move(addNode);
+                }
+            } else {
+                root.release(); // 放弃对node的持有，现在node只被mulLeft持有
+                root = std::move(addNode);
+            }
             return;
         }
         case MathOperator::MATH_DIVIDE:
@@ -596,7 +623,13 @@ Node Diff(Node &&node, const std::string &varname, int i) noexcept {
     while (i--) {
         internal::DiffFunctions::DiffOnce(n, varname);
     }
+#ifndef NDEBUG
+    n->CheckParent();
+#endif
     n->Simplify();
+#ifndef NDEBUG
+    n->CheckParent();
+#endif
     return n;
 }
 

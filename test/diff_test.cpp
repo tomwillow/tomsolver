@@ -21,6 +21,23 @@ TEST(Diff, Base) {
     // diff(a+b, a) == 1
     Node n2 = n + Var("b");
     ASSERT_TRUE(Diff(n2, "a")->Equal(Num(1)));
+}
+
+TEST(Diff, Sin) {
+    MemoryLeakDetection mld;
+
+    {
+        // sin'x = cos x
+        Node n = sin(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(cos(Var("x"))));
+    }
+}
+
+TEST(Diff, Multiply) {
+    MemoryLeakDetection mld;
 
     // diff(5*a, a) == 5
     ASSERT_TRUE(Diff(Num(5) * Var("a"), "a")->Equal(Num(5)));
@@ -30,9 +47,18 @@ TEST(Diff, Base) {
 
     {
         // diff(a*b, a) == b
-        // Node n = Var("a") * Var("b");
-        // Node dn = Diff(n, "a");
-        // cout << dn->ToString() << endl;
-        // ASSERT_TRUE(dn->Equal(Var("b")));
+        Node n = Var("a") * Var("b");
+        Node dn = Diff(n, "a");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Var("b")));
+    }
+
+    {
+        // diff(a*b*a, a) ==
+        Node n = Var("a") * Var("b") * Var("a");
+        Node dn = Diff(n, "a");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
     }
 }
