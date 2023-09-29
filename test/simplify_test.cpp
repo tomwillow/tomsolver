@@ -26,6 +26,38 @@ TEST(Simplify, Base) {
     ASSERT_TRUE(n2->Equal(Num(7)));
 }
 
+TEST(Simplify, Vars) {
+    MemoryLeakDetection mld;
+
+    {
+        Node n = Var("x") + Num(0);
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "x");
+        n->CheckParent();
+    }
+
+    {
+        Node n = Num(0) + Var("x");
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "x");
+        n->CheckParent();
+    }
+
+    {
+        Node n = Var("x") * Num(1) * Var("y") * Var("z");
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "x*y*z");
+        n->CheckParent();
+    }
+
+    {
+        Node n = Num(1) * Var("x") * Num(0) + Num(0) * Var("y");
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "0");
+        n->CheckParent();
+    }
+}
+
 TEST(Simplify, DoNotStackOverFlow) {
     MemoryLeakDetection mld;
 
