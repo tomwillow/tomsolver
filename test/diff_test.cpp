@@ -62,3 +62,16 @@ TEST(Diff, Multiply) {
         cout << dn->ToString() << endl;
     }
 }
+
+TEST(Diff, Combine) {
+    MemoryLeakDetection mld;
+
+    {
+        // diff(sin(a*b+c)*1*a, a)
+        Node n = sin(Var("a") * Var("b") + Var("c")) * Num(1) * Var("a");
+        Node dn = Diff(n, "a");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_EQ(dn->ToString(), "cos(a*b+c)*b*a+sin(a*b+c)");
+    }
+}
