@@ -405,7 +405,7 @@ double NodeImpl::VpaNonRecursively() const {
     // 后序遍历。非递归实现。
 
     std::stack<const NodeImpl *> stk;
-    std::stack<const NodeImpl *> revertedPostOrder;
+    std::vector<const NodeImpl *> revertedPostOrder;
 
     // ==== Part I ====
 
@@ -428,16 +428,15 @@ double NodeImpl::VpaNonRecursively() const {
             stk.push(f->right.get());
         }
 
-        revertedPostOrder.push(f);
+        revertedPostOrder.push_back(f);
     }
 
     // ==== Part II ====
     // revertedPostOrder的反向序列是一组逆波兰表达式，根据这组逆波兰表达式可以计算出表达式的值
     // calcStk是用来计算值的临时栈，计算完成后calcStk的size应该为1
     std::stack<double> calcStk;
-    while (!revertedPostOrder.empty()) {
-        auto f = revertedPostOrder.top();
-        revertedPostOrder.pop();
+    for (auto it = revertedPostOrder.rbegin(); it != revertedPostOrder.rend(); ++it) {
+        auto f = *it;
 
         if (f->type == NodeType::NUMBER) {
             calcStk.push(f->value);
