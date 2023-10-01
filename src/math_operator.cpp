@@ -277,6 +277,7 @@ double Calc(MathOperator op, double v1, double v2) {
         ret = exp(v1);
         break;
     case MathOperator::MATH_POSITIVE:
+        ret = v1;
         break;
     case MathOperator::MATH_NEGATIVE:
         ret = -v1;

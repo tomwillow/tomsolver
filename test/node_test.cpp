@@ -153,6 +153,11 @@ TEST(Node, Negative) {
     }
 
     {
+        Node n = +Var("y");
+        ASSERT_EQ(n->ToString(), "+y");
+    }
+
+    {
         Node n = -(Var("x") + Num(2));
         ASSERT_EQ(n->ToString(), "-(x+2)");
     }
@@ -165,6 +170,11 @@ TEST(Node, Negative) {
     {
         Node n = Var("y") + +(Var("x") + Num(2));
         ASSERT_EQ(n->ToString(), "y++(x+2)");
+    }
+
+    {
+        Node n = atan(cos(-(+(-Num(87.9117553746407054) / Num(90.5933224572584663)))));
+        ASSERT_DOUBLE_EQ(n->Vpa(), 0.51426347804323491);
     }
 }
 

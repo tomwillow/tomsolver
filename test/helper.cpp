@@ -14,10 +14,10 @@ std::pair<Node, double> tomsolver::CreateRandomExpresionTree(int len) {
     cout << "seed = " << seed << endl;
     default_random_engine eng(seed);
 
-    vector<MathOperator> ops{MathOperator::MATH_ADD,    MathOperator::MATH_SUB,    MathOperator::MATH_MULTIPLY,
-                             MathOperator::MATH_DIVIDE, MathOperator::MATH_SIN,    MathOperator::MATH_COS,
-                             MathOperator::MATH_TAN,    MathOperator::MATH_ARCSIN, MathOperator::MATH_ARCCOS,
-                             MathOperator::MATH_ARCTAN};
+    vector<MathOperator> ops{MathOperator::MATH_POSITIVE, MathOperator::MATH_NEGATIVE, MathOperator::MATH_ADD,
+                             MathOperator::MATH_SUB,      MathOperator::MATH_MULTIPLY, MathOperator::MATH_DIVIDE,
+                             MathOperator::MATH_SIN,      MathOperator::MATH_COS,      MathOperator::MATH_TAN,
+                             MathOperator::MATH_ARCSIN,   MathOperator::MATH_ARCCOS,   MathOperator::MATH_ARCTAN};
     uniform_int_distribution<int> unifOp(0, static_cast<int>(ops.size()) - 1);
     uniform_real_distribution<double> unifNum(-100.0, 100.0);
     double v = unifNum(eng);
@@ -29,6 +29,15 @@ std::pair<Node, double> tomsolver::CreateRandomExpresionTree(int len) {
 
         bool frontOrBack = unifOp(eng) % 2;
         switch (op) {
+        case MathOperator::MATH_POSITIVE: {
+            node = +std::move(node);
+            break;
+        }
+        case MathOperator::MATH_NEGATIVE: {
+            v = -v;
+            node = -std::move(node);
+            break;
+        }
         case MathOperator::MATH_ADD:
             if (frontOrBack) {
                 v = num + v;
