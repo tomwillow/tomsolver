@@ -139,6 +139,35 @@ TEST(Node, SubEqual) {
     n2->CheckParent();
 }
 
+TEST(Node, Negative) {
+    MemoryLeakDetection mld;
+
+    {
+        Node n = -Num(10);
+        ASSERT_EQ(n->ToString(), "-10");
+    }
+
+    {
+        Node n = -Var("x");
+        ASSERT_EQ(n->ToString(), "-x");
+    }
+
+    {
+        Node n = -(Var("x") + Num(2));
+        ASSERT_EQ(n->ToString(), "-(x+2)");
+    }
+
+    {
+        Node n = Var("y") + -(Var("x") + Num(2));
+        ASSERT_EQ(n->ToString(), "y+-(x+2)");
+    }
+
+    {
+        Node n = Var("y") + +(Var("x") + Num(2));
+        ASSERT_EQ(n->ToString(), "y++(x+2)");
+    }
+}
+
 TEST(Node, MulEqual) {
     MemoryLeakDetection mld;
 

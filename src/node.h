@@ -211,6 +211,16 @@ std::unique_ptr<internal::NodeImpl> operator-(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
+template <typename T1>
+std::unique_ptr<internal::NodeImpl> operator-(T1 &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T1>(n1));
+}
+
+template <typename T1>
+std::unique_ptr<internal::NodeImpl> operator+(T1 &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T1>(n1));
+}
+
 template <typename T>
 std::unique_ptr<internal::NodeImpl> &operator-=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));

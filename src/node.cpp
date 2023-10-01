@@ -293,8 +293,17 @@ void NodeImpl::ToStringNonRecursively(std::string &output) const noexcept {
                 continue;
             }
 
-            // 一元运算符的特殊处理：直接输出 "sin(" ，并且把一个右括号入栈。让退栈时这个右括号能包裹住现在的子树。
+            // 一元运算符的特殊处理：
+            //      例如sin: 直接输出 "sin(" ，并且把一个右括号入栈。让退栈时这个右括号能包裹住现在的子树。
+            //      如果是+/-: 直接输出 "+"/"-"，如果+/-的操作数是operator，那么处理方式和sin这类一样；
+            //                                  如果+/-的操作数是number/variable，那么不加括号。
             if (GetOperatorNum(cur->op) == 1) {
+                if ((cur->op == MathOperator::MATH_POSITIVE || cur->op == MathOperator::MATH_NEGATIVE) &&
+                    (cur->left->type != NodeType::OPERATOR)) {
+                    output += cur->NodeToStr();
+                    cur = cur->left.get();
+                    continue;
+                }
                 output += cur->NodeToStr() + "(";
 
                 // not push this op
