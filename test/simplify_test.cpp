@@ -72,15 +72,10 @@ TEST(Simplify, Multiply) {
 TEST(Simplify, DoNotStackOverFlow) {
     MemoryLeakDetection mld;
 
-    // 关掉定义域检查
-    GetConfig().checkDomain = false;
-
     // 构造一个随机的长表达式
     auto pr = CreateRandomExpresionTree(100000);
     Node &node = pr.first;
     double v = pr.second;
 
     node->Simplify();
-
-    GetConfig().checkDomain = true;
 }

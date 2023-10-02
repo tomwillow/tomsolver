@@ -47,9 +47,6 @@ TEST(Node, Random) {
 TEST(Clone, DoNotStackOverFlow) {
     MemoryLeakDetection mld;
 
-    // 关掉定义域检查
-    GetConfig().checkDomain = false;
-
     // 构造一个随机的长表达式
     auto pr = CreateRandomExpresionTree(10000);
     Node &node = pr.first;
@@ -59,15 +56,10 @@ TEST(Clone, DoNotStackOverFlow) {
     Node n2 = Clone(node);
 
     ASSERT_TRUE(node->Equal(n2));
-
-    GetConfig().checkDomain = true;
 }
 
 TEST(Vpa, DoNotStackOverFlow) {
     MemoryLeakDetection mld;
-
-    // 关掉定义域检查
-    GetConfig().checkDomain = false;
 
     // 构造一个随机的长表达式
     auto pr = CreateRandomExpresionTree(10000);
@@ -79,15 +71,10 @@ TEST(Vpa, DoNotStackOverFlow) {
     cout << "\t result = " << result << endl;
     cout << "\t expected = " << v << endl;
     ASSERT_DOUBLE_EQ(result, v);
-
-    GetConfig().checkDomain = true;
 }
 
 TEST(ToString, DoNotStackOverFlow) {
     MemoryLeakDetection mld;
-
-    // 关掉定义域检查
-    GetConfig().checkDomain = false;
 
     // 构造一个随机的长表达式
     auto pr = CreateRandomExpresionTree(10000);
@@ -96,8 +83,6 @@ TEST(ToString, DoNotStackOverFlow) {
 
     // 输出表达式字符串，不应爆栈
     string s = node->ToString();
-
-    GetConfig().checkDomain = true;
 }
 
 TEST(Vec, Base) {

@@ -60,7 +60,8 @@ std::string MathOperatorToStr(MathOperator op) {
     case MathOperator::MATH_RIGHT_PARENTHESIS:
         return ")";
     }
-    throw MathError{ErrorType::ERROR_WRONG_MATH_OPERATOR, std::string("value=" + std::to_string(static_cast<int>(op)))};
+    assert(0);
+    return "err";
 }
 
 int GetOperatorNum(MathOperator op) noexcept {
@@ -220,57 +221,28 @@ double Calc(MathOperator op, double v1, double v2) {
     case MathOperator::MATH_COS:
         ret = cos(v1);
         break;
-    case MathOperator::MATH_TAN: {
-        // x!=k*pi+pi/2 -> 2*x/pi != 2*k+1(odd)
-        double value = v1 * 2.0 / PI;
-        if (abs(value - (int)value) < eps && (int)value % 2 != 1) {
-            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN,
-                            std::string("tan(") + std::to_string(value) + std::string("")};
-        }
+    case MathOperator::MATH_TAN:
         ret = tan(v1);
         break;
-    }
     case MathOperator::MATH_ARCSIN:
-        if (v1 < -1.0 || v1 > 1.0) {
-            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN,
-                            std::string("arcsin(") + std::to_string(v1) + std::string("")};
-        }
         ret = asin(v1);
         break;
     case MathOperator::MATH_ARCCOS:
-        if (v1 < -1.0 || v1 > 1.0) {
-            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN,
-                            std::string("arccos(") + std::to_string(v1) + std::string("")};
-        }
         ret = acos(v1);
         break;
     case MathOperator::MATH_ARCTAN:
         ret = atan(v1);
         break;
     case MathOperator::MATH_SQRT:
-        if (v1 < 0.0) {
-            throw MathError(ErrorType::ERROR_I, std::string("sqrt(") + std::to_string(v1) + std::string(")"));
-        }
         ret = sqrt(v1);
         break;
     case MathOperator::MATH_LOG:
-        if (v1 <= 0) {
-            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN, std::string("log(") + std::to_string(v1) + std::string("")};
-        }
         ret = log(v1);
         break;
     case MathOperator::MATH_LOG2:
-        if (v1 <= 0) {
-            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN, std::string("log2(") + std::to_string(v1) + std::string("")};
-        }
         ret = log2(v1);
         break;
     case MathOperator::MATH_LOG10:
-        if (v1 <= 0) // log(0)或log(负数)
-        {
-            throw MathError{ErrorType::ERROR_OUTOF_DOMAIN,
-                            std::string("log10(") + std::to_string(v1) + std::string("")};
-        }
         ret = log10(v1);
         break;
     case MathOperator::MATH_EXP:
@@ -284,8 +256,6 @@ double Calc(MathOperator op, double v1, double v2) {
         break;
 
     case MathOperator::MATH_MOD: //%
-        if ((int)v2 == 0)
-            throw MathError{ErrorType::ERROR_DIVIDE_ZERO, std::to_string(v2)};
         ret = (int)v1 % (int)v2;
         break;
     case MathOperator::MATH_AND: //&
@@ -296,16 +266,6 @@ double Calc(MathOperator op, double v1, double v2) {
         break;
 
     case MathOperator::MATH_POWER: //^
-        // 0^0
-        if (abs(v1) < eps && abs(v2) < eps) {
-            throw MathError{ErrorType::ERROR_ZERO_POWEROF_ZERO, ""};
-        }
-
-        //(-1)^0.5=i
-        if (v1 < 0 && IsIntAndEven(1.0 / v2)) {
-            throw MathError{ErrorType::ERROR_I,
-                            std::string("pow(") + std::to_string(v1) + "," + std::to_string(v2) + ""};
-        }
         ret = pow(v1, v2);
         break;
 
@@ -319,14 +279,34 @@ double Calc(MathOperator op, double v1, double v2) {
         ret = v1 * v2;
         break;
     case MathOperator::MATH_DIVIDE:
-        if (GetConfig().checkDomain && abs(v2) == 0) {
-            throw MathError{ErrorType::ERROR_DIVIDE_ZERO, ""};
-        }
         ret = v1 / v2;
         break;
     default:
         assert(0 && "[Calc] bug.");
         break;
+    }
+
+    if (GetConfig().throwOnInvalidValue == false) {
+        return ret;
+    }
+
+    bool isInvalid = (ret == std::numeric_limits<double>::infinity()) ||
+                     (ret == -std::numeric_limits<double>::infinity()) || (ret != ret);
+    if (isInvalid) {
+        std::string info;
+        info = "expression: \"";
+        switch (GetOperatorNum(op)) {
+        case 1:
+            info += MathOperatorToStr(op) + " " + ToString(v1);
+            break;
+        case 2:
+            info += ToString(v1) + " " + MathOperatorToStr(op) + " " + ToString(v2);
+            break;
+        default:
+            assert(0);
+        }
+        info += "\"";
+        throw MathError(ErrorType::ERROR_INVALID_NUMBER, info);
     }
 
     return ret;

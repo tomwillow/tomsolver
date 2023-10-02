@@ -6,8 +6,11 @@ namespace tomsolver {
 
 std::string GetErrorInfo(ErrorType err) {
     switch (err) {
+    case ErrorType::ERROR_INVALID_NUMBER:
+        return u8"invalid number";
+        break;
     case ErrorType::ERROR_ILLEGALCHAR:
-        return u8"错误：出现非法字符。";
+        return u8"illegal character";
         break;
     case ErrorType::ERROR_PARENTHESIS_NOT_MATCH:
         return u8"错误：括号不匹配。";
@@ -21,14 +24,8 @@ std::string GetErrorInfo(ErrorType err) {
     case ErrorType::ERROR_EMPTY_INPUT:
         return u8"表达式为空。";
         break;
-    case ErrorType::ERROR_DIVIDE_ZERO:
-        return u8"错误：不能除以0。";
-        break;
     case ErrorType::ERROR_UNDEFINED_VARIABLE:
         return u8"错误：未定义的变量。";
-        break;
-    case ErrorType::ERROR_ZERO_POWEROF_ZERO:
-        return u8"错误：0的0次方。";
         break;
     case ErrorType::ERROR_SUBS_NOT_EQUAL:
         return u8"错误：替换与被替换数目不等。";
@@ -42,9 +39,6 @@ std::string GetErrorInfo(ErrorType err) {
     case ErrorType::ERROR_VAR_COUNT_NOT_EQUAL_NUM_COUNT:
         return u8"错误：变量名与初始值数量不对等。";
         break;
-    case ErrorType::ERROR_I:
-        return u8"暂不支持虚数。";
-        break;
     default:
         assert(0);
         break;
@@ -52,9 +46,7 @@ std::string GetErrorInfo(ErrorType err) {
     return u8"GetErrorInfo: bug";
 }
 
-
-const char *MathError::what() const noexcept
-{
+const char *MathError::what() const noexcept {
     return errInfo.c_str();
 }
 

@@ -56,7 +56,7 @@ struct NodeImpl {
     /**
      * 计算出整个表达式的数值。
      * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 不符合定义域, 除0等情况。
+     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
      */
     double Vpa() const;
 

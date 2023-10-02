@@ -82,6 +82,14 @@ Config &GetConfig() noexcept {
     return config;
 }
 
+Config::Config() {
+    Reset();
+}
+
+void Config::Reset() noexcept {
+    throwOnInvalidValue = true;
+}
+
 const char *Config::GetDoubleFormatStr() const noexcept {
     return doubleFormatStr;
 }
