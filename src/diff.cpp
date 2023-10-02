@@ -105,47 +105,6 @@ public:
                 root.release(); // 放弃对node的持有，现在node只被mulLeft持有
                 root = std::move(mul);
             }
-
-            //		case MATH_SIN:
-            //		{
-            //			TNode *multiply = new TNode;
-            //			multiply->eType = NODE_OPERATOR;
-            //			multiply->eOperator = MATH_MULTIPLY;
-            //
-            //			//连接上一级和乘号
-            //			if (function != head)
-            //			{
-            //				if (function->parent->left == function)
-            //				{
-            //					function->parent->left = multiply;
-            //					multiply->parent = function->parent;
-            //				}
-            //				if (function->parent->right == function)
-            //				{
-            //					function->parent->right = multiply;
-            //					multiply->parent = function->parent;
-            //				}
-            //			}
-            //			else
-            //			{
-            //				head = multiply;
-            //				multiply->parent = NULL;
-            //			}
-            //
-            //			//连接乘号和function
-            //			multiply->left = function;
-            //			function->parent = multiply;
-            //
-            //			//变更function
-            //			function->eOperator = MATH_COS;
-            //
-            //			//复制u2并连接乘号
-            //			TNode *u2 = CopyNodeTree(function->left);
-            //			multiply->right = u2;
-            //			u2->parent = multiply;
-            //
-            //			Diff(u2, var);
-            //		}
             break;
         }
         case MathOperator::MATH_COS:
@@ -245,11 +204,6 @@ public:
 //	case NODE_OPERATOR://当前为运算符节点
 //		switch (now->eOperator)
 //		{
-//		case MATH_POSITIVE:
-//		case MATH_NEGATIVE:
-//			if (now->left != NULL)
-//				Diff(now->left, var);
-//			return;
 //		case MATH_DIVIDE:
 //			if (now->right->eType == NODE_NUMBER)// f(x)/number = f'(x)/number
 //			{
