@@ -41,7 +41,7 @@ public:
     static void DiffOnceOperator(std::unique_ptr<NodeImpl> &root, NodeImpl *&node, const std::string &varname,
                                  std::queue<NodeImpl *> &q) noexcept {
         // 调用前提：node是1元操作符
-        // 如果node的成员是数字，那么整个node变为数字节点，value=1，且返回true
+        // 如果node的成员是数字，那么整个node变为数字节点，value=0，且返回true
         // 例如： sin(1)' = 0
         auto CullNumberMember = [&]() -> bool {
             assert(GetOperatorNum(node->op) == 1);
@@ -57,11 +57,15 @@ public:
         };
 
         switch (node->op) {
-        case MathOperator::MATH_NULL:
-        case MathOperator::MATH_POSITIVE:
-        case MathOperator::MATH_NEGATIVE:
+        case MathOperator::MATH_NULL: {
             assert(0);
+            break;
+        }
+        case MathOperator::MATH_POSITIVE:
+        case MathOperator::MATH_NEGATIVE: {
+            q.push(node->left.get());
             return;
+        }
 
         // 函数
         case MathOperator::MATH_SIN: {
@@ -391,17 +395,6 @@ public:
 //		break;
 //	case NODE_FUNCTION:
 //	{
-//		//不考虑定义域
-//		//函数内为数字则导为0
-//		if (now->left->eType == NODE_NUMBER)
-//		{
-//			now->eType = NODE_NUMBER;
-//			now->eOperator = MATH_NULL;
-//			now->value = 0;
-//			DeleteNode(now->left);
-//			now->left = NULL;
-//			return;
-//		}
 //
 //		TNode *function = now;
 //		switch (function->eOperator)

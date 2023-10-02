@@ -23,6 +23,29 @@ TEST(Diff, Base) {
     ASSERT_TRUE(Diff(n2, "a")->Equal(Num(1)));
 }
 
+TEST(Diff, Negative) {
+    MemoryLeakDetection mld;
+
+    Node n = -Var("a");
+    auto dn = Diff(n, "a");
+    ASSERT_TRUE(dn->Equal(Num(-1)));
+    ASSERT_TRUE(Diff(n, "b")->Equal(Num(0)));
+
+    ASSERT_TRUE(Diff(-Num(1), "a")->Equal(Num(0)));
+
+    // diff(-a+ -b, a) == -1
+    Node n2 = n + -Var("b");
+    auto dn2a = Diff(n2, "a");
+    ASSERT_TRUE(dn2a->Equal(Num(-1)));
+    auto dn2b = Diff(n2, "b");
+    ASSERT_TRUE(dn2b->Equal(Num(-1)));
+
+    // diff(-a+ +b, a) == -1
+    Node n3 = n + +Var("b");
+    ASSERT_TRUE(Diff(n3, "a")->Equal(Num(-1)));
+    ASSERT_TRUE(Diff(n3, "b")->Equal(Num(1)));
+}
+
 TEST(Diff, Sin) {
     MemoryLeakDetection mld;
 
