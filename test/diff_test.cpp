@@ -59,6 +59,19 @@ TEST(Diff, Sin) {
     }
 }
 
+TEST(Diff, Cos) {
+    MemoryLeakDetection mld;
+
+    {
+        // cos'x = -sin x
+        Node n = cos(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(-sin(Var("x"))));
+    }
+}
+
 TEST(Diff, Multiply) {
     MemoryLeakDetection mld;
 
@@ -96,5 +109,14 @@ TEST(Diff, Combine) {
         dn->CheckParent();
         cout << dn->ToString() << endl;
         ASSERT_EQ(dn->ToString(), "cos(a*b+c)*b*a+sin(a*b+c)");
+    }
+
+    {
+        // diff(sin(cos(x)+sin(x)), x) =
+        Node n = sin(cos(Var("x")) + sin(Var("x")));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_EQ(dn->ToString(), "cos(cos(x)+sin(x))*(-(sin(x))+cos(x))");
     }
 }

@@ -107,7 +107,50 @@ public:
             }
             break;
         }
-        case MathOperator::MATH_COS:
+        case MathOperator::MATH_COS: {
+            // cos(u)' = -sin(u) * u'
+
+            NodeImpl *p = const_cast<NodeImpl *>(node->parent);
+
+            Node negative = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_NEGATIVE, 0, "");
+            Node mul = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_MULTIPLY, 0, "");
+            Node u2 = Clone(node->left);
+
+            // cos->sin
+            node->op = MathOperator::MATH_SIN;
+
+            // 乘号连接sin
+            node->parent = mul.get();
+            mul->left = std::unique_ptr<NodeImpl>(node); // node现在强行被2个unique_ptr持有
+
+            // u2加入求导队列
+            q.push(u2.get());
+
+            // 乘号连接u2
+            u2->parent = mul.get();
+            mul->right = std::move(u2);
+
+            // 负号连接乘号
+            mul->parent = negative.get();
+            negative->left = std::move(mul);
+
+            //连接上一级和负号
+            if (p) {
+                if (p->left.get() == node) {
+                    p->left.release(); // 放弃对node的持有，现在node只被sin持有
+                    negative->parent = p;
+                    p->left = std::move(negative);
+                } else {
+                    p->right.release(); // 放弃对node的持有，现在node只被sin持有
+                    negative->parent = p;
+                    p->right = std::move(negative);
+                }
+            } else {
+                root.release(); // 放弃对node的持有，现在node只被sin持有
+                root = std::move(negative);
+            }
+            break;
+        }
         case MathOperator::MATH_TAN:
         case MathOperator::MATH_ARCSIN:
         case MathOperator::MATH_ARCCOS:
@@ -497,54 +540,6 @@ public:
 //			Diff(u2, var);
 //		}
 //		return;
-//		case MATH_COS:
-//		{
-//			TNode *negative = new TNode;
-//			negative->eType = NODE_OPERATOR;
-//			negative->eOperator = MATH_NEGATIVE;
-//
-//			//连接上一级和负号
-//			if (function != head)
-//			{
-//				if (function->parent->left == function)
-//				{
-//					function->parent->left = negative;
-//					negative->parent = function->parent;
-//				}
-//				if (function->parent->right == function)
-//				{
-//					function->parent->right = negative;
-//					negative->parent = function->parent;
-//				}
-//			}
-//			else
-//			{
-//				head = negative;
-//				negative->parent = NULL;
-//			}
-//
-//			TNode *multiply = new TNode;
-//			multiply->eType = NODE_OPERATOR;
-//			multiply->eOperator = MATH_MULTIPLY;
-//
-//			//连接负号和乘号
-//			negative->left = multiply;
-//			multiply->parent = negative;
-//
-//			//连接乘号和function
-//			multiply->left = function;
-//			function->parent = multiply;
-//
-//			//变更function
-//			function->eOperator = MATH_SIN;
-//
-//			//复制u2并连接乘号
-//			TNode *u2 = CopyNodeTree(function->left);
-//			multiply->right = u2;
-//			u2->parent = multiply;
-//
-//			Diff(u2, var);
-//		}
 //		return;
 //		//case MATH_ARCTAN:
 //		//{
