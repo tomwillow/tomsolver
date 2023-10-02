@@ -37,9 +37,9 @@ TEST(Subs, Combine) {
         // r*sin(x+y)
         Node n = Var("r") * sin(Var("x") + Var("y"));
 
-        // -> 100*sin(2*pi+pi/6) == 50
-        n = Subs(std::move(n), "x", Num(2.0 * PI));
-        n = Subs(std::move(n), "y", Num(PI / 6.0));
+        // -> 100*sin(360deg+30deg) == 50
+        n = Subs(std::move(n), "x", Num(radians(360.0)));
+        n = Subs(std::move(n), "y", Num(radians(30.0)));
         n = Subs(std::move(n), "r", Num(100));
 
         ASSERT_DOUBLE_EQ(n->Vpa(), 50.0);

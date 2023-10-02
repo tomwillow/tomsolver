@@ -14,6 +14,16 @@ constexpr double PI = M_PI;
 
 constexpr double eps = std::numeric_limits<double>::epsilon();
 
+template <typename T>
+T radians(T &&t) noexcept {
+    return std::forward<T>(t) / 180.0 * PI;
+}
+
+template <typename T>
+T degrees(T &&t) noexcept {
+    return std::forward<T>(t) * 180.0 / PI;
+}
+
 enum class MathOperator {
     MATH_NULL,
     //一元
