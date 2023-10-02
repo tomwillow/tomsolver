@@ -132,6 +132,7 @@ private:
     friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 
     friend class DiffFunctions;
+    friend class SubsFunctions;
 };
 
 std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;

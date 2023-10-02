@@ -5,3 +5,4 @@
 #include "functions.h"
 #include "simplify.h"
 #include "diff.h"
+#include "subs.h"
