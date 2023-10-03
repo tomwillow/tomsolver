@@ -1,6 +1,7 @@
 #include "helper.h"
 
-#include "tomsolver.h"
+#include "node.h"
+#include "functions.h"
 
 #include <cmath>
 #include <random>
