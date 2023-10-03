@@ -15,6 +15,16 @@ Mat::Mat(int rows, int cols) noexcept {
     }
 }
 
+Mat Mat::Clone() const noexcept {
+    Mat ret(Rows(), Cols());
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            ret.data[i][j] = tomsolver::Clone(data[i][j]);
+        }
+    }
+    return ret;
+}
+
 bool Mat::Empty() const noexcept {
     return data.empty();
 }
@@ -30,12 +40,13 @@ int Mat::Cols() const noexcept {
     return 0;
 }
 
-void Mat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
+Mat &Mat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
     for (auto &row : data) {
         for (auto &node : row) {
             node = tomsolver::Subs(std::move(node), varValues);
         }
     }
+    return *this;
 }
 
 Mat Mat::operator-(const Mat &rhs) const noexcept {
@@ -43,7 +54,7 @@ Mat Mat::operator-(const Mat &rhs) const noexcept {
     Mat ret(Rows(), Cols());
     for (int i = 0; i < Rows(); ++i) {
         for (int j = 0; j < Cols(); ++j) {
-            ret.data[i][j] = Clone(data[i][j]) - Clone(rhs.data[i][j]);
+            ret.data[i][j] = tomsolver::Clone(data[i][j]) - tomsolver::Clone(rhs.data[i][j]);
         }
     }
     return ret;

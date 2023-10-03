@@ -29,4 +29,14 @@ TEST(Solve, Base) {
 
     Mat ja = Jacobian(n, vars);
     cout << ja.ToString() << endl;
+
+    std::unordered_map<std::string, double> ret = {{"x1", 0}, {"x2", 0}, {"x3", 0}};
+
+    Mat n0 = n.Clone();
+    n0.Subs(ret);
+    cout << n0.ToString() << endl;
+
+    Mat ja0 = ja.Clone();
+    ja0.Subs(ret);
+    cout << ja0.ToString() << endl;
 }

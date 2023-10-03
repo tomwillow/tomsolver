@@ -19,13 +19,15 @@ public:
      */
     Mat(int rows, int cols) noexcept;
 
+    Mat Clone() const noexcept;
+
     bool Empty() const noexcept;
 
     int Rows() const noexcept;
 
     int Cols() const noexcept;
 
-    void Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
+    Mat &Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
 
     /**
      * 如果rhs和自己的维数不匹配会触发assert。
