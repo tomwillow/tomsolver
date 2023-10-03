@@ -1,4 +1,5 @@
-#include "tomsolver.h"
+#include "simplify.h"
+#include "functions.h"
 
 #include "helper.h"
 #include "memory_leak_detection.h"
