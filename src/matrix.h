@@ -2,6 +2,8 @@
 
 #include "node.h"
 
+#include <unordered_map>
+
 namespace tomsolver {
 
 class Vec;
@@ -22,6 +24,8 @@ public:
     int Rows() const noexcept;
 
     int Cols() const noexcept;
+
+    void Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
 
     std::string ToString() const noexcept;
 

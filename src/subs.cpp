@@ -93,4 +93,36 @@ Node Subs(Node &&node, const std::vector<std::string> &oldVars, const Vec &newNo
     return ret;
 }
 
+Node Subs(const Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
+    Node node2 = Clone(node);
+    return Subs(std::move(node2), dict);
+}
+
+Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexcept {
+    Node ret = std::move(node);
+    internal::SubsFunctions::SubsInner(ret, dict);
+#ifndef NDEBUG
+    ret->CheckParent();
+#endif
+    return ret;
+}
+
+Node Subs(const Node &node, const std::unordered_map<std::string, double> &varValues) noexcept {
+    Node node2 = Clone(node);
+    return Subs(std::move(node2), varValues);
+}
+
+Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues) noexcept {
+    Node ret = std::move(node);
+    std::unordered_map<std::string, Node> dict;
+    for (auto &pr : varValues) {
+        dict.insert({pr.first, Num(pr.second)});
+    }
+    internal::SubsFunctions::SubsInner(ret, dict);
+#ifndef NDEBUG
+    ret->CheckParent();
+#endif
+    return ret;
+}
+
 } // namespace tomsolver

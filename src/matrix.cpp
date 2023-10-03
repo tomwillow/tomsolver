@@ -1,6 +1,7 @@
 #include "matrix.h"
 
 #include "diff.h"
+#include "subs.h"
 
 namespace tomsolver {
 
@@ -27,6 +28,14 @@ int Mat::Cols() const noexcept {
         return static_cast<int>(data[0].size());
     }
     return 0;
+}
+
+void Mat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
+    for (auto &row : data) {
+        for (auto &node : row) {
+            node = tomsolver::Subs(std::move(node), varValues);
+        }
+    }
 }
 
 std::string Mat::ToString() const noexcept {
