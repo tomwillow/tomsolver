@@ -43,7 +43,7 @@ Mat Mat::operator-(const Mat &rhs) const noexcept {
     Mat ret(Rows(), Cols());
     for (int i = 0; i < Rows(); ++i) {
         for (int j = 0; j < Cols(); ++j) {
-            ret.data[i][j] = data[i][j] - rhs.data[i][j];
+            ret.data[i][j] = Clone(data[i][j]) - Clone(rhs.data[i][j]);
         }
     }
     return ret;
@@ -86,6 +86,10 @@ Vec::Vec(const std::initializer_list<Node> &lst) noexcept : Mat(static_cast<int>
     }
 }
 
+// Vec Vec::operator-(const Vec &rhs) const noexcept {
+//    return Vec({});
+//}
+
 Node &Vec::operator[](std::size_t index) noexcept {
     return data[index][0];
 }
@@ -94,20 +98,16 @@ const Node &Vec::operator[](std::size_t index) const noexcept {
     return data[index][0];
 }
 
-Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcept {
+Mat Jacobian(const Mat &equations, const std::vector<std::string> &vars) noexcept {
     int rows = equations.Rows();
     int cols = static_cast<int>(vars.size());
     Mat ja(rows, cols);
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            ja.data[i][j] = std::move(Diff(equations[i], vars[j]));
+            ja.data[i][j] = std::move(Diff(equations.data[i][0], vars[j]));
         }
     }
     return ja;
-}
-
-Mat operator-(const Mat &lhs, const Mat &rhs) noexcept {
-    return Mat();
 }
 
 } // namespace tomsolver

@@ -37,10 +37,8 @@ public:
 protected:
     std::vector<std::vector<Node>> data;
 
-    friend Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcept;
+    friend Mat Jacobian(const Mat &equations, const std::vector<std::string> &vars) noexcept;
 };
-
-Mat operator-(const Mat &lhs, const Mat &rhs) noexcept;
 
 class Vec : public Mat {
 public:
@@ -49,13 +47,16 @@ public:
      */
     Vec(const std::initializer_list<Node> &lst) noexcept;
 
+    /**
+     * 如果rhs和自己的维数不匹配会触发assert。
+     */
+    // Vec operator-(const Vec &rhs) const noexcept;
+
     Node &operator[](std::size_t index) noexcept;
 
     const Node &operator[](std::size_t index) const noexcept;
 };
 
-Vec operator-(const Vec &lhs, const Vec &rhs) noexcept;
-
-Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcept;
+Mat Jacobian(const Mat &equations, const std::vector<std::string> &vars) noexcept;
 
 } // namespace tomsolver

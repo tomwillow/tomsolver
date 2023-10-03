@@ -208,7 +208,7 @@ std::unique_ptr<internal::NodeImpl> &operator+=(std::unique_ptr<internal::NodeIm
 }
 
 template <typename T1, typename T2>
-std::unique_ptr<internal::NodeImpl> operator-(T1 &&n1, T2 &&n2) noexcept {
+std::enable_if_t<std::is_same_v<T1, Node>, std::unique_ptr<internal::NodeImpl>> operator-(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 

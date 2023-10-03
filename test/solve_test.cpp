@@ -25,8 +25,8 @@ TEST(Solve, Base) {
     cout << equations.ToString() << endl;
 
     Vec b{Num(0.5), Num(0.4), Num(0)};
-    // auto n = equations - b;
+    auto n = equations - b;
 
-    Mat ja = Jacobian(equations, vars);
+    Mat ja = Jacobian(n, vars);
     cout << ja.ToString() << endl;
 }
