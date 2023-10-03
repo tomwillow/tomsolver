@@ -64,4 +64,12 @@ Vec::Vec(const std::initializer_list<Node> &lst) noexcept : Mat(lst.size(), 1) {
     }
 }
 
+Node &Vec::operator[](std::size_t index) noexcept {
+    return data[index][0];
+}
+
+const Node &Vec::operator[](std::size_t index) const noexcept {
+    return data[index][0];
+}
+
 } // namespace tomsolver

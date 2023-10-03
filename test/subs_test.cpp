@@ -45,3 +45,20 @@ TEST(Subs, Combine) {
         ASSERT_DOUBLE_EQ(n->Vpa(), 50.0);
     }
 }
+
+TEST(Subs, Multiple) {
+    MemoryLeakDetection mld;
+
+    {
+        // x*y+sin(x)
+        Node n = Var("x") * Var("y") + sin(Var("x"));
+
+        // 交换x y
+        n = Subs(std::move(n), {"x", "y"}, {Var("y"), Var("x")});
+        ASSERT_EQ(n->ToString(), "y*x+sin(y)");
+
+        // x -> cos(y)
+        n = Subs(std::move(n), {"x"}, {cos(Var("y"))});
+        ASSERT_EQ(n->ToString(), "y*cos(y)+sin(y)");
+    }
+}

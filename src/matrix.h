@@ -34,6 +34,10 @@ public:
      * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
      */
     Vec(const std::initializer_list<Node> &lst) noexcept;
+
+    Node &operator[](std::size_t index) noexcept;
+
+    const Node &operator[](std::size_t index) const noexcept;
 };
 
 } // namespace tomsolver

@@ -1,7 +1,6 @@
-#include "diff.h"
-
-#include <queue>
 #include "subs.h"
+
+#include <unordered_map>
 
 namespace tomsolver {
 
@@ -9,19 +8,24 @@ namespace internal {
 
 class SubsFunctions {
 public:
-    static void SubsInner(Node &node, const std::string &oldVar, const Node &newNode) noexcept {
+    static void SubsInner(Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
         // 前序遍历。非递归实现。
 
         std::stack<NodeImpl *> stk;
 
-        auto Replace = [&oldVar, &newNode](Node &cur) -> bool {
-            if (cur->type == NodeType::VARIABLE && cur->varname == oldVar) {
-                Node cloned = std::move(Clone(newNode));
-                cloned->parent = cur->parent;
-                cur = std::move(cloned);
-                return true;
+        auto Replace = [&dict](Node &cur) -> bool {
+            if (cur->type != NodeType::VARIABLE) {
+                return false;
             }
-            return false;
+            const auto &itor = dict.find(cur->varname);
+            if (itor == dict.end()) {
+                return false;
+            }
+
+            Node cloned = std::move(Clone(itor->second));
+            cloned->parent = cur->parent;
+            cur = std::move(cloned);
+            return true;
         };
 
         if (Replace(node)) {
@@ -60,12 +64,33 @@ Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noex
 }
 
 Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
-    Node n = std::move(node);
-    internal::SubsFunctions ::SubsInner(n, oldVar, newNode);
+    Node ret = std::move(node);
+    std::unordered_map<std::string, Node> dict;
+    dict.insert({oldVar, Clone(newNode)});
+    internal::SubsFunctions::SubsInner(ret, dict);
 #ifndef NDEBUG
-    n->CheckParent();
+    ret->CheckParent();
 #endif
-    return n;
+    return ret;
+}
+
+Node Subs(const Node &node, const std::vector<std::string> &oldVars, const Vec &newNodes) noexcept {
+    Node node2 = Clone(node);
+    return Subs(std::move(node2), oldVars, newNodes);
+}
+
+Node Subs(Node &&node, const std::vector<std::string> &oldVars, const Vec &newNodes) noexcept {
+    assert(oldVars.size() == newNodes.Rows());
+    Node ret = std::move(node);
+    std::unordered_map<std::string, Node> dict;
+    for (size_t i = 0; i < oldVars.size(); ++i) {
+        dict.insert({oldVars[i], Clone(newNodes[i])});
+    }
+    internal::SubsFunctions::SubsInner(ret, dict);
+#ifndef NDEBUG
+    ret->CheckParent();
+#endif
+    return ret;
 }
 
 } // namespace tomsolver
