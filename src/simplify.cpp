@@ -48,7 +48,7 @@ NodeImpl &NodeImpl::Simplify() noexcept {
         // 对于1元运算符，且儿子是数字的，直接计算出来
         if (GetOperatorNum(n->op) == 1 && n->left->type == NodeType::NUMBER) {
             n->type = NodeType::NUMBER;
-            n->value = Calc(n->op, n->left->value, 0);
+            n->value = tomsolver::Calc(n->op, n->left->value, 0);
             n->op = MathOperator::MATH_NULL;
             n->left = nullptr;
             return;
@@ -59,7 +59,7 @@ NodeImpl &NodeImpl::Simplify() noexcept {
             // 儿子是数字的，直接计算出来
             if (n->left->type == NodeType::NUMBER && n->right->type == NodeType::NUMBER) {
                 n->type = NodeType::NUMBER;
-                n->value = Calc(n->op, n->left->value, n->right->value);
+                n->value = tomsolver::Calc(n->op, n->left->value, n->right->value);
                 n->op = MathOperator::MATH_NULL;
                 n->left = nullptr;
                 n->right = nullptr;

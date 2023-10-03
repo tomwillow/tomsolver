@@ -142,6 +142,17 @@ double NodeImpl::Vpa() const {
     return VpaNonRecursively();
 }
 
+NodeImpl &NodeImpl::Calc() {
+    double d = Vpa();
+    type = NodeType::NUMBER;
+    value = d;
+    varname.clear();
+    left = nullptr;
+    right = nullptr;
+    parent = nullptr;
+    return *this;
+}
+
 void NodeImpl::CheckParent() const noexcept {
     // 前序遍历。非递归实现。
 
@@ -394,7 +405,7 @@ double NodeImpl::VpaRecursively() const {
     if (type == NodeType::OPERATOR) {
         assert((GetOperatorNum(op) == 1 && left != nullptr && right == nullptr) ||
                (GetOperatorNum(op) == 2 && left != nullptr && right != nullptr));
-        return Calc(op, l, r);
+        return tomsolver::Calc(op, l, r);
     }
 
     throw std::runtime_error("unsupported node type");
@@ -445,7 +456,7 @@ double NodeImpl::VpaNonRecursively() const {
 
         if (f->type == NodeType::OPERATOR) {
             if (GetOperatorNum(f->op) == 1) {
-                calcStk.top() = Calc(f->op, calcStk.top(), std::numeric_limits<double>::quiet_NaN());
+                calcStk.top() = tomsolver::Calc(f->op, calcStk.top(), std::numeric_limits<double>::quiet_NaN());
                 continue;
             }
 
@@ -454,7 +465,7 @@ double NodeImpl::VpaNonRecursively() const {
                 calcStk.pop();
 
                 double &l = calcStk.top();
-                calcStk.top() = Calc(f->op, l, r);
+                calcStk.top() = tomsolver::Calc(f->op, l, r);
                 continue;
             }
 

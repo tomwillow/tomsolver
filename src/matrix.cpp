@@ -40,6 +40,15 @@ int Mat::Cols() const noexcept {
     return 0;
 }
 
+Mat &Mat::Calc() {
+    for (auto &row : data) {
+        for (auto &node : row) {
+            node->Calc();
+        }
+    }
+    return *this;
+}
+
 Mat &Mat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
     for (auto &row : data) {
         for (auto &node : row) {

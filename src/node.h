@@ -54,11 +54,18 @@ struct NodeImpl {
     std::string ToString() const noexcept;
 
     /**
-     * 计算出整个表达式的数值。
+     * 计算出整个表达式的数值。不改变自身。
      * @exception runtime_error 如果有变量存在，则无法计算
      * @exception MathError 出现浮点数无效值(inf, -inf, nan)
      */
     double Vpa() const;
+
+    /**
+     * 计算出整个表达式的数值。不改变自身。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
+     */
+    NodeImpl &Calc();
 
     /**
      * 化简。

@@ -27,6 +27,13 @@ public:
 
     int Cols() const noexcept;
 
+    /**
+     * 把矩阵的内的元素均计算为数值节点。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
+     */
+    Mat &Calc();
+
     Mat &Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
 
     /**
