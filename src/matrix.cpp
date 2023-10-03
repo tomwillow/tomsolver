@@ -19,12 +19,12 @@ bool Mat::Empty() const noexcept {
 }
 
 int Mat::Rows() const noexcept {
-    return data.size();
+    return static_cast<int>(data.size());
 }
 
 int Mat::Cols() const noexcept {
     if (Rows()) {
-        return data[0].size();
+        return static_cast<int>(data[0].size());
     }
     return 0;
 }
@@ -59,7 +59,7 @@ std::string Mat::ToString() const noexcept {
     return s;
 }
 
-Vec::Vec(const std::initializer_list<Node> &lst) noexcept : Mat(lst.size(), 1) {
+Vec::Vec(const std::initializer_list<Node> &lst) noexcept : Mat(static_cast<int>(lst.size()), 1) {
     for (auto it = lst.begin(); it != lst.end(); ++it) {
         auto &node = const_cast<Node &>(*it);
         data[it - lst.begin()][0] = std::move(node);
@@ -76,7 +76,7 @@ const Node &Vec::operator[](std::size_t index) const noexcept {
 
 Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcept {
     int rows = equations.Rows();
-    int cols = vars.size();
+    int cols = static_cast<int>(vars.size());
     Mat ja(rows, cols);
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
