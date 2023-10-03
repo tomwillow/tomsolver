@@ -4,6 +4,7 @@
 
 namespace tomsolver {
 
+class Vec;
 class Mat {
 public:
     /**
@@ -26,6 +27,8 @@ public:
 
 protected:
     std::vector<std::vector<Node>> data;
+
+    friend Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcept;
 };
 
 class Vec : public Mat {
@@ -39,5 +42,7 @@ public:
 
     const Node &operator[](std::size_t index) const noexcept;
 };
+
+Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcept;
 
 } // namespace tomsolver

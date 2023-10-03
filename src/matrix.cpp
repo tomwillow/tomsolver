@@ -1,5 +1,7 @@
 #include "matrix.h"
 
+#include "diff.h"
+
 namespace tomsolver {
 
 namespace internal {} // namespace internal
@@ -70,6 +72,18 @@ Node &Vec::operator[](std::size_t index) noexcept {
 
 const Node &Vec::operator[](std::size_t index) const noexcept {
     return data[index][0];
+}
+
+Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcept {
+    int rows = equations.Rows();
+    int cols = vars.size();
+    Mat ja(rows, cols);
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            ja.data[i][j] = std::move(Diff(equations[i], vars[j]));
+        }
+    }
+    return ja;
 }
 
 } // namespace tomsolver
