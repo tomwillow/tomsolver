@@ -27,6 +27,11 @@ public:
 
     void Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
 
+    /**
+     * 如果rhs和自己的维数不匹配会触发assert。
+     */
+    Mat operator-(const Mat &rhs) const noexcept;
+
     std::string ToString() const noexcept;
 
 protected:
@@ -34,6 +39,8 @@ protected:
 
     friend Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcept;
 };
+
+Mat operator-(const Mat &lhs, const Mat &rhs) noexcept;
 
 class Vec : public Mat {
 public:
@@ -46,6 +53,8 @@ public:
 
     const Node &operator[](std::size_t index) const noexcept;
 };
+
+Vec operator-(const Vec &lhs, const Vec &rhs) noexcept;
 
 Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcept;
 

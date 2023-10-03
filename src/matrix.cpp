@@ -38,6 +38,17 @@ void Mat::Subs(const std::unordered_map<std::string, double> &varValues) noexcep
     }
 }
 
+Mat Mat::operator-(const Mat &rhs) const noexcept {
+    assert(rhs.Rows() == Rows() && rhs.Cols() == Cols());
+    Mat ret(Rows(), Cols());
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            ret.data[i][j] = data[i][j] - rhs.data[i][j];
+        }
+    }
+    return ret;
+}
+
 std::string Mat::ToString() const noexcept {
     if (Empty())
         return "[]";
@@ -93,6 +104,10 @@ Mat Jacobian(const Vec &equations, const std::vector<std::string> &vars) noexcep
         }
     }
     return ja;
+}
+
+Mat operator-(const Mat &lhs, const Mat &rhs) noexcept {
+    return Mat();
 }
 
 } // namespace tomsolver
