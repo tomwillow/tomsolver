@@ -84,7 +84,3 @@ TEST(ToString, DoNotStackOverFlow) {
     // 输出表达式字符串，不应爆栈
     string s = node->ToString();
 }
-
-TEST(Vec, Base) {
-    vector<Node> vec;
-}
