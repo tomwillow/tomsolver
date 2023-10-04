@@ -268,10 +268,4 @@ std::unique_ptr<internal::NodeImpl> &operator^=(std::unique_ptr<internal::NodeIm
     return n1;
 }
 
-//
-// class Matrix {
-// public:
-// private:
-//};
-
 } // namespace tomsolver
