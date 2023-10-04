@@ -20,23 +20,23 @@ TEST(Solve, Base) {
     Node f3 = Var("x1") - Var("x2") - Var("x3");
 
     std::vector<std::string> vars = {"x1", "x2", "x3"};
-    Vec equations{Clone(f1), Clone(f2), Clone(f3)};
+    SymVec equations{Clone(f1), Clone(f2), Clone(f3)};
     equations.Subs({{"a", 0.425}, {"b", 0.39243}, {"c", 0.109}});
     cout << equations.ToString() << endl;
 
-    Vec b{Num(0.5), Num(0.4), Num(0)};
+    SymVec b{Num(0.5), Num(0.4), Num(0)};
     auto n = equations - b;
 
-    Mat ja = Jacobian(n, vars);
+    SymMat ja = Jacobian(n, vars);
     cout << ja.ToString() << endl;
 
     std::unordered_map<std::string, double> ret = {{"x1", 0}, {"x2", 0}, {"x3", 0}};
 
-    Mat n0 = n.Clone();
+    SymMat n0 = n.Clone();
     n0.Subs(ret).Calc();
     cout << n0.ToString() << endl;
 
-    Mat ja0 = ja.Clone();
+    SymMat ja0 = ja.Clone();
     ja0.Subs(ret).Calc();
     cout << ja0.ToString() << endl;
 }

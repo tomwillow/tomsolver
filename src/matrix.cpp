@@ -7,7 +7,7 @@ namespace tomsolver {
 
 namespace internal {} // namespace internal
 
-Mat::Mat(int rows, int cols) noexcept {
+SymMat::SymMat(int rows, int cols) noexcept {
     assert(rows > 0 && cols > 0);
     data.resize(rows);
     for (auto &row : data) {
@@ -15,8 +15,8 @@ Mat::Mat(int rows, int cols) noexcept {
     }
 }
 
-Mat Mat::Clone() const noexcept {
-    Mat ret(Rows(), Cols());
+SymMat SymMat::Clone() const noexcept {
+    SymMat ret(Rows(), Cols());
     for (int i = 0; i < Rows(); ++i) {
         for (int j = 0; j < Cols(); ++j) {
             ret.data[i][j] = tomsolver::Clone(data[i][j]);
@@ -25,22 +25,22 @@ Mat Mat::Clone() const noexcept {
     return ret;
 }
 
-bool Mat::Empty() const noexcept {
+bool SymMat::Empty() const noexcept {
     return data.empty();
 }
 
-int Mat::Rows() const noexcept {
+int SymMat::Rows() const noexcept {
     return static_cast<int>(data.size());
 }
 
-int Mat::Cols() const noexcept {
+int SymMat::Cols() const noexcept {
     if (Rows()) {
         return static_cast<int>(data[0].size());
     }
     return 0;
 }
 
-Mat &Mat::Calc() {
+SymMat &SymMat::Calc() {
     for (auto &row : data) {
         for (auto &node : row) {
             node->Calc();
@@ -49,7 +49,7 @@ Mat &Mat::Calc() {
     return *this;
 }
 
-Mat &Mat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
+SymMat &SymMat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
     for (auto &row : data) {
         for (auto &node : row) {
             node = tomsolver::Subs(std::move(node), varValues);
@@ -58,9 +58,9 @@ Mat &Mat::Subs(const std::unordered_map<std::string, double> &varValues) noexcep
     return *this;
 }
 
-Mat Mat::operator-(const Mat &rhs) const noexcept {
+SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
     assert(rhs.Rows() == Rows() && rhs.Cols() == Cols());
-    Mat ret(Rows(), Cols());
+    SymMat ret(Rows(), Cols());
     for (int i = 0; i < Rows(); ++i) {
         for (int j = 0; j < Cols(); ++j) {
             ret.data[i][j] = tomsolver::Clone(data[i][j]) - tomsolver::Clone(rhs.data[i][j]);
@@ -69,7 +69,7 @@ Mat Mat::operator-(const Mat &rhs) const noexcept {
     return ret;
 }
 
-std::string Mat::ToString() const noexcept {
+std::string SymMat::ToString() const noexcept {
     if (Empty())
         return "[]";
     std::string s;
@@ -99,29 +99,29 @@ std::string Mat::ToString() const noexcept {
     return s;
 }
 
-Vec::Vec(const std::initializer_list<Node> &lst) noexcept : Mat(static_cast<int>(lst.size()), 1) {
+SymVec::SymVec(const std::initializer_list<Node> &lst) noexcept : SymMat(static_cast<int>(lst.size()), 1) {
     for (auto it = lst.begin(); it != lst.end(); ++it) {
         auto &node = const_cast<Node &>(*it);
         data[it - lst.begin()][0] = std::move(node);
     }
 }
 
-// Vec Vec::operator-(const Vec &rhs) const noexcept {
-//    return Vec({});
+// SymVec SymVec::operator-(const SymVec &rhs) const noexcept {
+//    return SymVec({});
 //}
 
-Node &Vec::operator[](std::size_t index) noexcept {
+Node &SymVec::operator[](std::size_t index) noexcept {
     return data[index][0];
 }
 
-const Node &Vec::operator[](std::size_t index) const noexcept {
+const Node &SymVec::operator[](std::size_t index) const noexcept {
     return data[index][0];
 }
 
-Mat Jacobian(const Mat &equations, const std::vector<std::string> &vars) noexcept {
+SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept {
     int rows = equations.Rows();
     int cols = static_cast<int>(vars.size());
-    Mat ja(rows, cols);
+    SymMat ja(rows, cols);
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
             ja.data[i][j] = std::move(Diff(equations.data[i][0], vars[j]));

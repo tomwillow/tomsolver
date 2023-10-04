@@ -18,12 +18,12 @@ Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept;
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(const Node &node, const std::vector<std::string> &oldVars, const Vec &newNodes) noexcept;
+Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(Node &&node, const std::vector<std::string> &oldVars, const Vec &newNodes) noexcept;
+Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。

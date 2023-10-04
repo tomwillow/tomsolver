@@ -10,10 +10,10 @@
 using namespace std;
 using namespace tomsolver;
 
-TEST(Matrix, Base) {
+TEST(SymMat, Base) {
     MemoryLeakDetection mld;
 
-    Vec a{Var("a"), Var("b"), Var("c")};
+    SymVec a{Var("a"), Var("b"), Var("c")};
 
     cout << a.ToString() << endl;
 
@@ -22,7 +22,7 @@ TEST(Matrix, Base) {
     Node f1 = (sin(x) ^ Num(2)) + x * y + y - Num(3);
     Node f2 = Num(4) * x + (y ^ Num(2));
 
-    Vec f{std::move(f1), std::move(f2)};
+    SymVec f{std::move(f1), std::move(f2)};
 
     cout << f.ToString() << endl;
 }

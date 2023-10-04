@@ -74,12 +74,12 @@ Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept 
     return ret;
 }
 
-Node Subs(const Node &node, const std::vector<std::string> &oldVars, const Vec &newNodes) noexcept {
+Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
     Node node2 = Clone(node);
     return Subs(std::move(node2), oldVars, newNodes);
 }
 
-Node Subs(Node &&node, const std::vector<std::string> &oldVars, const Vec &newNodes) noexcept {
+Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
     assert(oldVars.size() == newNodes.Rows());
     Node ret = std::move(node);
     std::unordered_map<std::string, Node> dict;
