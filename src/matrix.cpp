@@ -141,7 +141,7 @@ Mat &Mat::SwapRow(std::size_t i, std::size_t j) noexcept {
     return *this;
 }
 
-inline void Mat::Resize(std::size_t newRows) noexcept {
+void Mat::Resize(std::size_t newRows) noexcept {
     assert(newRows > 0);
     if (newRows < rows)
         data.resize(newRows);
@@ -198,7 +198,7 @@ double Mat::Min() const noexcept {
     return ans;
 }
 
-inline void Mat::SetValue(double value) noexcept {
+void Mat::SetValue(double value) noexcept {
     data = vector<vector<double>>(rows, vector<double>(cols, value));
 }
 
@@ -369,19 +369,19 @@ double Det(const Mat &A, std::size_t n) noexcept {
     return D; // 마지막엔 n X n 행렬의 Determinant를 리턴해준다.
 }
 
-inline Vec::Vec(std::size_t rows) noexcept : Mat(rows, 1) {
+Vec::Vec(std::size_t rows) noexcept : Mat(rows, 1) {
     assert(rows > 0);
     data.resize(rows, std::vector<double>(1));
 }
 
-inline Vec::Vec(const std::initializer_list<double> &init) noexcept : Vec(init.size()) {
+Vec::Vec(const std::initializer_list<double> &init) noexcept : Vec(init.size()) {
     data.resize(rows, std::vector<double>(1));
     std::size_t i = 0;
     for (auto v : init)
         data[i++][0] = v;
 }
 
-inline void Vec::resize(std::size_t new_rows) noexcept {
+void Vec::resize(std::size_t new_rows) noexcept {
     assert(new_rows > 0);
     data.resize(new_rows, std::vector<double>(1));
     rows = new_rows;
