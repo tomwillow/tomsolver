@@ -132,7 +132,7 @@ public:
 
     Vec(const std::initializer_list<double> &init) noexcept;
 
-    void resize(std::size_t new_rows) noexcept;
+    void Resize(std::size_t newRows) noexcept;
 
     double &operator[](std::size_t i) noexcept {
         return data[i][0];

@@ -381,10 +381,10 @@ Vec::Vec(const std::initializer_list<double> &init) noexcept : Vec(init.size()) 
         data[i++][0] = v;
 }
 
-void Vec::resize(std::size_t new_rows) noexcept {
-    assert(new_rows > 0);
-    data.resize(new_rows, std::vector<double>(1));
-    rows = new_rows;
+void Vec::Resize(std::size_t newRows) noexcept {
+    assert(newRows > 0);
+    data.resize(newRows, std::vector<double>(1));
+    rows = newRows;
 }
 
 double Dot(const Vec &a, const Vec &b) noexcept {
