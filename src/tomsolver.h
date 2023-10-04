@@ -6,4 +6,4 @@
 #include "simplify.h"
 #include "diff.h"
 #include "subs.h"
-#include "matrix.h"
+#include "symmat.h"

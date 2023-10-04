@@ -1,4 +1,4 @@
-#include "matrix.h"
+#include "symmat.h"
 
 #include "diff.h"
 #include "subs.h"

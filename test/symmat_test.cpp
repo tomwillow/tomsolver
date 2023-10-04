@@ -1,4 +1,4 @@
-#include "matrix.h"
+#include "symmat.h"
 #include "functions.h"
 
 #include "memory_leak_detection.h"

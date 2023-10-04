@@ -1,7 +1,7 @@
 #pragma once
 
 #include "node.h"
-#include "matrix.h"
+#include "symmat.h"
 
 namespace tomsolver {
 
