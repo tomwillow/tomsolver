@@ -9,7 +9,7 @@ struct Config {
      */
     bool throwOnInvalidValue = true;
 
-    double epsilon = std::numeric_limits<double>::epsilon();
+    double epsilon = 1.0e-9;
 
     Config();
 

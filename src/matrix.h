@@ -1,293 +1,214 @@
+/*
+
+Original Inverse(), Adjoint(), GetCofactor(), Det() is from https://github.com/taehwan642:
+
+///////////////////////////////////////////
+    MADE BY TAE HWAN KIM, SHIN JAE HO
+    김태환, 신재호 제작
+    If you see this documents, you can learn & understand Faster.
+    밑에 자료들을 보시면, 더욱 빠르게 배우고 이해하실 수 있으실겁니다.
+    https://www.wikihow.com/Find-the-Inverse-of-a-3x3-Matrix
+    https://www.wikihow.com/Find-the-Determinant-of-a-3X3-Matrix
+    LAST UPDATE 2020 - 03 - 30
+    마지막 업데이트 2020 - 03 - 30
+    This is my Github Profile. You can use this source whenever you want.
+    제 깃허브 페이지입니다. 언제든지 이 소스를 가져다 쓰셔도 됩니다.
+    https://github.com/taehwan642
+    Thanks :)
+    감사합니다 :)
+///////////////////////////////////////////
+
+*/
+
 #pragma once
 
+#include "error_type.h"
+
 #include <vector>
+#include <iostream>
+#include <cassert>
 
 namespace tomsolver {
+
 class Matrix {
 public:
-    size_t rows;
-    size_t cols;
-    std::vector<std::vector<double>> data;
-    Matrix(size_t row, size_t col) : rows(row), cols(col) {
-        assert(row > 0);
-        assert(col > 0);
-        data.resize(row, std::vector<double>(col, 0));
-    }
+    Matrix(std::size_t row, std::size_t col) noexcept;
 
-    Matrix(const std::vector<std::vector<double>> &init) {
-        rows = init.size();
-        assert(rows > 0);
-        cols = init[0].size();
-        assert(cols > 0);
-        for (auto &vec : init) {
-            assert(vec.size() == cols);
-        }
-        data = std::vector<std::vector<double>>(init.begin(), init.end());
-    }
+    Matrix(const std::vector<std::vector<double>> &init) noexcept;
 
-    Matrix(const std::initializer_list<std::initializer_list<double>> &init) {
-        rows = init.size();
-        assert(rows > 0);
-        cols = (*init.begin()).size();
-        assert(cols > 0);
-        for (auto &vec : init) {
-            assert(vec.size() == cols);
-        }
-        data = std::vector<std::vector<double>>(init.begin(), init.end());
-    }
+    Matrix(const std::initializer_list<std::initializer_list<double>> &init) noexcept;
 
-    std::vector<double> &operator[](size_t i) {
-        return data[i];
-    }
+    std::vector<double> &operator[](std::size_t i) noexcept;
 
-    const std::vector<double> &operator[](size_t i) const {
-        return data[i];
-    }
+    const std::vector<double> &operator[](std::size_t i) const noexcept;
 
-    Matrix operator*(double m) const {
-        Matrix ans = *this;
-        for (auto &vec : ans.data)
-            for (auto &val : vec)
-                val *= m;
-        return ans;
-    }
-
-    Matrix operator+(const Matrix &b) const {
-        assert(rows == b.rows);
-        assert(cols == b.cols);
-        Matrix ans(b);
-        for (size_t i = 0; i < rows; ++i) {
-            for (size_t j = 0; j < cols; ++j) {
-                ans[i][j] = data[i][j] + b[i][j];
-            }
-        }
-        return ans;
-    }
-
-    Matrix operator-(const Matrix &b) const {
-        assert(rows == b.rows);
-        assert(cols == b.cols);
-        Matrix ans(b);
-        for (size_t i = 0; i < rows; ++i) {
-            for (size_t j = 0; j < cols; ++j) {
-                ans[i][j] = data[i][j] - b[i][j];
-            }
-        }
-        return ans;
-    }
+    bool operator==(double m) const noexcept;
+    bool operator==(const Matrix &b) const noexcept;
 
     // be negative
-    Matrix operator-() {
-        Matrix ans(*this);
-        for (auto &vec : ans.data)
-            for (auto &val : vec)
-                val = -val;
-        return ans;
-    }
+    Matrix operator-() noexcept;
 
-    bool operator==(double m) const {
-        for (auto &vec : data)
-            for (auto &val : vec) {
-                if (abs(val - m) >= epsilon)
-                    return false;
-            }
-        return true;
-    }
+    Matrix operator+(const Matrix &b) const noexcept;
+    Matrix &operator+=(const Matrix &b) noexcept;
 
-    Matrix operator*(const Matrix &b) const {
-        assert(cols == b.rows);
-        Matrix ans(rows, b.cols);
-        for (size_t i = 0; i < rows; ++i) {
-            double sum = 0;
-            for (size_t j = 0; j < cols; ++j) {
-                for (size_t k = 0; k < cols; ++k) {
-                    sum += data[i][k] * b[k][j];
-                }
-                ans[i][j] = sum;
-            }
-        }
-        return ans;
-    }
+    Matrix operator-(const Matrix &b) const noexcept;
 
-    Matrix &operator+=(const Matrix &b) {
-        assert(rows == b.rows);
-        assert(cols == b.cols);
-        for (size_t i = 0; i < rows; ++i)
-            for (size_t j = 0; j < cols; ++j)
-                data[i][j] += b[i][j];
-        return *this;
-    }
+    Matrix operator*(double m) const noexcept;
+    Matrix operator*(const Matrix &b) const noexcept;
 
-    bool operator==(const Matrix &b);
+    Matrix &SwapRow(std::size_t i, std::size_t j) noexcept;
 
-    Matrix &SwapRow(size_t i, size_t j) {
-        if (i == j)
-            return *this;
-        assert(i >= 0);
-        assert(i < rows);
-        assert(j >= 0);
-        assert(j < rows);
+    void Resize(std::size_t newRows) noexcept;
 
-        std::swap(data[i], data[j]);
-        return *this;
-    }
+    Matrix &Zero() noexcept;
 
-    void resize(size_t new_rows) {
-        assert(new_rows > 0);
-        if (new_rows < rows)
-            data.resize(new_rows);
-        else {
-            data.resize(new_rows);
-            for (size_t i = rows; i < new_rows; ++i)
-                data[i] = std::vector<double>(cols, 0);
-        }
-        rows = new_rows;
-    }
+    Matrix &Ones() noexcept;
 
-    Matrix &Zero();
+    double Norm2() const noexcept;
 
-    Matrix &Ones();
+    double NormInfinity() const noexcept;
 
-    double Norm2() const;
+    double NormNegInfinity() const noexcept;
 
-    double NormInfinity() const;
+    double Min() const noexcept;
 
-    double NormNegInfinity() const;
+    void SetValue(double value) noexcept;
 
-    double Min() const;
+    /**
+     * 返回矩阵是否正定。
+     */
+    bool PositiveDetermine() const noexcept;
 
-    // double Determinant() const;
+    Matrix Transpose() const noexcept;
 
-    void SetValue(double value) {
-        for (auto &vec : data)
-            for (auto &val : vec)
-                val = value;
-    }
-
-    bool PositiveDetermine() const;
-
-    Matrix Transpose() const;
-
+    /**
+     * 计算逆矩阵。
+     * @exception MathError 如果是奇异矩阵，抛出异常
+     */
     Matrix Inverse() const;
+
+protected:
+    std::size_t rows;
+    std::size_t cols;
+    std::vector<std::vector<double>> data;
+
+    friend Matrix operator*(double k, const Matrix &mat) noexcept;
+    friend std::ostream &operator<<(std::ostream &out, const Matrix &mat) noexcept;
+    friend Matrix EachDivide(const Matrix &a, const Matrix &b) noexcept;
+    friend bool IsZero(const Matrix &mat) noexcept;
+    friend bool AllIsLessThan(const Matrix &v1, const Matrix &v2) noexcept;
+    friend void GetCofactor(const Matrix &A, Matrix &temp, std::size_t p, std::size_t q, std::size_t n) noexcept;
+    friend void Adjoint(const Matrix &A, Matrix &adj) noexcept;
+    friend double Det(const Matrix &A, std::size_t n) noexcept;
 };
 
-#ifdef _DEBUG
-void TestMatrix();
-#endif
+Matrix operator*(double k, const Matrix &mat) noexcept;
+
+std::ostream &operator<<(std::ostream &out, const Matrix &mat) noexcept;
+
+Matrix EachDivide(const Matrix &a, const Matrix &b) noexcept;
+
+bool IsZero(const Matrix &mat) noexcept;
+
+bool AllIsLessThan(const Matrix &v1, const Matrix &v2) noexcept;
+
+std::size_t GetMaxAbsRowIndex(const Matrix &A, std::size_t RowStart, std::size_t RowEnd, std::size_t Col) noexcept;
+
+/**
+ * 伴随矩阵。
+ */
+void Adjoint(const Matrix &A, Matrix &adj) noexcept;
+
+void GetCofactor(const Matrix &A, Matrix &temp, std::size_t p, std::size_t q, std::size_t n) noexcept;
+
+/**
+ * 计算矩阵的行列式值。
+ */
+double Det(const Matrix &A, std::size_t n) noexcept;
 
 class Vector : public Matrix {
 public:
-    Vector(size_t rows) : Matrix(rows, 1) {
-        assert(rows > 0);
-        data.resize(rows, std::vector<double>(1));
-    }
+    Vector(std::size_t rows) noexcept;
 
-    Vector(const std::initializer_list<double> &init) : Vector(init.size()) {
-        data.resize(rows, std::vector<double>(1));
-        size_t i = 0;
-        for (auto v : init)
-            data[i++][0] = v;
-    }
+    Vector(const std::initializer_list<double> &init) noexcept;
 
-    void resize(size_t new_rows) {
-        assert(new_rows > 0);
-        data.resize(new_rows, std::vector<double>(1));
-        rows = new_rows;
-    }
+    void resize(std::size_t new_rows) noexcept;
 
-    double &operator[](size_t i) {
+    double &operator[](std::size_t i) noexcept {
         return data[i][0];
     }
 
-    double operator[](size_t i) const {
+    double operator[](std::size_t i) const noexcept {
         return data[i][0];
     }
 
-    Vector operator+(const Vector &b) const {
+    Vector operator+(const Vector &b) const noexcept {
         assert(rows == b.rows);
         assert(cols == b.cols == 1);
         Vector ans(b);
-        for (size_t i = 0; i < rows; ++i) {
+        for (std::size_t i = 0; i < rows; ++i) {
             ans[i] = data[i][0] + b[i];
         }
         return ans;
     }
 
     // be negative
-    Vector operator-() {
+    Vector operator-() noexcept {
         Vector ans(*this);
         for (auto &vec : ans.data)
             vec[0] = -vec[0];
         return ans;
     }
 
-    Vector operator-(const Vector &b) const {
+    Vector operator-(const Vector &b) const noexcept {
         assert(rows == b.rows);
         Vector ans(b);
-        for (size_t i = 0; i < rows; ++i) {
+        for (std::size_t i = 0; i < rows; ++i) {
             ans[i] = data[i][0] - b[i];
         }
         return ans;
     }
 
-    Vector operator*(double m) const {
+    Vector operator*(double m) const noexcept {
         Vector ans = *this;
         for (auto &vec : ans.data)
             vec[0] *= m;
         return ans;
     }
 
-    Vector operator*(const Vector &b) const {
+    Vector operator*(const Vector &b) const noexcept {
         assert(rows == b.rows);
         Vector ans(b);
-        for (size_t i = 0; i < rows; ++i) {
+        for (std::size_t i = 0; i < rows; ++i) {
             ans[i] = data[i][0] * b[i];
         }
         return ans;
     }
 
-    Vector operator/(const Vector &b) const {
+    Vector operator/(const Vector &b) const noexcept {
         assert(rows == b.rows);
         Vector ans(b);
-        for (size_t i = 0; i < rows; ++i) {
+        for (std::size_t i = 0; i < rows; ++i) {
             ans[i] = data[i][0] / b[i];
         }
         return ans;
     }
 
-    bool operator<(const Vector &b) {
+    bool operator<(const Vector &b) noexcept {
         assert(rows == b.rows);
-        for (size_t i = 0; i < rows; ++i)
+        for (std::size_t i = 0; i < rows; ++i)
             if (data[i][0] >= b[i])
                 return false;
         return true;
     }
+
+    friend double Dot(const Vector &a, const Vector &b) noexcept;
+    friend Vector operator*(double k, const Vector &V);
 };
-// end of Vector class
 
-double dot(const Vector &a, const Vector &b);
+/**
+ * 向量点乘。
+ */
+double Dot(const Vector &a, const Vector &b) noexcept;
 
-Matrix EachDivide(const Matrix &a, const Matrix &b);
-
-Vector operator*(double k, const Vector &V);
-Matrix operator*(double k, const Matrix &V);
-
-Vector operator*(const Matrix &A, const Vector &x);
-
-std::ostream &operator<<(std::ostream &out, const Matrix &V);
-
-std::ostream &operator<<(std::ostream &out, const Vector &V);
-
-size_t GetMaxAbsRowIndex(const Matrix &A, size_t RowStart, size_t RowEnd, size_t Col);
-
-bool AllIsLessThan(const Vector &v1, const Vector &v2);
-
-bool IsZero(const Vector &V, double epsilon = 1.0e-6);
-
-#ifdef _DEBUG
-#endif
 } // namespace tomsolver
-
-std::vector<double> operator-(const std::vector<double> &A, const std::vector<double> &B);
-
-bool IsZero(const std::vector<double> &V, double epsilon = 1.0e-6);
