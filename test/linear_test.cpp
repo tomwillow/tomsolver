@@ -15,7 +15,7 @@ TEST(Linear, Base) {
 
     auto x = SolveLinear(A, b);
 
-    cout << x << endl;
+    Vec expected = {-66.5555555555555429, 25.6666666666666643, -18.777777777777775, 26.55555555555555};
 
-    Vec expected = {-66.5556, 25.6667, -18.7778, 26.5556};
+    ASSERT_EQ(x, expected);
 }

@@ -62,6 +62,8 @@ public:
 
     Mat &SwapRow(std::size_t i, std::size_t j) noexcept;
 
+    std::string ToString() const noexcept;
+
     void Resize(std::size_t newRows) noexcept;
 
     Mat &Zero() noexcept;

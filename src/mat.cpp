@@ -149,6 +149,36 @@ Mat &Mat::SwapRow(std::size_t i, std::size_t j) noexcept {
     return *this;
 }
 
+std::string Mat::ToString() const noexcept {
+    if (data.empty())
+        return "[]";
+    std::string s;
+    s.reserve(256);
+
+    auto OutputRow = [&](int i) {
+        int j = 0;
+        for (; j < Cols() - 1; ++j) {
+            s += tomsolver::ToString(data[i][j]) + ", ";
+        }
+        s += tomsolver::ToString(data[i][j]);
+    };
+
+    s += "[";
+    OutputRow(0);
+    s += "\n";
+
+    int i = 1;
+    for (; i < Rows() - 1; ++i) {
+        s += " ";
+        OutputRow(i);
+        s += "\n";
+    }
+    s += " ";
+    OutputRow(i);
+    s += "]";
+    return s;
+}
+
 void Mat::Resize(std::size_t newRows) noexcept {
     assert(newRows > 0);
     if (newRows < rows)
@@ -412,15 +442,7 @@ Vec operator*(double k, const Vec &v) {
 }
 
 std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept {
-    out << "[" << endl;
-    for (auto &vec : mat.data) {
-        for (auto &val : vec) {
-            out << val << " ";
-        }
-        out << ";" << endl;
-    }
-    out << "]";
-    return out;
+    return out << mat.ToString();
 }
 
 std::vector<double> operator-(const std::vector<double> &A, const std::vector<double> &B) {
