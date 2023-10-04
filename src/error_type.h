@@ -19,7 +19,6 @@ enum class ErrorType {
     ERROR_VAR_HAS_BEEN_DEFINED,          //变量重定义
     ERROR_INDETERMINATE_EQUATION,        //不定方程
     ERROR_SINGULAR_MATRIX,               //矩阵奇异
-    ERROR_JACOBI_ROW_NOT_EQUAL_PHI_ROW,  // A矩阵行数不等于b向量数
     ERROR_INFINITY_SOLUTIONS,            //无穷多解
     ERROR_OVER_DETERMINED_EQUATIONS      //方程组过定义
 };

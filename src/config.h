@@ -9,6 +9,8 @@ struct Config {
      */
     bool throwOnInvalidValue = true;
 
+    double epsilon = std::numeric_limits<double>::epsilon();
+
     Config();
 
     void Reset() noexcept;
