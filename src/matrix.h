@@ -30,39 +30,39 @@ Original Inverse(), Adjoint(), GetCofactor(), Det() is from https://github.com/t
 
 namespace tomsolver {
 
-class Matrix {
+class Mat {
 public:
-    Matrix(std::size_t row, std::size_t col) noexcept;
+    Mat(std::size_t row, std::size_t col) noexcept;
 
-    Matrix(const std::vector<std::vector<double>> &init) noexcept;
+    Mat(const std::vector<std::vector<double>> &init) noexcept;
 
-    Matrix(const std::initializer_list<std::initializer_list<double>> &init) noexcept;
+    Mat(const std::initializer_list<std::initializer_list<double>> &init) noexcept;
 
     std::vector<double> &operator[](std::size_t i) noexcept;
 
     const std::vector<double> &operator[](std::size_t i) const noexcept;
 
     bool operator==(double m) const noexcept;
-    bool operator==(const Matrix &b) const noexcept;
+    bool operator==(const Mat &b) const noexcept;
 
     // be negative
-    Matrix operator-() noexcept;
+    Mat operator-() noexcept;
 
-    Matrix operator+(const Matrix &b) const noexcept;
-    Matrix &operator+=(const Matrix &b) noexcept;
+    Mat operator+(const Mat &b) const noexcept;
+    Mat &operator+=(const Mat &b) noexcept;
 
-    Matrix operator-(const Matrix &b) const noexcept;
+    Mat operator-(const Mat &b) const noexcept;
 
-    Matrix operator*(double m) const noexcept;
-    Matrix operator*(const Matrix &b) const noexcept;
+    Mat operator*(double m) const noexcept;
+    Mat operator*(const Mat &b) const noexcept;
 
-    Matrix &SwapRow(std::size_t i, std::size_t j) noexcept;
+    Mat &SwapRow(std::size_t i, std::size_t j) noexcept;
 
     void Resize(std::size_t newRows) noexcept;
 
-    Matrix &Zero() noexcept;
+    Mat &Zero() noexcept;
 
-    Matrix &Ones() noexcept;
+    Mat &Ones() noexcept;
 
     double Norm2() const noexcept;
 
@@ -79,58 +79,58 @@ public:
      */
     bool PositiveDetermine() const noexcept;
 
-    Matrix Transpose() const noexcept;
+    Mat Transpose() const noexcept;
 
     /**
      * 计算逆矩阵。
      * @exception MathError 如果是奇异矩阵，抛出异常
      */
-    Matrix Inverse() const;
+    Mat Inverse() const;
 
 protected:
     std::size_t rows;
     std::size_t cols;
     std::vector<std::vector<double>> data;
 
-    friend Matrix operator*(double k, const Matrix &mat) noexcept;
-    friend std::ostream &operator<<(std::ostream &out, const Matrix &mat) noexcept;
-    friend Matrix EachDivide(const Matrix &a, const Matrix &b) noexcept;
-    friend bool IsZero(const Matrix &mat) noexcept;
-    friend bool AllIsLessThan(const Matrix &v1, const Matrix &v2) noexcept;
-    friend void GetCofactor(const Matrix &A, Matrix &temp, std::size_t p, std::size_t q, std::size_t n) noexcept;
-    friend void Adjoint(const Matrix &A, Matrix &adj) noexcept;
-    friend double Det(const Matrix &A, std::size_t n) noexcept;
+    friend Mat operator*(double k, const Mat &mat) noexcept;
+    friend std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
+    friend Mat EachDivide(const Mat &a, const Mat &b) noexcept;
+    friend bool IsZero(const Mat &mat) noexcept;
+    friend bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
+    friend void GetCofactor(const Mat &A, Mat &temp, std::size_t p, std::size_t q, std::size_t n) noexcept;
+    friend void Adjoint(const Mat &A, Mat &adj) noexcept;
+    friend double Det(const Mat &A, std::size_t n) noexcept;
 };
 
-Matrix operator*(double k, const Matrix &mat) noexcept;
+Mat operator*(double k, const Mat &mat) noexcept;
 
-std::ostream &operator<<(std::ostream &out, const Matrix &mat) noexcept;
+std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
 
-Matrix EachDivide(const Matrix &a, const Matrix &b) noexcept;
+Mat EachDivide(const Mat &a, const Mat &b) noexcept;
 
-bool IsZero(const Matrix &mat) noexcept;
+bool IsZero(const Mat &mat) noexcept;
 
-bool AllIsLessThan(const Matrix &v1, const Matrix &v2) noexcept;
+bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
 
-std::size_t GetMaxAbsRowIndex(const Matrix &A, std::size_t RowStart, std::size_t RowEnd, std::size_t Col) noexcept;
+std::size_t GetMaxAbsRowIndex(const Mat &A, std::size_t RowStart, std::size_t RowEnd, std::size_t Col) noexcept;
 
 /**
  * 伴随矩阵。
  */
-void Adjoint(const Matrix &A, Matrix &adj) noexcept;
+void Adjoint(const Mat &A, Mat &adj) noexcept;
 
-void GetCofactor(const Matrix &A, Matrix &temp, std::size_t p, std::size_t q, std::size_t n) noexcept;
+void GetCofactor(const Mat &A, Mat &temp, std::size_t p, std::size_t q, std::size_t n) noexcept;
 
 /**
  * 计算矩阵的行列式值。
  */
-double Det(const Matrix &A, std::size_t n) noexcept;
+double Det(const Mat &A, std::size_t n) noexcept;
 
-class Vector : public Matrix {
+class Vec : public Mat {
 public:
-    Vector(std::size_t rows) noexcept;
+    Vec(std::size_t rows) noexcept;
 
-    Vector(const std::initializer_list<double> &init) noexcept;
+    Vec(const std::initializer_list<double> &init) noexcept;
 
     void resize(std::size_t new_rows) noexcept;
 
@@ -142,10 +142,10 @@ public:
         return data[i][0];
     }
 
-    Vector operator+(const Vector &b) const noexcept {
+    Vec operator+(const Vec &b) const noexcept {
         assert(rows == b.rows);
         assert(cols == b.cols == 1);
-        Vector ans(b);
+        Vec ans(b);
         for (std::size_t i = 0; i < rows; ++i) {
             ans[i] = data[i][0] + b[i];
         }
@@ -153,48 +153,48 @@ public:
     }
 
     // be negative
-    Vector operator-() noexcept {
-        Vector ans(*this);
+    Vec operator-() noexcept {
+        Vec ans(*this);
         for (auto &vec : ans.data)
             vec[0] = -vec[0];
         return ans;
     }
 
-    Vector operator-(const Vector &b) const noexcept {
+    Vec operator-(const Vec &b) const noexcept {
         assert(rows == b.rows);
-        Vector ans(b);
+        Vec ans(b);
         for (std::size_t i = 0; i < rows; ++i) {
             ans[i] = data[i][0] - b[i];
         }
         return ans;
     }
 
-    Vector operator*(double m) const noexcept {
-        Vector ans = *this;
+    Vec operator*(double m) const noexcept {
+        Vec ans = *this;
         for (auto &vec : ans.data)
             vec[0] *= m;
         return ans;
     }
 
-    Vector operator*(const Vector &b) const noexcept {
+    Vec operator*(const Vec &b) const noexcept {
         assert(rows == b.rows);
-        Vector ans(b);
+        Vec ans(b);
         for (std::size_t i = 0; i < rows; ++i) {
             ans[i] = data[i][0] * b[i];
         }
         return ans;
     }
 
-    Vector operator/(const Vector &b) const noexcept {
+    Vec operator/(const Vec &b) const noexcept {
         assert(rows == b.rows);
-        Vector ans(b);
+        Vec ans(b);
         for (std::size_t i = 0; i < rows; ++i) {
             ans[i] = data[i][0] / b[i];
         }
         return ans;
     }
 
-    bool operator<(const Vector &b) noexcept {
+    bool operator<(const Vec &b) noexcept {
         assert(rows == b.rows);
         for (std::size_t i = 0; i < rows; ++i)
             if (data[i][0] >= b[i])
@@ -202,13 +202,13 @@ public:
         return true;
     }
 
-    friend double Dot(const Vector &a, const Vector &b) noexcept;
-    friend Vector operator*(double k, const Vector &V);
+    friend double Dot(const Vec &a, const Vec &b) noexcept;
+    friend Vec operator*(double k, const Vec &V);
 };
 
 /**
  * 向量点乘。
  */
-double Dot(const Vector &a, const Vector &b) noexcept;
+double Dot(const Vec &a, const Vec &b) noexcept;
 
 } // namespace tomsolver
