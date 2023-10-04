@@ -1,4 +1,4 @@
-#include "matrix.h"
+#include "mat.h"
 
 #include "config.h"
 #include "error_type.h"
