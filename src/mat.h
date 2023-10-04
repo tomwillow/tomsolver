@@ -30,6 +30,8 @@ Original Inverse(), Adjoint(), GetCofactor(), Det() is from https://github.com/t
 
 namespace tomsolver {
 
+class Vec;
+
 class Mat {
 public:
     Mat(std::size_t row, std::size_t col) noexcept;
@@ -60,6 +62,12 @@ public:
     int Rows() const noexcept;
 
     int Cols() const noexcept;
+
+    /**
+     * 输出Vec。如果列数不为1，抛出异常。
+     * @exception runtime_error 列数不为1
+     */
+    Vec ToVec() const;
 
     Mat &SwapRow(std::size_t i, std::size_t j) noexcept;
 

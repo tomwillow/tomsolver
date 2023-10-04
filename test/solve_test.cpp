@@ -1,5 +1,6 @@
 #include "symmat.h"
 #include "functions.h"
+#include "linear.h"
 
 #include "memory_leak_detection.h"
 
@@ -12,6 +13,8 @@ using namespace tomsolver;
 
 TEST(Solve, Base) {
     MemoryLeakDetection mld;
+
+    std::setlocale(LC_ALL, ".UTF8");
 
     Node f1 = Var("a") * cos(Var("x1")) + Var("b") * cos(Var("x1") - Var("x2")) +
               Var("c") * cos(Var("x1") - Var("x2") - Var("x3"));
@@ -32,9 +35,12 @@ TEST(Solve, Base) {
 
     std::unordered_map<std::string, double> ret = {{"x1", 0}, {"x2", 0}, {"x3", 0}};
 
-    Mat n0 = n.Clone().Subs(ret).Calc().ToMat();
-    cout << n0.ToString() << endl;
+    Vec n0 = n.Clone().Subs(ret).Calc().ToMat().ToVec();
+    cout << "n0 = " << n0 << endl;
 
     Mat ja0 = ja.Clone().Subs(ret).Calc().ToMat();
-    cout << ja0.ToString() << endl;
+    cout << "ja0 = " << ja0 << endl;
+
+    // Vec x = SolveLinear(ja0, n0);
+    // cout << "x = " << x << endl;
 }

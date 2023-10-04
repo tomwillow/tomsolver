@@ -140,6 +140,17 @@ int Mat::Cols() const noexcept {
     return cols;
 }
 
+Vec Mat::ToVec() const {
+    assert(rows > 0);
+    if (cols != 1) {
+        throw runtime_error("Mat::ToVec fail. rows is not one");
+    }
+    Vec v(rows);
+    v.cols = 1;
+    v.data = data;
+    return v;
+}
+
 Mat &Mat::SwapRow(std::size_t i, std::size_t j) noexcept {
     if (i == j)
         return *this;
