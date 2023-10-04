@@ -1,12 +1,9 @@
 #pragma once
 
-#include <vector>
+#include "mat.h"
 
 namespace tomsolver {
 
-using TMatrix = std::vector<std::vector<double>>;
-using TVector = std::vector<double>;
-
-TVector SolveLinear(TMatrix &A, TVector &b);
+Vec SolveLinear(const Mat &A, const Vec &b);
 
 } // namespace tomsolver

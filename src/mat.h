@@ -56,6 +56,10 @@ public:
     Mat operator*(double m) const noexcept;
     Mat operator*(const Mat &b) const noexcept;
 
+    int Rows() const noexcept;
+
+    int Cols() const noexcept;
+
     Mat &SwapRow(std::size_t i, std::size_t j) noexcept;
 
     void Resize(std::size_t newRows) noexcept;
@@ -88,8 +92,8 @@ public:
     Mat Inverse() const;
 
 protected:
-    std::size_t rows;
-    std::size_t cols;
+    int rows;
+    int cols;
     std::vector<std::vector<double>> data;
 
     friend Mat operator*(double k, const Mat &mat) noexcept;

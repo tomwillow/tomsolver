@@ -129,6 +129,14 @@ Mat Mat::operator*(const Mat &b) const noexcept {
     return ans;
 }
 
+int Mat::Rows() const noexcept {
+    return rows;
+}
+
+int Mat::Cols() const noexcept {
+    return cols;
+}
+
 Mat &Mat::SwapRow(std::size_t i, std::size_t j) noexcept {
     if (i == j)
         return *this;
