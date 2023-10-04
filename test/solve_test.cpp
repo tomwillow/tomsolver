@@ -32,11 +32,9 @@ TEST(Solve, Base) {
 
     std::unordered_map<std::string, double> ret = {{"x1", 0}, {"x2", 0}, {"x3", 0}};
 
-    SymMat n0 = n.Clone();
-    n0.Subs(ret).Calc();
+    Mat n0 = n.Clone().Subs(ret).Calc().ToMat();
     cout << n0.ToString() << endl;
 
-    SymMat ja0 = ja.Clone();
-    ja0.Subs(ret).Calc();
+    Mat ja0 = ja.Clone().Subs(ret).Calc().ToMat();
     cout << ja0.ToString() << endl;
 }

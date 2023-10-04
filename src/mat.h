@@ -35,6 +35,7 @@ public:
     Mat(std::size_t row, std::size_t col) noexcept;
 
     Mat(const std::vector<std::vector<double>> &init) noexcept;
+    Mat(std::vector<std::vector<double>> &&init) noexcept;
 
     Mat(const std::initializer_list<std::initializer_list<double>> &init) noexcept;
 

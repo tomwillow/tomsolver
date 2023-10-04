@@ -40,6 +40,19 @@ int SymMat::Cols() const noexcept {
     return 0;
 }
 
+Mat SymMat::ToMat() const {
+    std::vector<std::vector<double>> arr(Rows(), std::vector<double>(Cols()));
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            if (data[i][j]->type != NodeType::NUMBER) {
+                throw std::runtime_error("ToMat error: node is not number");
+            }
+            arr[i][j] = data[i][j]->value;
+        }
+    }
+    return Mat(std::move(arr));
+}
+
 SymMat &SymMat::Calc() {
     for (auto &row : data) {
         for (auto &node : row) {

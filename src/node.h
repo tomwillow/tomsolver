@@ -15,9 +15,11 @@ namespace tomsolver {
 
 enum class NodeType { NUMBER, OPERATOR, VARIABLE };
 
+// 前置声明
 namespace internal {
 struct NodeImpl;
 }
+class SymMat;
 
 /**
  * 表达式节点。
@@ -138,6 +140,7 @@ private:
     template <typename T1, typename T2>
     friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 
+    friend class tomsolver::SymMat;
     friend class DiffFunctions;
     friend class SubsFunctions;
 };

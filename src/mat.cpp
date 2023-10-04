@@ -26,6 +26,9 @@ Mat::Mat(const std::vector<std::vector<double>> &init) noexcept {
     data = init;
 }
 
+Mat::Mat(std::vector<std::vector<double>> &&init) noexcept
+    : rows(init.size()), cols(init.size() ? init[0].size() : 0), data(std::move(init)) {}
+
 Mat::Mat(const std::initializer_list<std::initializer_list<double>> &init) noexcept {
     rows = init.size();
     assert(rows > 0);

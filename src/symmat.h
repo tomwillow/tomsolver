@@ -1,6 +1,7 @@
 #pragma once
 
 #include "node.h"
+#include "mat.h"
 
 #include <unordered_map>
 
@@ -26,6 +27,12 @@ public:
     int Rows() const noexcept;
 
     int Cols() const noexcept;
+
+    /**
+     * 得到数值矩阵。前提条件是矩阵内的元素均为数值节点，否则抛出异常。
+     * @exception runtime_error 存在非数值节点
+     */
+    Mat ToMat() const;
 
     /**
      * 把矩阵的内的元素均计算为数值节点。
