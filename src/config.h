@@ -15,6 +15,11 @@ struct Config {
 
     LogLevel logLevel = LogLevel::WARN;
 
+    /**
+     * 最大迭代次数限制
+     */
+    int maxIterations = 100;
+
     Config();
 
     void Reset() noexcept;

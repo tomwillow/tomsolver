@@ -64,8 +64,7 @@ double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double u
 }
 
 Vec Solve(const std::unordered_map<std::string, double> &varsTable, const SymVec &equations) {
-    const int max_iterator = 100; // 最大迭代次数限制
-    int it = 0;                   // 迭代计数
+    int it = 0; // 迭代计数
     auto table = varsTable;
     int n = table.size(); // 未知量数量
     Vec q(n);             // x向量
@@ -155,7 +154,7 @@ Vec Solve(const std::unordered_map<std::string, double> &varsTable, const SymVec
                 mu *= 10.0; // 扩大λ，使模型倾向梯度下降方向
             }
 
-            if (it++ == max_iterator)
+            if (it++ == GetConfig().maxIterations)
                 goto overIterate;
         }
 
@@ -168,7 +167,7 @@ Vec Solve(const std::unordered_map<std::string, double> &varsTable, const SymVec
 
         F = FNew; // 更新F
 
-        if (it++ == max_iterator)
+        if (it++ == GetConfig().maxIterations)
             goto overIterate;
     }
 
