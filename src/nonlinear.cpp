@@ -63,7 +63,62 @@ double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double u
     return alpha_new;
 }
 
-Vec Solve(const std::unordered_map<std::string, double> &varsTable, const SymVec &equations) {
+Vec SolveByNewtonRaphson(const std::unordered_map<std::string, double> &varsTable, const SymVec &equations) {
+    int it = 0; // 迭代计数
+    auto table = varsTable;
+    int n = table.size(); // 未知量数量
+    Vec q(n);             // x向量
+
+    std::vector<std::string> vars(n);
+    int index = 0;
+    for (auto &pr : table) {
+        vars[index] = pr.first;
+        q[index] = pr.second;
+        ++index;
+    }
+
+    SymMat jaEqs = Jacobian(equations, vars);
+
+    if (GetConfig().logLevel >= LogLevel::TRACE) {
+        cout << "Jacobian = " << jaEqs.ToString() << endl;
+    }
+
+    while (1) {
+        Vec phi = equations.Clone().Subs(table).Calc().ToMat().ToVec();
+        if (GetConfig().logLevel >= LogLevel::TRACE) {
+            cout << "iteration = " << it << endl;
+            cout << "phi = " << phi << endl;
+        }
+
+        if (phi == 0) {
+            break;
+        }
+
+        if (it > GetConfig().maxIterations) {
+            throw runtime_error("迭代次数超出限制");
+        }
+
+        Mat ja = jaEqs.Clone().Subs(table).Calc().ToMat();
+
+        Vec deltaq = SolveLinear(ja, -phi);
+
+        q += deltaq;
+
+        if (GetConfig().logLevel >= LogLevel::TRACE) {
+            cout << "ja = " << ja << endl;
+            cout << "deltaq = " << deltaq << endl;
+            cout << "q = " << q << endl;
+        }
+
+        int i = 0;
+        for (auto &var : vars) {
+            table[var] = q[i++];
+        }
+    }
+    return q;
+}
+
+Vec SolveByLM(const std::unordered_map<std::string, double> &varsTable, const SymVec &equations) {
     int it = 0; // 迭代计数
     auto table = varsTable;
     int n = table.size(); // 未知量数量

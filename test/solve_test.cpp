@@ -67,46 +67,32 @@ TEST(Solve, Base) {
               Var("c") * sin(Var("x1") - Var("x2") - Var("x3"));
     Node f3 = Var("x1") - Var("x2") - Var("x3");
 
-    std::vector<std::string> vars = {"x1", "x2", "x3"};
     SymVec f{Clone(f1), Clone(f2), Clone(f3)};
-    f.Subs({{"a", 0.425}, {"b", 0.39243}, {"c", 0.109}});
-    cout << f.ToString() << endl;
 
+    // 目标位置为：[0.5 0.4 0]
     SymVec b{Num(0.5), Num(0.4), Num(0)};
     SymVec equations = f - b;
+    equations.Subs({{"a", 0.425}, {"b", 0.39243}, {"c", 0.109}});
 
-    SymMat ja = Jacobian(equations, vars);
-    cout << ja.ToString() << endl;
-
-    Vec q{{1, 1, 1}};
+    // 初值表
     std::unordered_map<std::string, double> varsTable = {{"x1", 1}, {"x2", 1}, {"x3", 1}};
 
-    while (1) {
-        Vec phi = equations.Clone().Subs(varsTable).Calc().ToMat().ToVec();
-        cout << "phi = " << phi << endl;
-
-        if (phi == 0) {
-            break;
-        }
-
-        Mat ja0 = ja.Clone().Subs(varsTable).Calc().ToMat();
-        cout << "ja0 = " << ja0 << endl;
-
-        Vec deltaq = SolveLinear(ja0, -phi);
-        cout << "deltaq = " << deltaq << endl;
-
-        q += deltaq;
-
-        int i = 0;
-        for (auto &var : vars) {
-            varsTable[var] = q[i++];
-        }
-    }
-    cout << " x = " << q << endl;
-
-    // Vec ret = Solve(varsTable, equations);
-    // cout << "ret = " << ret << endl;
-
+    // 期望值
     Vec expected{{1.5722855035930956, 1.6360330989069252, -0.0637475947386077}};
-    ASSERT_EQ(q, expected);
+
+    // LM方法
+    {
+        Vec got = SolveByLM(varsTable, equations);
+        cout << "x = " << got << endl;
+
+        ASSERT_EQ(got, expected);
+    }
+
+    // Newton-Raphson方法
+    {
+        Vec got = SolveByNewtonRaphson(varsTable, equations);
+        cout << "x = " << got << endl;
+
+        ASSERT_EQ(got, expected);
+    }
 }

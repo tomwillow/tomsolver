@@ -22,6 +22,13 @@ double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double u
  * 初值及变量名通过varsTable传入。
  * @exception runtime_error 迭代次数超出限制
  */
-Vec Solve(const std::unordered_map<std::string, double> &varsTable, const SymVec &equations);
+Vec SolveByNewtonRaphson(const std::unordered_map<std::string, double> &varsTable, const SymVec &equations);
+
+/**
+ * 解非线性方程组equations。
+ * 初值及变量名通过varsTable传入。
+ * @exception runtime_error 迭代次数超出限制
+ */
+Vec SolveByLM(const std::unordered_map<std::string, double> &varsTable, const SymVec &equations);
 
 } // namespace tomsolver
