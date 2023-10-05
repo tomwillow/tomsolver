@@ -63,21 +63,13 @@ double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double u
     return alpha_new;
 }
 
-Vec SolveByNewtonRaphson(const std::unordered_map<std::string, double> &varsTable, const SymVec &equations) {
+Vec SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations) {
     int it = 0; // 迭代计数
     auto table = varsTable;
-    int n = table.size(); // 未知量数量
-    Vec q(n);             // x向量
+    int n = table.VarNums(); // 未知量数量
+    Vec q(n);                // x向量
 
-    std::vector<std::string> vars(n);
-    int index = 0;
-    for (auto &pr : table) {
-        vars[index] = pr.first;
-        q[index] = pr.second;
-        ++index;
-    }
-
-    SymMat jaEqs = Jacobian(equations, vars);
+    SymMat jaEqs = Jacobian(equations, table.Vars());
 
     if (GetConfig().logLevel >= LogLevel::TRACE) {
         cout << "Jacobian = " << jaEqs.ToString() << endl;
@@ -110,29 +102,20 @@ Vec SolveByNewtonRaphson(const std::unordered_map<std::string, double> &varsTabl
             cout << "q = " << q << endl;
         }
 
-        int i = 0;
-        for (auto &var : vars) {
-            table[var] = q[i++];
-        }
+        table.SetValues(q);
+
+        ++it;
     }
     return q;
 }
 
-Vec SolveByLM(const std::unordered_map<std::string, double> &varsTable, const SymVec &equations) {
+Vec SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
     int it = 0; // 迭代计数
     auto table = varsTable;
-    int n = table.size(); // 未知量数量
-    Vec q(n);             // x向量
+    int n = table.VarNums(); // 未知量数量
+    Vec q = table.Values();  // x向量
 
-    std::vector<std::string> vars(n);
-    int index = 0;
-    for (auto &pr : table) {
-        vars[index] = pr.first;
-        q[index] = pr.second;
-        ++index;
-    }
-
-    SymMat JaEqs = Jacobian(equations, vars);
+    SymMat JaEqs = Jacobian(equations, table.Vars());
     while (1) {
 
         double mu = 1e-5; // LM方法的λ值
@@ -160,17 +143,11 @@ Vec SolveByLM(const std::unordered_map<std::string, double> &varsTable, const Sy
             double alpha = Armijo(
                 q, d,
                 [&](Vec v) -> Vec {
-                    int i = 0;
-                    for (auto &var : vars) {
-                        table[var] = v[i++];
-                    }
+                    table.SetValues(v);
                     return equations.Clone().Subs(table).Calc().ToMat().ToVec();
                 },
                 [&](Vec v) -> Mat {
-                    int i = 0;
-                    for (auto &var : vars) {
-                        table[var] = v[i++];
-                    }
+                    table.SetValues(v);
                     return JaEqs.Clone().Subs(table).Calc().ToMat();
                 }); // 进行1维搜索得到alpha
 
@@ -185,10 +162,7 @@ Vec SolveByLM(const std::unordered_map<std::string, double> &varsTable, const Sy
             deltaq = alpha * d; // 计算Δq
 
             Vec qTemp = q + deltaq;
-            int i = 0;
-            for (auto &var : vars) {
-                table[var] = qTemp[i++];
-            }
+            table.SetValues(qTemp);
 
             FNew = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算新的F
 
@@ -215,10 +189,7 @@ Vec SolveByLM(const std::unordered_map<std::string, double> &varsTable, const Sy
 
         q += deltaq; // 应用Δq，更新q值
 
-        int i = 0;
-        for (auto &var : vars) {
-            table[var] = q[i++];
-        }
+        table.SetValues(q);
 
         F = FNew; // 更新F
 

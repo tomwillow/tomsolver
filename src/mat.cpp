@@ -15,6 +15,9 @@ Mat::Mat(std::size_t row, std::size_t col) noexcept
     assert(col > 0);
 }
 
+Mat::Mat(std::size_t row, std::size_t col, double initValue) noexcept
+    : rows(row), cols(col), data(std::vector<std::vector<double>>(row, std::vector<double>(col, initValue))) {}
+
 Mat::Mat(const std::vector<std::vector<double>> &init) noexcept {
     rows = init.size();
     assert(rows > 0);
@@ -420,10 +423,9 @@ double Det(const Mat &A, std::size_t n) noexcept {
     return D; // 마지막엔 n X n 행렬의 Determinant를 리턴해준다.
 }
 
-Vec::Vec(std::size_t rows) noexcept : Mat(rows, 1) {
-    assert(rows > 0);
-    data.resize(rows, std::vector<double>(1));
-}
+Vec::Vec(std::size_t rows) noexcept : Mat(rows, 1) {}
+
+Vec::Vec(std::size_t rows, double initValue) noexcept: Mat(rows,1, initValue) {}
 
 Vec::Vec(const std::initializer_list<double> &init) noexcept : Vec(init.size()) {
     data.resize(rows, std::vector<double>(1));

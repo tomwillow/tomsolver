@@ -125,4 +125,22 @@ Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues)
     return ret;
 }
 
+Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
+    Node node2 = Clone(node);
+    return Subs(std::move(node2), varsTable);
+}
+
+Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
+    Node ret = std::move(node);
+    std::unordered_map<std::string, Node> dict;
+    for (const auto &pr : varsTable) {
+        dict.insert({pr.first, Num(pr.second)});
+    }
+    internal::SubsFunctions::SubsInner(ret, dict);
+#ifndef NDEBUG
+    ret->CheckParent();
+#endif
+    return ret;
+}
+
 } // namespace tomsolver

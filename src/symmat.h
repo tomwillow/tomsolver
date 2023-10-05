@@ -2,6 +2,7 @@
 
 #include "node.h"
 #include "mat.h"
+#include "vars_table.h"
 
 #include <unordered_map>
 
@@ -48,6 +49,8 @@ public:
     SymMat &Calc();
 
     SymMat &Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
+
+    SymMat &Subs(const VarsTable &varsTable) noexcept;
 
     /**
      * 如果rhs和自己的维数不匹配会触发assert。

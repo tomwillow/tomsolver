@@ -83,6 +83,15 @@ SymMat &SymMat::Subs(const std::unordered_map<std::string, double> &varValues) n
     return *this;
 }
 
+SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
+    for (auto &row : data) {
+        for (auto &node : row) {
+            node = tomsolver::Subs(std::move(node), varsTable);
+        }
+    }
+    return *this;
+}
+
 SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
     assert(rhs.Rows() == Rows() && rhs.Cols() == Cols());
     SymMat ret(Rows(), Cols());

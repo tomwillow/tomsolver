@@ -72,25 +72,25 @@ TEST(Solve, Base) {
     // 目标位置为：[0.5 0.4 0]
     SymVec b{Num(0.5), Num(0.4), Num(0)};
     SymVec equations = f - b;
-    equations.Subs({{"a", 0.425}, {"b", 0.39243}, {"c", 0.109}});
+    equations.Subs(VarsTable{{"a", 0.425}, {"b", 0.39243}, {"c", 0.109}});
 
     // 初值表
-    std::unordered_map<std::string, double> varsTable = {{"x1", 1}, {"x2", 1}, {"x3", 1}};
+    VarsTable varsTable{{"x1", 1}, {"x2", 1}, {"x3", 1}};
 
     // 期望值
     Vec expected{{1.5722855035930956, 1.6360330989069252, -0.0637475947386077}};
 
-    // LM方法
+    // Newton-Raphson方法
     {
-        Vec got = SolveByLM(varsTable, equations);
+        Vec got = SolveByNewtonRaphson(varsTable, equations);
         cout << "x = " << got << endl;
 
         ASSERT_EQ(got, expected);
     }
 
-    // Newton-Raphson方法
+    // LM方法
     {
-        Vec got = SolveByNewtonRaphson(varsTable, equations);
+        Vec got = SolveByLM(varsTable, equations);
         cout << "x = " << got << endl;
 
         ASSERT_EQ(got, expected);
