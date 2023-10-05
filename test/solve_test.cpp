@@ -1,6 +1,7 @@
 #include "nonlinear.h"
 #include "config.h"
 #include "functions.h"
+#include "linear.h"
 
 #include "memory_leak_detection.h"
 
@@ -47,10 +48,19 @@ TEST(Solve, FindAlpha) {
 }
 
 TEST(Solve, Base) {
+    // the example of this test is from: https://zhuanlan.zhihu.com/p/136889381
+
     MemoryLeakDetection mld;
 
     std::setlocale(LC_ALL, ".UTF8");
 
+    /*
+        以一个平面三轴机器人为例，运动学方程为
+            a = 0.425;  b = 0.39243;  c=0.109;
+            y = [   a*cos(x(1)) + b*cos(x(1)-x(2)) + c*cos(x(1)-x(2)-x(3)),
+                    a*sin(x(1)) + b*sin(x(1)-x(2)) + c*sin(x(1)-x(2)-x(3)),
+                    x(1)-x(2)-x(3)    ];
+    */
     Node f1 = Var("a") * cos(Var("x1")) + Var("b") * cos(Var("x1") - Var("x2")) +
               Var("c") * cos(Var("x1") - Var("x2") - Var("x3"));
     Node f2 = Var("a") * sin(Var("x1")) + Var("b") * sin(Var("x1") - Var("x2")) +
@@ -58,30 +68,45 @@ TEST(Solve, Base) {
     Node f3 = Var("x1") - Var("x2") - Var("x3");
 
     std::vector<std::string> vars = {"x1", "x2", "x3"};
-    SymVec equations{Clone(f1), Clone(f2), Clone(f3)};
-    equations.Subs({{"a", 0.425}, {"b", 0.39243}, {"c", 0.109}});
-    cout << equations.ToString() << endl;
+    SymVec f{Clone(f1), Clone(f2), Clone(f3)};
+    f.Subs({{"a", 0.425}, {"b", 0.39243}, {"c", 0.109}});
+    cout << f.ToString() << endl;
 
     SymVec b{Num(0.5), Num(0.4), Num(0)};
-    SymVec n = equations - b;
+    SymVec equations = f - b;
 
-    SymMat ja = Jacobian(n, vars);
+    SymMat ja = Jacobian(equations, vars);
     cout << ja.ToString() << endl;
 
+    Vec q{{1, 1, 1}};
     std::unordered_map<std::string, double> varsTable = {{"x1", 1}, {"x2", 1}, {"x3", 1}};
 
-    Vec n0 = n.Clone().Subs(varsTable).Calc().ToMat().ToVec();
-    cout << "n0 = " << n0 << endl;
+    while (1) {
+        Vec phi = equations.Clone().Subs(varsTable).Calc().ToMat().ToVec();
+        cout << "phi = " << phi << endl;
 
-    Mat ja0 = ja.Clone().Subs(varsTable).Calc().ToMat();
-    cout << "ja0 = " << ja0 << endl;
+        if (phi == 0) {
+            break;
+        }
 
-    // Vec x = SolveLinear(ja0, n0);
-    // cout << "x = " << x << endl;
+        Mat ja0 = ja.Clone().Subs(varsTable).Calc().ToMat();
+        cout << "ja0 = " << ja0 << endl;
 
-    Vec ret = Solve(varsTable, n);
-    cout << "ret = " << ret << endl;
+        Vec deltaq = SolveLinear(ja0, -phi);
+        cout << "deltaq = " << deltaq << endl;
+
+        q += deltaq;
+
+        int i = 0;
+        for (auto &var : vars) {
+            varsTable[var] = q[i++];
+        }
+    }
+    cout << " x = " << q << endl;
+
+    // Vec ret = Solve(varsTable, equations);
+    // cout << "ret = " << ret << endl;
 
     Vec expected{{1.5722855035930956, 1.6360330989069252, -0.0637475947386077}};
-    ASSERT_EQ(ret, expected);
+    ASSERT_EQ(q, expected);
 }
