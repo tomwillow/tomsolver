@@ -40,6 +40,18 @@ int SymMat::Cols() const noexcept {
     return 0;
 }
 
+SymVec SymMat::ToSymVec() const {
+    assert(Rows() > 0);
+    if (Cols() != 1) {
+        throw std::runtime_error("SymMat::ToSymVec fail. rows is not one");
+    }
+    SymVec v(Rows());
+    for (int j = 0; j < Rows(); ++j) {
+        v.data[j][0] = tomsolver::Clone(data[j][0]);
+    }
+    return v;
+}
+
 Mat SymMat::ToMat() const {
     std::vector<std::vector<double>> arr(Rows(), std::vector<double>(Cols()));
     for (int i = 0; i < Rows(); ++i) {
@@ -112,6 +124,8 @@ std::string SymMat::ToString() const noexcept {
     return s;
 }
 
+SymVec::SymVec(int rows) noexcept : SymMat(rows, 1) {}
+
 SymVec::SymVec(const std::initializer_list<Node> &lst) noexcept : SymMat(static_cast<int>(lst.size()), 1) {
     for (auto it = lst.begin(); it != lst.end(); ++it) {
         auto &node = const_cast<Node &>(*it);
@@ -119,9 +133,9 @@ SymVec::SymVec(const std::initializer_list<Node> &lst) noexcept : SymMat(static_
     }
 }
 
-// SymVec SymVec::operator-(const SymVec &rhs) const noexcept {
-//    return SymVec({});
-//}
+SymVec SymVec::operator-(const SymVec &rhs) const noexcept {
+    return SymMat::operator-(rhs).ToSymVec();
+}
 
 Node &SymVec::operator[](std::size_t index) noexcept {
     return data[index][0];

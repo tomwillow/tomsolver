@@ -122,7 +122,7 @@ Mat Mat::operator*(const Mat &b) const noexcept {
     Mat ans(rows, b.cols);
     for (std::size_t i = 0; i < rows; ++i) {
         double sum = 0;
-        for (std::size_t j = 0; j < cols; ++j) {
+        for (std::size_t j = 0; j < b.cols; ++j) {
             for (std::size_t k = 0; k < cols; ++k) {
                 sum += data[i][k] * b[k][j];
             }
@@ -265,11 +265,10 @@ bool Mat::PositiveDetermine() const noexcept {
 }
 
 Mat Mat::Transpose() const noexcept {
-    assert(rows == cols);
-    Mat ans(*this);
+    Mat ans(cols, rows);
     for (std::size_t i = 0; i < rows; ++i)
         for (std::size_t j = 0; j < cols; ++j) {
-            ans[i][j] = data[j][i];
+            ans[j][i] = data[i][j];
         }
     return ans;
 }
@@ -431,6 +430,10 @@ Vec::Vec(const std::initializer_list<double> &init) noexcept : Vec(init.size()) 
     std::size_t i = 0;
     for (auto v : init)
         data[i++][0] = v;
+}
+
+Mat &Vec::AsMat() noexcept {
+    return *this;
 }
 
 void Vec::Resize(std::size_t newRows) noexcept {

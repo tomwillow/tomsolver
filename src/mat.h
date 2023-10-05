@@ -34,7 +34,7 @@ class Vec;
 
 class Mat {
 public:
-    Mat(std::size_t row, std::size_t col) noexcept;
+    explicit Mat(std::size_t row, std::size_t col) noexcept;
 
     Mat(const std::vector<std::vector<double>> &init) noexcept;
     Mat(std::vector<std::vector<double>> &&init) noexcept;
@@ -143,9 +143,11 @@ double Det(const Mat &A, std::size_t n) noexcept;
 
 class Vec : public Mat {
 public:
-    Vec(std::size_t rows) noexcept;
+    explicit Vec(std::size_t rows) noexcept;
 
     Vec(const std::initializer_list<double> &init) noexcept;
+
+    Mat &AsMat() noexcept;
 
     void Resize(std::size_t newRows) noexcept;
 

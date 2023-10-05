@@ -29,6 +29,12 @@ public:
     int Cols() const noexcept;
 
     /**
+     * 输出Vec。如果列数不为1，抛出异常。
+     * @exception runtime_error 列数不为1
+     */
+    SymVec ToSymVec() const;
+
+    /**
      * 得到数值矩阵。前提条件是矩阵内的元素均为数值节点，否则抛出异常。
      * @exception runtime_error 存在非数值节点
      */
@@ -59,6 +65,11 @@ protected:
 class SymVec : public SymMat {
 public:
     /**
+     *
+     */
+    SymVec(int rows) noexcept;
+
+    /**
      * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
      */
     SymVec(const std::initializer_list<Node> &lst) noexcept;
@@ -66,7 +77,7 @@ public:
     /**
      * 如果rhs和自己的维数不匹配会触发assert。
      */
-    // SymVec operator-(const SymVec &rhs) const noexcept;
+    SymVec operator-(const SymVec &rhs) const noexcept;
 
     Node &operator[](std::size_t index) noexcept;
 
