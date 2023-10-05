@@ -89,6 +89,7 @@ Config::Config() {
 void Config::Reset() noexcept {
     throwOnInvalidValue = true;
     epsilon = 1.0e-9;
+    logLevel = LogLevel::WARN;
 }
 
 const char *Config::GetDoubleFormatStr() const noexcept {

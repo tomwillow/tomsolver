@@ -3,6 +3,8 @@
 
 namespace tomsolver {
 
+enum class LogLevel { OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL };
+
 struct Config {
     /**
      * 指定出现浮点数无效值(inf, -inf, nan)时，是否抛出异常。默认为true。
@@ -10,6 +12,8 @@ struct Config {
     bool throwOnInvalidValue = true;
 
     double epsilon = 1.0e-9;
+
+    LogLevel logLevel = LogLevel::WARN;
 
     Config();
 

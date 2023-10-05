@@ -69,7 +69,6 @@ Vec Solve(const std::unordered_map<std::string, double> &varsTable, const SymVec
     auto table = varsTable;
     int n = table.size(); // 未知量数量
     Vec q(n);             // x向量
-    bool doPrint = true;
 
     std::vector<std::string> vars(n);
     int index = 0;
@@ -139,7 +138,7 @@ Vec Solve(const std::unordered_map<std::string, double> &varsTable, const SymVec
 
             FNew = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算新的F
 
-            if (doPrint) {
+            if (GetConfig().logLevel >= LogLevel::TRACE) {
                 cout << "it=" << it << endl;
                 cout << "\talpha=" << alpha << endl;
                 cout << "mu=" << mu << endl;
@@ -174,7 +173,7 @@ Vec Solve(const std::unordered_map<std::string, double> &varsTable, const SymVec
     }
 
 success:
-    if (doPrint) {
+    if (GetConfig().logLevel >= LogLevel::TRACE) {
         cout << "success" << endl;
     }
     return q;
