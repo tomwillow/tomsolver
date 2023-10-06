@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <iostream>
 
 namespace tomsolver {
 
@@ -63,10 +64,14 @@ public:
         return table.cend();
     }
 
+    bool operator==(const VarsTable &rhs) const noexcept;
+
 private:
     std::vector<std::string> vars;
     Vec values;
     std::unordered_map<std::string, double> table;
 };
+
+std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept;
 
 } // namespace tomsolver

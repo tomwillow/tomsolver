@@ -53,4 +53,21 @@ void VarsTable::SetValues(const Vec &v) noexcept {
     }
 }
 
+bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
+    int len = values.Rows();
+    if (values.Rows() != rhs.values.Rows()) {
+        return false;
+    }
+
+    // 这里会自动使用浮点数比较
+    return values == rhs.values;
+}
+
+std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
+    for (auto &pr : table) {
+        out << pr.first << " = " << pr.second << std::endl;
+    }
+    return out;
+}
+
 } // namespace tomsolver

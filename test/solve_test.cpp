@@ -78,11 +78,11 @@ TEST(Solve, Base) {
     VarsTable varsTable{{"x1", 1}, {"x2", 1}, {"x3", 1}};
 
     // 期望值
-    Vec expected{{1.5722855035930956, 1.6360330989069252, -0.0637475947386077}};
+    VarsTable expected{{"x1", 1.5722855035930956}, {"x2", 1.6360330989069252}, {"x3", -0.0637475947386077}};
 
     // Newton-Raphson方法
     {
-        Vec got = SolveByNewtonRaphson(varsTable, equations);
+        VarsTable got = SolveByNewtonRaphson(varsTable, equations);
         cout << "x = " << got << endl;
 
         ASSERT_EQ(got, expected);
@@ -90,7 +90,7 @@ TEST(Solve, Base) {
 
     // LM方法
     {
-        Vec got = SolveByLM(varsTable, equations);
+        VarsTable got = SolveByLM(varsTable, equations);
         cout << "x = " << got << endl;
 
         ASSERT_EQ(got, expected);

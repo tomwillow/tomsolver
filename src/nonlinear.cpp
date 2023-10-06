@@ -63,9 +63,9 @@ double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double u
     return alpha_new;
 }
 
-Vec SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations) {
+VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations) {
     int it = 0; // 迭代计数
-    auto table = varsTable;
+    VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
     Vec q(n);                // x向量
 
@@ -106,12 +106,12 @@ Vec SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations) {
 
         ++it;
     }
-    return q;
+    return table;
 }
 
-Vec SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
+VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
     int it = 0; // 迭代计数
-    auto table = varsTable;
+    VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
     Vec q = table.Values();  // x向量
 
@@ -201,7 +201,7 @@ success:
     if (GetConfig().logLevel >= LogLevel::TRACE) {
         cout << "success" << endl;
     }
-    return q;
+    return table;
 
 overIterate:
     throw runtime_error("迭代次数超出限制");
