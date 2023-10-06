@@ -12,8 +12,8 @@ namespace tomsolver {
 
 inline ParseError::ParseError(int line, int pos, const std::string &content, const std::string &errInfo)
     : std::runtime_error(""), line(line), pos(pos), content(content), errInfo(errInfo) {
-    whatStr = "[Parse Error] " + errInfo + " at(" + to_string(line) + ", " + to_string(pos) + "):\n ";
-    whatStr += content;
+    whatStr = "[Parse Error] " + errInfo + " at(" + to_string(line) + ", " + to_string(pos) + "):\n";
+    whatStr += content + "\n";
     whatStr += string(pos, ' ') + "^---- error position";
 }
 
@@ -133,10 +133,11 @@ std::vector<Token> SplitRough(const std::string &expression) {
     std::string temp;
     for (int i = 0; i < static_cast<int>(expression.size()); ++i) {
         char c = expression[i];
-        ////字符合法性检查
-        // if (!isLegal(c)) {
-        //    throw MathError{ErrorType::ERROR_ILLEGALCHAR, std::string("WRONG CHAR:") + ToString(c)};
-        //}
+
+        // 忽略tab (\t) whitespaces (\n, \v, \f, \r) space
+        if (isspace(c)) {
+            continue;
+        }
 
         if (!IsBaseOperator(c)) {
             tempBeg = i;
@@ -204,7 +205,7 @@ std::vector<Node> ParseToTokens(const std::string &expression) {
         //非运算符、数字、函数
         if (!VarNameIsLegal(s)) //变量名首字符需为下划线或字母
         {
-            throw ParseError(token.line, token.pos, expression, "Invalid variable name: " + s);
+            throw ParseError(token.line, token.pos, expression, "Invalid variable name: \"" + s + "\"");
         }
 
         ret.push_back(Var(s));
