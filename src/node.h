@@ -124,6 +124,8 @@ private:
      */
     void Release() noexcept;
 
+    friend std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node &&right) noexcept;
+
     friend std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
     friend std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
 
@@ -182,6 +184,11 @@ std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noex
     CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
     return ret;
 }
+
+/**
+ * 新建一个运算符节点。
+ */
+std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left = nullptr, Node &&right = nullptr) noexcept;
 
 } // namespace internal
 

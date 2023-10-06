@@ -586,6 +586,19 @@ std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::Node
     return out;
 }
 
+std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node &&right) noexcept {
+    auto ret = std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
+    if (left) {
+        left->parent = ret.get();
+        ret->left = std::move(left);
+    }
+    if (right) {
+        right->parent = ret.get();
+        ret->right = std::move(right);
+    }
+    return ret;
+}
+
 } // namespace internal
 
 Node Clone(const Node &rhs) noexcept {
