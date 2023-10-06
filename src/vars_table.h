@@ -9,6 +9,10 @@
 
 namespace tomsolver {
 
+/**
+ * 变量表。
+ * 内部保存了多个变量名及其数值的对应关系。
+ */
 class VarsTable {
 public:
     /**
@@ -32,37 +36,33 @@ public:
      */
     explicit VarsTable(const std::unordered_map<std::string, double> &table) noexcept;
 
+    /**
+     * 变量数量。
+     */
     int VarNums() const noexcept;
 
+    /**
+     * 返回std::vector容器包装的变量名数组。
+     */
     const std::vector<std::string> &Vars() const noexcept;
 
+    /**
+     * 返回所有变量名对应的值的数值向量。
+     */
     const Vec &Values() const noexcept;
 
+    /**
+     * 设置数值向量。
+     */
     void SetValues(const Vec &v) noexcept;
 
-    std::unordered_map<std::string, double>::iterator begin() noexcept {
-        return table.begin();
-    }
+    std::unordered_map<std::string, double>::const_iterator begin() const noexcept;
 
-    std::unordered_map<std::string, double>::iterator end() noexcept {
-        return table.end();
-    }
+    std::unordered_map<std::string, double>::const_iterator end() const noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator begin() const noexcept {
-        return table.begin();
-    }
+    std::unordered_map<std::string, double>::const_iterator cbegin() const noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator end() const noexcept {
-        return table.end();
-    }
-
-    std::unordered_map<std::string, double>::const_iterator cbegin() const noexcept {
-        return table.cbegin();
-    }
-
-    std::unordered_map<std::string, double>::const_iterator cend() const noexcept {
-        return table.cend();
-    }
+    std::unordered_map<std::string, double>::const_iterator cend() const noexcept;
 
     bool operator==(const VarsTable &rhs) const noexcept;
 

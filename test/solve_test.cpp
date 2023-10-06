@@ -29,6 +29,8 @@ TEST(Solve, FindAlphaByArmijo) {
     Vec d = -Vec{0, -2, 1024};
     double alpha = Armijo(x, d, g, dg);
     cout << alpha << endl;
+
+    // FIXME: not match got results
     double expected = 0.003866;
 }
 
@@ -83,7 +85,7 @@ TEST(Solve, Base) {
     // Newton-Raphson方法
     {
         VarsTable got = SolveByNewtonRaphson(varsTable, equations);
-        cout << "x = " << got << endl;
+        cout << got << endl;
 
         ASSERT_EQ(got, expected);
     }
@@ -91,7 +93,7 @@ TEST(Solve, Base) {
     // LM方法
     {
         VarsTable got = SolveByLM(varsTable, equations);
-        cout << "x = " << got << endl;
+        cout << got << endl;
 
         ASSERT_EQ(got, expected);
     }

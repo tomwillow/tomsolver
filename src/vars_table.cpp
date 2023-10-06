@@ -1,5 +1,7 @@
 #include "vars_table.h"
 
+#include "config.h"
+
 #include <cassert>
 
 namespace tomsolver {
@@ -53,6 +55,22 @@ void VarsTable::SetValues(const Vec &v) noexcept {
     }
 }
 
+std::unordered_map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
+    return table.begin();
+}
+
+std::unordered_map<std::string, double>::const_iterator VarsTable::end() const noexcept {
+    return table.end();
+}
+
+std::unordered_map<std::string, double>::const_iterator VarsTable::cbegin() const noexcept {
+    return table.cbegin();
+}
+
+std::unordered_map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
+    return table.cend();
+}
+
 bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
     int len = values.Rows();
     if (values.Rows() != rhs.values.Rows()) {
@@ -65,7 +83,7 @@ bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
 
 std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
     for (auto &pr : table) {
-        out << pr.first << " = " << pr.second << std::endl;
+        out << pr.first << " = " << tomsolver::ToString(pr.second) << std::endl;
     }
     return out;
 }
