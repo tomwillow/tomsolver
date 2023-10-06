@@ -41,7 +41,7 @@ double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double u
 
     Vec g_cur = f(x + alpha_cur * d);
 
-    while (abs(alpha_new - alpha_cur) > alpha_cur * uncert) {
+    while (std::abs(alpha_new - alpha_cur) > alpha_cur * uncert) {
         double alpha_old = alpha_cur;
         alpha_cur = alpha_new;
         Vec g_old = g_cur;

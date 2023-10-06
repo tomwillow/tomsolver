@@ -206,7 +206,7 @@ bool InAssociativeLaws(MathOperator eOperator) noexcept {
 
 bool IsIntAndEven(double n) noexcept {
     long long i = (long long)n;
-    if (abs(n - i) <= eps)
+    if (std::abs(n - i) <= eps)
         if (i % 2 == 0)
             return true;
     return false;

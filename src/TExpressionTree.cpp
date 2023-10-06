@@ -293,7 +293,7 @@
 //	switch (node.eType)
 //	{
 //	case NODE_NUMBER:
-//		if (abs(node.value - (long long)node.value) < MIN_DOUBLE)
+//		if (std::abs(node.value - (long long)node.value) < MIN_DOUBLE)
 //			return ToString((long long)node.value);
 //		else
 //			return ToString(node.value);
@@ -421,8 +421,8 @@
 //	//OutputStr();
 //	if (GetOperateNum(now->eOperator) == 1)
 //	{
-//		bool ChildIs0 = (now->left->eType == NODE_NUMBER && abs(now->left->value) < MIN_DOUBLE);
-//		bool ChildIs1 = (now->left->eType == NODE_NUMBER && abs(now->left->value - 1) < MIN_DOUBLE);
+//		bool ChildIs0 = (now->left->eType == NODE_NUMBER && std::abs(now->left->value) < MIN_DOUBLE);
+//		bool ChildIs1 = (now->left->eType == NODE_NUMBER && std::abs(now->left->value - 1) < MIN_DOUBLE);
 //
 //		//sin(0)=0
 //		if (now->eOperator == MATH_SIN && ChildIs0)
@@ -454,10 +454,10 @@
 //	{
 //		//下列每种情况必须互斥，因为每个情况都有返回值，涉及删除操作，若不返回连续执行将导致指针出错
 //		//不检查左右儿子是否存在，因为此处本身就是2元运算符
-//		bool LChildIs0 = (now->left->eType == NODE_NUMBER && abs(now->left->value) < MIN_DOUBLE);
-//		bool RChildIs0 = (now->right->eType == NODE_NUMBER && abs(now->right->value) < MIN_DOUBLE);
-//		bool LChildIs1 = (now->left->eType == NODE_NUMBER && abs(now->left->value - 1) < MIN_DOUBLE);
-//		bool RChildIs1 = (now->right->eType == NODE_NUMBER && abs(now->right->value - 1) < MIN_DOUBLE);
+//		bool LChildIs0 = (now->left->eType == NODE_NUMBER && std::abs(now->left->value) < MIN_DOUBLE);
+//		bool RChildIs0 = (now->right->eType == NODE_NUMBER && std::abs(now->right->value) < MIN_DOUBLE);
+//		bool LChildIs1 = (now->left->eType == NODE_NUMBER && std::abs(now->left->value - 1) < MIN_DOUBLE);
+//		bool RChildIs1 = (now->right->eType == NODE_NUMBER && std::abs(now->right->value - 1) < MIN_DOUBLE);
 //
 //		//被除数为0
 //		if (now->eOperator == MATH_DIVIDE && RChildIs0)

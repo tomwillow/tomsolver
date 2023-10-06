@@ -11,8 +11,8 @@ int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) {
     double max = 0.0;
     int index = rowStart;
     for (int i = rowStart; i <= rowEnd; i++) {
-        if (abs(A[i][col]) > max) {
-            max = abs(A[i][col]);
+        if (std::abs(A[i][col]) > max) {
+            max = std::abs(A[i][col]);
             index = i;
         }
     }
@@ -60,7 +60,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         A.SwapRow(y, maxAbsRowIndex);
         b.SwapRow(y, maxAbsRowIndex);
 
-        while (abs(A[y][x]) < GetConfig().epsilon) //如果当前值为0  x一直递增到非0
+        while (std::abs(A[y][x]) < GetConfig().epsilon) //如果当前值为0  x一直递增到非0
         {
             x++;
             if (x == cols)
@@ -79,7 +79,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         if (x == cols) //本行全为0
         {
             RankA = y;
-            if (abs(b[y]) < GetConfig().epsilon)
+            if (std::abs(b[y]) < GetConfig().epsilon)
                 RankAb = y;
 
             if (RankA != RankAb) //奇异，且系数矩阵及增广矩阵秩不相等->无解
@@ -97,7 +97,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         //每行化为0
         for (decltype(rows) row = y + 1; row < rows; row++) //下1行->最后1行
         {
-            if (abs(A[row][x]) < GetConfig().epsilon)
+            if (std::abs(A[row][x]) < GetConfig().epsilon)
                 ;
             else {
                 double mi = A[row][x];

@@ -55,7 +55,7 @@ const std::vector<double> &Mat::operator[](std::size_t i) const noexcept {
 bool Mat::operator==(double m) const noexcept {
     for (auto &vec : data)
         for (auto &val : vec) {
-            if (abs(val - m) >= GetConfig().epsilon)
+            if (std::abs(val - m) >= GetConfig().epsilon)
                 return false;
         }
     return true;
@@ -66,7 +66,7 @@ bool Mat::operator==(const Mat &b) const noexcept {
     assert(cols == b.cols);
     for (std::size_t i = 0; i < rows; ++i)
         for (std::size_t j = 0; j < cols; ++j)
-            if (abs(data[i][j] - b[i][j]) > GetConfig().epsilon)
+            if (std::abs(data[i][j] - b[i][j]) > GetConfig().epsilon)
                 return false;
     return true;
 }
@@ -234,7 +234,7 @@ double Mat::NormInfinity() const noexcept {
     double ans = data[0][0];
     for (auto &vec : data)
         for (auto val : vec)
-            ans = std::max(ans, abs(val));
+            ans = std::max(ans, std::abs(val));
     return ans;
 }
 
@@ -242,7 +242,7 @@ double Mat::NormNegInfinity() const noexcept {
     double ans = data[0][0];
     for (auto &vec : data)
         for (auto val : vec)
-            ans = std::min(ans, abs(val));
+            ans = std::min(ans, std::abs(val));
     return ans;
 }
 
@@ -344,8 +344,8 @@ std::size_t GetMaxAbsRowIndex(const Mat &A, std::size_t RowStart, std::size_t Ro
     double max = 0.0;
     std::size_t index = RowStart;
     for (std::size_t i = RowStart; i <= RowEnd; i++) {
-        if (abs(A[i][Col]) > max) {
-            max = abs(A[i][Col]);
+        if (std::abs(A[i][Col]) > max) {
+            max = std::abs(A[i][Col]);
             index = i;
         }
     }
