@@ -143,6 +143,8 @@ private:
     friend class tomsolver::SymMat;
     friend class DiffFunctions;
     friend class SubsFunctions;
+
+    friend std::vector<Node> ParseToTokens(const std::string &expression);
 };
 
 std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;

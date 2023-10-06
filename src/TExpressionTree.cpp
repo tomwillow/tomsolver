@@ -140,99 +140,7 @@
 //}
 //
 //
-///* 是基本运算符()+-* /^&|% */
-// bool TExpressionTree::isBaseOperator(char c)
-//{
-//	switch (c)
-//	{
-//	case '(':
-//	case ')':
-//	case '+':
-//	case '-':
-//	case '*':
-//	case '/':
-//	case '^':
-//	case '&':
-//	case '|':
-//	case '%':return true;
-//	}
-//	return false;
-//}
 //
-// TExpressionTree::enumMathOperator TExpressionTree::Str2Function(std::string s)
-//{
-//	if (s == "sin")
-//	{
-//		return MATH_SIN;
-//	}
-//        if (s == "cos")
-//	{
-//		return MATH_COS;
-//	}
-//        if (s == "tan")
-//	{
-//		return MATH_TAN;
-//	}
-//        if (s == "arcsin")
-//	{
-//		return MATH_ARCSIN;
-//	}
-//        if (s == "arccos")
-//	{
-//		return MATH_ARCCOS;
-//	}
-//        if (s == "arctan")
-//	{
-//		return MATH_ARCTAN;
-//	}
-//        if (s == "sqrt")
-//	{
-//		return MATH_SQRT;
-//	}
-//        if (s == "ln")
-//	{
-//		return MATH_LOG;
-//	}
-//        if (s == "log10")
-//	{
-//		return MATH_LOG10;
-//	}
-//        if (s == "exp")
-//	{
-//		return MATH_EXP;
-//	}
-//	return MATH_NULL;
-//}
-//
-//
-///*  */
-// TExpressionTree::enumMathOperator TExpressionTree::BaseOperatorCharToEnum(char c) {
-//	switch (c)
-//	{
-//	case '(':
-//		return MATH_LEFT_PARENTHESIS;
-//	case ')':
-//		return MATH_RIGHT_PARENTHESIS;
-//	case '+':
-//		return MATH_ADD;
-//	case '-':
-//		return MATH_SUB;
-//	case '*':
-//		return MATH_MULTIPLY;
-//	case '/':
-//		return MATH_DIVIDE;
-//	case '^':
-//		return MATH_POWER;
-//	case '&':
-//		return MATH_AND;
-//	case '|':
-//		return MATH_OR;
-//	case '%':
-//		return MATH_MOD;
-//	default:
-//		return MATH_NULL;
-//	}
-//}
 ///*  */
 // std::string TExpressionTree::EnumOperatorToTChar(TExpressionTree::enumMathOperator eOperator)
 //{
@@ -268,14 +176,6 @@
 //}
 //
 //
-//
-///* 字符是0-9或. */
-// bool TExpressionTree::isDoubleChar(char c) {
-//	if ((c >= '0' && c <= '9') || c == '.')
-//		return true;
-//	else
-//		return false;
-//}
 //
 //
 ///*由in order队列得到post order队列*/
@@ -352,7 +252,8 @@
 //					else//不是括号也不是正负号
 //					{
 //						if (temp.size() > 0 && isLeft2Right(temp.top()->eOperator) ==
-// true)//左结合 							while (temp.size() > 0 && Rank(InOrder.front()->eOperator)
+// true)//左结合 							while (temp.size() > 0 &&
+// Rank(InOrder.front()->eOperator)
 // <= Rank(temp.top()->eOperator))//临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
 //							{
 //								PostOrder.push_back(temp.top());//符号进入post队列
@@ -442,198 +343,6 @@
 //	return temp;
 //}
 //
-// void TExpressionTree::ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder)
-//{
-//	if (expression.empty())
-//	{
-//		throw MathError{ ErrorType::ERROR_EMPTY_INPUT, expression };
-//		return;
-//	}
-//	Replace(expression, " ", "");
-//	Replace(expression, "\t", "");
-//	Replace(expression, "\r", "");
-//	Replace(expression, "\n", "");
-//
-//	//过滤掉所有多余的加减
-//	Replace(expression, "--", "+");
-//	Replace(expression, "+-", "-");
-//	Replace(expression, "-+", "-");
-//
-//	//字符合法性检查
-//	for (auto c : expression)
-//		if (!isLegal(c))
-//		{
-//			throw MathError{ ErrorType::ERROR_ILLEGALCHAR, std::string("WRONG CHAR:") + ToString(c) };
-//		}
-//
-//	//粗切分：利用operator切分
-//	struct TStrPiece
-//	{
-//		bool bBaseOperator;
-//		std::string s;
-//		TStrPiece(bool bIn, std::string sIn) :bBaseOperator(bIn), s(sIn) {}
-//	};
-//	std::vector<TStrPiece> Data;
-//
-//	std::string temp;
-//	for (auto c : expression)
-//	{
-//		if (!isBaseOperator(c))
-//		{
-//			temp.push_back(c);
-//		}
-//		else
-//		{
-//			if (!temp.empty())
-//			{
-//				Data.emplace_back(false, temp);
-//				temp.clear();
-//			}
-//			Data.emplace_back(true, std::string{ c });
-//		}
-//	}
-//	if (!temp.empty())
-//	{
-//		Data.emplace_back(false, temp);
-//		temp.clear();
-//	}
-//
-//
-//	//二次切分：切分出4类元素
-//	//并送入Pre In order
-//	std::vector<TNode *> PreInOrder;
-//	TNode *tempNode;
-//	//string tempTChar;
-//	enumMathOperator tempeOperator;
-//	for (size_t i = 0; i < Data.size(); i++)
-//	{
-//		if (Data[i].bBaseOperator)//识别出基本运算符（括号也在其中）
-//		{
-//			tempNode = new TNode;
-//			tempNode->eType = NODE_OPERATOR;
-//			tempNode->eOperator = BaseOperatorCharToEnum(Data[i].s[0]);
-//			PreInOrder.push_back(tempNode);
-//		}
-//		else//
-//		{
-//			//逐位检验是否为数字
-//			bool isDouble = true;
-//			for (auto c : Data[i].s)
-//				if (isDoubleChar(c) == false)
-//				{
-//					isDouble = false;
-//					break;
-//				}
-//
-//			if (isDouble)//数字
-//			{
-//				tempNode = new TNode;
-//				tempNode->eType = NODE_NUMBER;
-//				tempNode->value = std::stod(Data[i].s);
-//				PreInOrder.push_back(tempNode);
-//			}
-//			else
-//			{
-//				if ((tempeOperator = Str2Function(Data[i].s)) != MATH_NULL)//识别出函数
-//				{
-//					tempNode = new TNode;
-//					tempNode->eType = NODE_FUNCTION;
-//					tempNode->eOperator = tempeOperator;
-//					PreInOrder.push_back(tempNode);
-//				}
-//				else//变量
-//				{
-//					//非运算符、数字、函数
-//
-//					if (pVariableTable == NULL)
-//					{
-//						ReleaseVectorTNode(PreInOrder);
-//						throw MathError{ ErrorType::ERROR_NOT_LINK_VARIABLETABLE, "" };
-//						return;
-//					}
-//					if (!IsCharAlpha(Data[i].s[0]) && Data[i].s[0] !=
-//'_')//变量名首字符需为下划线或字母
-//					{
-//						ReleaseVectorTNode(PreInOrder);
-//						throw MathError{ ErrorType::ERROR_INVALID_VARNAME, Data[i].s };
-//						return;
-//					}
-//
-//
-//					//
-//					if (pVariableTable->FindVariableTable(Data[i].s) ==
-// pVariableTable->VariableTable.end())
-//					{
-//						ReleaseVectorTNode(PreInOrder);
-//						throw MathError{ ErrorType::ERROR_UNDEFINED_VARIABLE, Data[i].s };
-//						return;
-//					}
-//
-//					tempNode = new TNode;
-//					tempNode->eType = NODE_VARIABLE;
-//					tempNode->varname = Data[i].s;
-//					PreInOrder.push_back(tempNode);
-//
-//					////得到自身的变量表 以解方程
-//					//if (SelfVariableTable.FindVariableTable(tempTChar) == NULL)
-//					//{
-//					//	SelfVariableTable.VariableTable.push_back(tempTChar);
-//					//
-// SelfVariableTable.VariableValue.push_back(pVariableTable->GetValueFromVarPoint(tempTChar));
-//					//}
-//					iVarAppearedCount++;
-//					LastVarNode = tempNode;
-//
-//				}
-//			}
-//		}
-//	}
-//	//此时4大元素均已切分入PreInOrder
-//
-//	//识别取正运算符与取负运算符
-//	bool bFirstOrParenFirst = false;
-//	bool bAferOneOperator = false;
-//	size_t i = 0;
-//	if (PreInOrder[0]->eOperator == MATH_ADD)
-//	{
-//		PreInOrder[0]->eOperator = MATH_POSITIVE;
-//		i++;
-//	}
-//	if (PreInOrder[0]->eOperator == MATH_SUB)
-//	{
-//		PreInOrder[0]->eOperator = MATH_NEGATIVE;
-//		i++;
-//	}
-//	for (; i < PreInOrder.size();)
-//	{
-//		if (PreInOrder[i]->eType == NODE_OPERATOR && PreInOrder[i]->eOperator != MATH_RIGHT_PARENTHESIS)
-//		{
-//			if (i + 1 < PreInOrder.size())
-//				i++;
-//			else
-//				break;
-//			if (PreInOrder[i]->eOperator == MATH_ADD)
-//			{
-//				PreInOrder[i]->eOperator = MATH_POSITIVE;
-//				i++;
-//				continue;
-//			}
-//			if (PreInOrder[i]->eOperator == MATH_SUB)
-//			{
-//				PreInOrder[i]->eOperator = MATH_NEGATIVE;
-//				i++;
-//				continue;
-//			}
-//		}
-//		else
-//			i++;
-//	}
-//
-//	for (auto pNode : PreInOrder)
-//	{
-//		InOrder.push(pNode);
-//	}
-//}
 //
 //
 //
@@ -973,9 +682,9 @@
 //					if (VarsPos[j] != head)
 //					{
 //						if (VarsPos[j]->parent->left != NULL && VarsPos[j]->parent->left ==
-// VarsPos[j]) 							VarsPos[j]->parent->left = newNode; 						if
-// (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right == VarsPos[j])
-// VarsPos[j]->parent->right = newNode; 						newNode->parent = VarsPos[j]->parent;
+// VarsPos[j]) 							VarsPos[j]->parent->left = newNode;
+// if (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right == VarsPos[j]) VarsPos[j]->parent->right =
+// newNode; 						newNode->parent = VarsPos[j]->parent;
 //					}
 //					else
 //						head = newNode;
@@ -1049,9 +758,9 @@
 //					if (VarsPos[j] != head)
 //					{
 //						if (VarsPos[j]->parent->left != NULL && VarsPos[j]->parent->left ==
-// VarsPos[j]) 							VarsPos[j]->parent->left = newNode; 						if
-// (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right == VarsPos[j])
-// VarsPos[j]->parent->right = newNode; 						newNode->parent = VarsPos[j]->parent;
+// VarsPos[j]) 							VarsPos[j]->parent->left = newNode;
+// if (VarsPos[j]->parent->right != NULL && VarsPos[j]->parent->right == VarsPos[j]) VarsPos[j]->parent->right =
+// newNode; 						newNode->parent = VarsPos[j]->parent;
 //					}
 //					else
 //						head = newNode;
