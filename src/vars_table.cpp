@@ -7,7 +7,7 @@
 namespace tomsolver {
 
 VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
-    : vars(vars), values(vars.size(), initValue) {
+    : vars(vars), values(static_cast<int>(vars.size()), initValue) {
     for (auto &var : vars) {
         table[var] = initValue;
     }
@@ -15,7 +15,7 @@ VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
 }
 
 VarsTable::VarsTable(const std::initializer_list<std::pair<std::string, double>> &initList)
-    : table(initList.begin(), initList.end()), values(initList.size()), vars(initList.size()) {
+    : table(initList.begin(), initList.end()), values(static_cast<int>(initList.size())), vars(initList.size()) {
     int i = 0;
     for (auto &pr : initList) {
         vars[i] = pr.first;
@@ -26,7 +26,7 @@ VarsTable::VarsTable(const std::initializer_list<std::pair<std::string, double>>
 }
 
 VarsTable::VarsTable(const std::unordered_map<std::string, double> &table) noexcept
-    : table(table), values(table.size()), vars(table.size()) {
+    : table(table), values(static_cast<int>(table.size())), vars(table.size()) {
     int i = 0;
     for (auto &pr : table) {
         vars[i] = pr.first;
@@ -36,7 +36,7 @@ VarsTable::VarsTable(const std::unordered_map<std::string, double> &table) noexc
 }
 
 int VarsTable::VarNums() const noexcept {
-    return table.size();
+    return static_cast<int>(table.size());
 }
 
 const std::vector<std::string> &VarsTable::Vars() const noexcept {
@@ -72,7 +72,6 @@ std::unordered_map<std::string, double>::const_iterator VarsTable::cend() const 
 }
 
 bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
-    int len = values.Rows();
     if (values.Rows() != rhs.values.Rows()) {
         return false;
     }

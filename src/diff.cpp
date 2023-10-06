@@ -30,7 +30,7 @@ public:
                 f->value = 0;
                 break;
             case NodeType::OPERATOR:
-                DiffOnceOperator(root, f, varname, q);
+                DiffOnceOperator(root, f, q);
                 break;
             default:
                 assert(0);
@@ -38,8 +38,7 @@ public:
         }
     }
 
-    static void DiffOnceOperator(std::unique_ptr<NodeImpl> &root, NodeImpl *&node, const std::string &varname,
-                                 std::queue<NodeImpl *> &q) noexcept {
+    static void DiffOnceOperator(std::unique_ptr<NodeImpl> &root, NodeImpl *&node, std::queue<NodeImpl *> &q) noexcept {
         // 调用前提：node是1元操作符
         // 如果node的成员是数字，那么整个node变为数字节点，value=0，且返回true
         // 例如： sin(1)' = 0

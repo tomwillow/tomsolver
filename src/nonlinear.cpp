@@ -12,7 +12,7 @@ using std::runtime_error;
 
 namespace tomsolver {
 
-double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::function<Mat(Vec)> df, double uncert) {
+double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::function<Mat(Vec)> df) {
     double alpha = 1;   // a > 0
     double gamma = 0.4; // 取值范围(0, 0.5)越大越快
     double sigma = 0.5; // 取值范围(0, 1)越大越慢

@@ -76,7 +76,6 @@ TEST(Simplify, DoNotStackOverFlow) {
     // 构造一个随机的长表达式
     auto pr = CreateRandomExpresionTree(100000);
     Node &node = pr.first;
-    double v = pr.second;
 
     node->Simplify();
 }

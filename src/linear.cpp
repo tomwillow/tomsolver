@@ -30,23 +30,24 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
     Mat A(AA);
     Vec b(bb);
 
-    auto rows = A.Rows(); //行数
-    auto cols = rows;     //列数=未知数个数
+    int rows = A.Rows(); //行数
+    int cols = rows;     //列数=未知数个数
 
-    auto RankA = rows, RankAb = rows; //初始值
+    int RankA = rows, RankAb = rows; //初始值
 
     assert(rows == b.Rows()); // A行数不等于b行数
 
-    Vec x(rows);
+    Vec ret(rows);
 
     if (rows > 0)
-        if ((cols = A[0].size()) != rows) //不是方阵
-        {
-            if (rows > cols)
-                throw MathError(ErrorType::ERROR_OVER_DETERMINED_EQUATIONS, ""); //过定义方程组
-            else                                                                 //不定方程组
-                x.Resize(cols);
-        }
+        cols = static_cast<int>(A[0].size());
+    if (cols != rows) //不是方阵
+    {
+        if (rows > cols)
+            throw MathError(ErrorType::ERROR_OVER_DETERMINED_EQUATIONS, ""); //过定义方程组
+        else                                                                 //不定方程组
+            ret.Resize(cols);
+    }
 
     std::vector<decltype(rows)> TrueRowNumber(cols);
 
@@ -66,7 +67,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
                 break;
 
             //交换本行与最大行
-            int maxAbsRowIndex = GetMaxAbsRowIndex(A, y, rows - 1, x);
+            maxAbsRowIndex = GetMaxAbsRowIndex(A, y, rows - 1, x);
             A.SwapRow(y, maxAbsRowIndex);
             b.SwapRow(y, maxAbsRowIndex);
         }
@@ -136,9 +137,9 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         sum_others = 0.0;
         for (decltype(rows) j = i + 1; j < rows; j++) //本列 后的元素乘以已知x 加总
         {
-            sum_others += A[i][j] * x[j];
+            sum_others += A[i][j] * ret[j];
         }
-        x[i] = b[i] - sum_others;
+        ret[i] = b[i] - sum_others;
     }
 
     if (RankA < cols && RankA == RankAb) {
@@ -148,7 +149,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
             throw MathError(ErrorType::ERROR_INFINITY_SOLUTIONS, "");
     }
 
-    return x;
+    return ret;
 }
 
 } // namespace tomsolver

@@ -11,12 +11,12 @@ namespace tomsolver {
 /**
  * Armijo方法一维搜索，寻找alpha
  */
-double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::function<Mat(Vec)> df, double uncert = 1e-5);
+double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::function<Mat(Vec)> df);
 
 /**
  * 割线法 进行一维搜索，寻找alpha
  */
-double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double uncert = 1e-5);
+double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double uncert = 1.0e-5);
 
 /**
  * 解非线性方程组equations。

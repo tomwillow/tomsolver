@@ -50,7 +50,6 @@ TEST(Clone, DoNotStackOverFlow) {
     // 构造一个随机的长表达式
     auto pr = CreateRandomExpresionTree(10000);
     Node &node = pr.first;
-    double v = pr.second;
 
     // clone，不应爆栈
     Node n2 = Clone(node);
@@ -79,7 +78,6 @@ TEST(ToString, DoNotStackOverFlow) {
     // 构造一个随机的长表达式
     auto pr = CreateRandomExpresionTree(10000);
     Node &node = pr.first;
-    double v = pr.second;
 
     // 输出表达式字符串，不应爆栈
     string s = node->ToString();

@@ -10,7 +10,7 @@ std::string ToString(double value) noexcept {
 
     // 绝对值过大 或者 绝对值过小，应该使用科学计数法来表示
     if ((std::abs(value) >= 1.0e16 || std::abs(value) <= 1.0e-16) && value != 0.0) {
-        ret = sprintf(buf, "%.16e", value);
+        ret = snprintf(buf, sizeof(buf), "%.16e", value);
 
         int state = 0;
         int stripPos = sizeof(buf) - 1;
@@ -58,7 +58,7 @@ std::string ToString(double value) noexcept {
 
         return buf;
     } else {
-        ret = sprintf(buf, GetConfig().GetDoubleFormatStr(), value);
+        ret = snprintf(buf, sizeof(buf), GetConfig().GetDoubleFormatStr(), value);
     }
 
     int stripPos = sizeof(buf) - 1;

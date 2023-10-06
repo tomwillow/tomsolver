@@ -31,7 +31,7 @@ TEST(Solve, FindAlphaByArmijo) {
     cout << alpha << endl;
 
     // FIXME: not match got results
-    double expected = 0.003866;
+    // double expected = 0.003866;
 }
 
 TEST(Solve, FindAlpha) {
@@ -46,7 +46,7 @@ TEST(Solve, FindAlpha) {
     cout << alpha << endl;
 
     // FIXME: not match got results
-    double expected = 0.003866;
+    // double expected = 0.003866;
 }
 
 TEST(Solve, Base) {

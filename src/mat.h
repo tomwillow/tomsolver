@@ -34,9 +34,9 @@ class Vec;
 
 class Mat {
 public:
-    explicit Mat(std::size_t row, std::size_t col) noexcept;
+    explicit Mat(int row, int col) noexcept;
 
-    explicit Mat(std::size_t row, std::size_t col, double initValue) noexcept;
+    explicit Mat(int row, int col, double initValue) noexcept;
 
     Mat(const std::vector<std::vector<double>> &init) noexcept;
     Mat(std::vector<std::vector<double>> &&init) noexcept;
@@ -75,7 +75,7 @@ public:
 
     std::string ToString() const noexcept;
 
-    void Resize(std::size_t newRows) noexcept;
+    void Resize(int newRows) noexcept;
 
     Mat &Zero() noexcept;
 
@@ -116,7 +116,7 @@ protected:
     friend bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
     friend void GetCofactor(const Mat &A, Mat &temp, std::size_t p, std::size_t q, std::size_t n) noexcept;
     friend void Adjoint(const Mat &A, Mat &adj) noexcept;
-    friend double Det(const Mat &A, std::size_t n) noexcept;
+    friend double Det(const Mat &A, int n) noexcept;
 };
 
 Mat operator*(double k, const Mat &mat) noexcept;
@@ -141,19 +141,19 @@ void GetCofactor(const Mat &A, Mat &temp, std::size_t p, std::size_t q, std::siz
 /**
  * 计算矩阵的行列式值。
  */
-double Det(const Mat &A, std::size_t n) noexcept;
+double Det(const Mat &A, int n) noexcept;
 
 class Vec : public Mat {
 public:
-    explicit Vec(std::size_t rows) noexcept;
+    explicit Vec(int rows) noexcept;
 
-    explicit Vec(std::size_t rows, double initValue) noexcept;
+    explicit Vec(int rows, double initValue) noexcept;
 
     Vec(const std::initializer_list<double> &init) noexcept;
 
     Mat &AsMat() noexcept;
 
-    void Resize(std::size_t newRows) noexcept;
+    void Resize(int newRows) noexcept;
 
     double &operator[](std::size_t i) noexcept {
         return data[i][0];

@@ -9,19 +9,19 @@ using namespace std;
 
 namespace tomsolver {
 
-Mat::Mat(std::size_t row, std::size_t col) noexcept
+Mat::Mat(int row, int col) noexcept
     : rows(row), cols(col), data(std::vector<std::vector<double>>(row, std::vector<double>(col))) {
     assert(row > 0);
     assert(col > 0);
 }
 
-Mat::Mat(std::size_t row, std::size_t col, double initValue) noexcept
+Mat::Mat(int row, int col, double initValue) noexcept
     : rows(row), cols(col), data(std::vector<std::vector<double>>(row, std::vector<double>(col, initValue))) {}
 
 Mat::Mat(const std::vector<std::vector<double>> &init) noexcept {
-    rows = init.size();
+    rows = static_cast<int>(init.size());
     assert(rows > 0);
-    cols = init[0].size();
+    cols = static_cast<int>(init[0].size());
     assert(cols > 0);
     for (auto &vec : init) {
         assert(vec.size() == cols);
@@ -30,12 +30,13 @@ Mat::Mat(const std::vector<std::vector<double>> &init) noexcept {
 }
 
 Mat::Mat(std::vector<std::vector<double>> &&init) noexcept
-    : rows(init.size()), cols(init.size() ? init[0].size() : 0), data(std::move(init)) {}
+    : rows(static_cast<int>(init.size())), cols(static_cast<int>(init.size() ? init[0].size() : 0)),
+      data(std::move(init)) {}
 
 Mat::Mat(const std::initializer_list<std::initializer_list<double>> &init) noexcept {
-    rows = init.size();
+    rows = static_cast<int>(init.size());
     assert(rows > 0);
-    cols = (*init.begin()).size();
+    cols = static_cast<int>(init.begin()->size());
     assert(cols > 0);
     for (auto &vec : init) {
         assert(vec.size() == cols);
@@ -196,7 +197,7 @@ std::string Mat::ToString() const noexcept {
     return s;
 }
 
-void Mat::Resize(std::size_t newRows) noexcept {
+void Mat::Resize(int newRows) noexcept {
     assert(newRows > 0);
     if (newRows < rows)
         data.resize(newRows);
@@ -259,7 +260,7 @@ void Mat::SetValue(double value) noexcept {
 
 bool Mat::PositiveDetermine() const noexcept {
     assert(rows == cols);
-    for (std::size_t i = 1; i <= rows; ++i) {
+    for (int i = 1; i <= rows; ++i) {
         double det = Det(*this, i);
         if (det <= 0)
             return false;
@@ -279,7 +280,7 @@ Mat Mat::Transpose() const noexcept {
 Mat Mat::Inverse() const {
     assert(rows == cols);
     const Mat &A = *this;
-    std::size_t n = rows;
+    int n = rows;
     Mat ans(n, n);
     double det = Det(A, n); // Determinant, 역행렬을 시킬 행렬의 행렬식을 구함
 
@@ -396,7 +397,7 @@ void GetCofactor(const Mat &A, Mat &temp, std::size_t p, std::size_t q,
     }
 }
 
-double Det(const Mat &A, std::size_t n) noexcept {
+double Det(const Mat &A, int n) noexcept {
     if (n == 0)
         return 0;
 
@@ -423,11 +424,11 @@ double Det(const Mat &A, std::size_t n) noexcept {
     return D; // 마지막엔 n X n 행렬의 Determinant를 리턴해준다.
 }
 
-Vec::Vec(std::size_t rows) noexcept : Mat(rows, 1) {}
+Vec::Vec(int rows) noexcept : Mat(rows, 1) {}
 
-Vec::Vec(std::size_t rows, double initValue) noexcept: Mat(rows,1, initValue) {}
+Vec::Vec(int rows, double initValue) noexcept : Mat(rows, 1, initValue) {}
 
-Vec::Vec(const std::initializer_list<double> &init) noexcept : Vec(init.size()) {
+Vec::Vec(const std::initializer_list<double> &init) noexcept : Vec(static_cast<int>(init.size())) {
     data.resize(rows, std::vector<double>(1));
     std::size_t i = 0;
     for (auto v : init)
@@ -438,7 +439,7 @@ Mat &Vec::AsMat() noexcept {
     return *this;
 }
 
-void Vec::Resize(std::size_t newRows) noexcept {
+void Vec::Resize(int newRows) noexcept {
     assert(newRows > 0);
     data.resize(newRows, std::vector<double>(1));
     rows = newRows;

@@ -1,6 +1,8 @@
 # for FetchContent
 cmake_minimum_required (VERSION 3.11 FATAL_ERROR)
 
+project(TomSolver)
+
 # 设置策略CMP0091为NEW，新策略
 if (POLICY CMP0091)
   cmake_policy(SET CMP0091 NEW)
@@ -11,9 +13,12 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
-
-project(TomSolver)
+if (MSVC)
+	add_compile_options(/W4 /WX)
+	add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+else()
+	add_compile_options(-Wall -Wextra -pedantic -Werror)
+endif()
 
 option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
 message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
@@ -22,7 +27,9 @@ if (ENABLE_UNIT_TESTS)
 	include(FetchContent)
 	FetchContent_Declare(
 		googletest
-		GIT_REPOSITORY https://github.com/google/googletest.git
+		GIT_REPOSITORY https://gitcode.net/mirrors/google/googletest.git
+		# origin: https://github.com/google/googletest.git
+		# mirror: https://gitcode.net/mirrors/google/googletest.git
 		GIT_TAG release-1.12.1
 	)
 	FetchContent_MakeAvailable(googletest)

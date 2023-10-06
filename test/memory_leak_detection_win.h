@@ -32,6 +32,7 @@ public:
     }
 
     void SetBreakAlloc(long index) const noexcept {
+        (index);
         _CrtSetBreakAlloc(index);
     }
 

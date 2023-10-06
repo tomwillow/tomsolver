@@ -409,7 +409,6 @@ double NodeImpl::VpaRecursively() const {
     }
 
     throw std::runtime_error("unsupported node type");
-    return std::numeric_limits<double>::quiet_NaN();
 }
 
 double NodeImpl::VpaNonRecursively() const {
