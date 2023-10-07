@@ -3,11 +3,6 @@ cmake_minimum_required (VERSION 3.11 FATAL_ERROR)
 
 project(TomSolver)
 
-# 设置策略CMP0091为NEW，新策略
-if (POLICY CMP0091)
-  cmake_policy(SET CMP0091 NEW)
-endif (POLICY CMP0091)
-
 # C++14
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -32,6 +27,8 @@ if (ENABLE_UNIT_TESTS)
 		# mirror: https://gitcode.net/mirrors/google/googletest.git
 		GIT_TAG release-1.12.1
 	)
+	# For Windows: Prevent overriding the parent project's compiler/linker settings
+	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 	FetchContent_MakeAvailable(googletest)
 	
 	enable_testing()
@@ -60,10 +57,6 @@ target_link_libraries(TomSolverTest PUBLIC
 	TomSolver
 	gtest_main
 	)
-	
-# 设置MT/MTd
-#set_property(TARGET TomSolverTest PROPERTY
-#  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 include(GoogleTest)
 gtest_discover_tests(TomSolverTest)
