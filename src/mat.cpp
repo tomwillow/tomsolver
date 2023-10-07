@@ -24,6 +24,7 @@ Mat::Mat(const std::vector<std::vector<double>> &init) noexcept {
     cols = static_cast<int>(init[0].size());
     assert(cols > 0);
     for (auto &vec : init) {
+        (vec);
         assert(static_cast<int>(vec.size()) == cols);
     }
     data = init;
@@ -39,6 +40,7 @@ Mat::Mat(const std::initializer_list<std::initializer_list<double>> &init) noexc
     cols = static_cast<int>(init.begin()->size());
     assert(cols > 0);
     for (auto &vec : init) {
+        (vec);
         assert(static_cast<int>(vec.size()) == cols);
     }
     data = std::vector<std::vector<double>>(init.begin(), init.end());
@@ -463,15 +465,6 @@ Vec operator*(double k, const Vec &v) {
 
 std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept {
     return out << mat.ToString();
-}
-
-std::vector<double> operator-(const std::vector<double> &A, const std::vector<double> &B) {
-    assert(A.size() == B.size());
-    std::vector<double> ans(A);
-    int rows = A.size();
-    for (int i = 0; i < rows; ++i)
-        ans[i] -= B[i];
-    return ans;
 }
 
 } // namespace tomsolver

@@ -173,6 +173,8 @@ void NodeImpl::CheckParent() const noexcept {
         assert(f->parent);
         bool isLeftChild = f->parent->left.get() == f;
         bool isRightChild = f->parent->right.get() == f;
+        (isLeftChild);
+        (isRightChild);
         assert(isLeftChild || isRightChild);
 
         f->CheckOperatorNum();
