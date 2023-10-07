@@ -169,13 +169,13 @@ void NodeImpl::CheckParent() const noexcept {
         const NodeImpl *f = stk.top();
         stk.pop();
 
+#ifndef NDEBUG
         // 检查
         assert(f->parent);
         bool isLeftChild = f->parent->left.get() == f;
         bool isRightChild = f->parent->right.get() == f;
-        (isLeftChild);
-        (isRightChild);
         assert(isLeftChild || isRightChild);
+#endif
 
         f->CheckOperatorNum();
 

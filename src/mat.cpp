@@ -23,10 +23,11 @@ Mat::Mat(const std::vector<std::vector<double>> &init) noexcept {
     assert(rows > 0);
     cols = static_cast<int>(init[0].size());
     assert(cols > 0);
+#ifndef NDEBUG
     for (auto &vec : init) {
-        (vec);
         assert(static_cast<int>(vec.size()) == cols);
     }
+#endif
     data = init;
 }
 
@@ -39,10 +40,11 @@ Mat::Mat(const std::initializer_list<std::initializer_list<double>> &init) noexc
     assert(rows > 0);
     cols = static_cast<int>(init.begin()->size());
     assert(cols > 0);
+#ifndef NDEBUG
     for (auto &vec : init) {
-        (vec);
         assert(static_cast<int>(vec.size()) == cols);
     }
+#endif
     data = std::vector<std::vector<double>>(init.begin(), init.end());
 }
 
