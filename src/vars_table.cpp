@@ -15,7 +15,7 @@ VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
 }
 
 VarsTable::VarsTable(const std::initializer_list<std::pair<std::string, double>> &initList)
-    : table(initList.begin(), initList.end()), values(static_cast<int>(initList.size())), vars(initList.size()) {
+    : vars(initList.size()), values(static_cast<int>(initList.size())), table(initList.begin(), initList.end()) {
     int i = 0;
     for (auto &pr : initList) {
         vars[i] = pr.first;
@@ -26,7 +26,7 @@ VarsTable::VarsTable(const std::initializer_list<std::pair<std::string, double>>
 }
 
 VarsTable::VarsTable(const std::unordered_map<std::string, double> &table) noexcept
-    : table(table), values(static_cast<int>(table.size())), vars(table.size()) {
+    : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
     int i = 0;
     for (auto &pr : table) {
         vars[i] = pr.first;

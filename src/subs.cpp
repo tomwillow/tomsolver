@@ -80,7 +80,7 @@ Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVe
 }
 
 Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
-    assert(oldVars.size() == newNodes.Rows());
+    assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
     Node ret = std::move(node);
     std::unordered_map<std::string, Node> dict;
     for (size_t i = 0; i < oldVars.size(); ++i) {

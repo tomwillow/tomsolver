@@ -71,7 +71,7 @@ public:
      */
     Vec ToVec() const;
 
-    Mat &SwapRow(std::size_t i, std::size_t j) noexcept;
+    Mat &SwapRow(int i, int j) noexcept;
 
     std::string ToString() const noexcept;
 
@@ -114,7 +114,7 @@ protected:
     friend Mat EachDivide(const Mat &a, const Mat &b) noexcept;
     friend bool IsZero(const Mat &mat) noexcept;
     friend bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
-    friend void GetCofactor(const Mat &A, Mat &temp, std::size_t p, std::size_t q, std::size_t n) noexcept;
+    friend void GetCofactor(const Mat &A, Mat &temp, int p, int q, int n) noexcept;
     friend void Adjoint(const Mat &A, Mat &adj) noexcept;
     friend double Det(const Mat &A, int n) noexcept;
 };
@@ -129,14 +129,14 @@ bool IsZero(const Mat &mat) noexcept;
 
 bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
 
-std::size_t GetMaxAbsRowIndex(const Mat &A, std::size_t RowStart, std::size_t RowEnd, std::size_t Col) noexcept;
+int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept;
 
 /**
  * 伴随矩阵。
  */
 void Adjoint(const Mat &A, Mat &adj) noexcept;
 
-void GetCofactor(const Mat &A, Mat &temp, std::size_t p, std::size_t q, std::size_t n) noexcept;
+void GetCofactor(const Mat &A, Mat &temp, int p, int q, int n) noexcept;
 
 /**
  * 计算矩阵的行列式值。
@@ -165,9 +165,9 @@ public:
 
     Vec operator+(const Vec &b) const noexcept {
         assert(rows == b.rows);
-        assert(cols == b.cols == 1);
+        assert(cols == 1 && b.cols == 1);
         Vec ans(b);
-        for (std::size_t i = 0; i < rows; ++i) {
+        for (int i = 0; i < rows; ++i) {
             ans[i] = data[i][0] + b[i];
         }
         return ans;
@@ -184,7 +184,7 @@ public:
     Vec operator-(const Vec &b) const noexcept {
         assert(rows == b.rows);
         Vec ans(b);
-        for (std::size_t i = 0; i < rows; ++i) {
+        for (int i = 0; i < rows; ++i) {
             ans[i] = data[i][0] - b[i];
         }
         return ans;
@@ -200,7 +200,7 @@ public:
     Vec operator*(const Vec &b) const noexcept {
         assert(rows == b.rows);
         Vec ans(b);
-        for (std::size_t i = 0; i < rows; ++i) {
+        for (int i = 0; i < rows; ++i) {
             ans[i] = data[i][0] * b[i];
         }
         return ans;
@@ -209,7 +209,7 @@ public:
     Vec operator/(const Vec &b) const noexcept {
         assert(rows == b.rows);
         Vec ans(b);
-        for (std::size_t i = 0; i < rows; ++i) {
+        for (int i = 0; i < rows; ++i) {
             ans[i] = data[i][0] / b[i];
         }
         return ans;
@@ -217,7 +217,7 @@ public:
 
     bool operator<(const Vec &b) noexcept {
         assert(rows == b.rows);
-        for (std::size_t i = 0; i < rows; ++i)
+        for (int i = 0; i < rows; ++i)
             if (data[i][0] >= b[i])
                 return false;
         return true;

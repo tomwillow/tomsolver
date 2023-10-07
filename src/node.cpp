@@ -231,6 +231,9 @@ void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
     case NodeType::VARIABLE:
         output += NodeToStr();
         return;
+    case NodeType::OPERATOR:
+        // pass
+        break;
     }
 
     int has_parenthesis = 0;

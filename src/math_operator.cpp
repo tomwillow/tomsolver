@@ -95,7 +95,10 @@ int GetOperatorNum(MathOperator op) noexcept {
     case MathOperator::MATH_LEFT_PARENTHESIS:
     case MathOperator::MATH_RIGHT_PARENTHESIS:
         assert(0);
-        return 0;
+        break;
+    default:
+        assert(0);
+        break;
     }
     assert(0);
     return 0;
@@ -141,6 +144,9 @@ int Rank(MathOperator op) noexcept {
     case MathOperator::MATH_LEFT_PARENTHESIS: // 左右括号优先级小是为了不被其余任何运算符挤出
     case MathOperator::MATH_RIGHT_PARENTHESIS:
         return 0;
+    default:
+        assert(0);
+        break;
     }
     assert(0);
     return 0;
@@ -161,7 +167,10 @@ bool IsLeft2Right(MathOperator eOperator) noexcept {
     case MathOperator::MATH_NEGATIVE:
     case MathOperator::MATH_POWER: //^
         return false;
-        // 函数和括号不计结合性
+    // 函数和括号不计结合性
+    default:
+        assert(0);
+        break;
     }
     assert(0);
     return false;
@@ -199,6 +208,9 @@ bool InAssociativeLaws(MathOperator eOperator) noexcept {
     case MathOperator::MATH_ADD:
     case MathOperator::MATH_MULTIPLY:
         return true;
+    default:
+        assert(0);
+        break;
     }
     assert(0);
     return false;
