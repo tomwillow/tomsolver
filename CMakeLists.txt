@@ -27,7 +27,7 @@ if (ENABLE_UNIT_TESTS)
 	include(FetchContent)
 	FetchContent_Declare(
 		googletest
-		GIT_REPOSITORY https://gitcode.net/mirrors/google/googletest.git
+		GIT_REPOSITORY https://github.com/google/googletest.git
 		# origin: https://github.com/google/googletest.git
 		# mirror: https://gitcode.net/mirrors/google/googletest.git
 		GIT_TAG release-1.12.1
