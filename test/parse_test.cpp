@@ -1,8 +1,11 @@
 #include "parse.h"
+#include "config.h"
 
 #include "memory_leak_detection.h"
 
 #include <gtest/gtest.h>
+
+#include <random>
 
 using namespace std;
 using namespace tomsolver;
@@ -17,6 +20,38 @@ TEST(Parse, Base) {
         ASSERT_TRUE(tokens[2]->Equal(Num(2)));
     }
 }
+
+TEST(Parse, Number) {
+    MemoryLeakDetection mld;
+
+    {
+        vector<Node> tokens = internal::ParseToTokens(".12345");
+        ASSERT_TRUE(tokens[0]->Equal(Num(.12345)));
+    }
+
+    {
+        vector<Node> tokens = internal::ParseToTokens("7891.123");
+        ASSERT_TRUE(tokens[0]->Equal(Num(7891.123)));
+    }
+
+    {
+        vector<Node> tokens = internal::ParseToTokens("1e0");
+        ASSERT_TRUE(tokens[0]->Equal(Num(1e0)));
+    }
+
+    std::default_random_engine eng(
+        static_cast<long>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+
+    std::uniform_real_distribution<double> unif;
+
+    for (int i = 0; i < 100; ++i) {
+        double d = unif(eng);
+        std::string expected = tomsolver::ToString(d);
+        vector<Node> tokens = internal::ParseToTokens(expected);
+        ASSERT_EQ(expected, tokens[0]->ToString());
+    }
+}
+
 TEST(Parse, IllegalChar) {
     MemoryLeakDetection mld;
 

@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <cassert>
+#include <regex>
 
 using std::string;
 using std::to_string;
@@ -30,7 +31,7 @@ int ParseError::GetPos() const noexcept {
 }
 
 /* 是基本运算符()+-* /^&|% */
-bool IsBaseOperator(char c) {
+bool IsBaseOperator(char c) noexcept {
     switch (c) {
     case '(':
     case ')':
@@ -48,7 +49,7 @@ bool IsBaseOperator(char c) {
 }
 
 /*  */
-MathOperator BaseOperatorCharToEnum(char c) {
+MathOperator BaseOperatorCharToEnum(char c) noexcept {
     switch (c) {
     case '(':
         return MathOperator::MATH_LEFT_PARENTHESIS;
@@ -77,15 +78,7 @@ MathOperator BaseOperatorCharToEnum(char c) {
     return MathOperator::MATH_NULL;
 }
 
-/* 字符是0-9或. */
-bool IsDoubleChar(char c) {
-    if ((c >= '0' && c <= '9') || c == '.')
-        return true;
-    else
-        return false;
-}
-
-MathOperator Str2Function(const std::string &s) {
+MathOperator Str2Function(const std::string &s) noexcept {
     if (s == "sin") {
         return MathOperator::MATH_SIN;
     }
@@ -188,18 +181,19 @@ std::vector<Node> ParseToTokens(const std::string &expression) {
             continue;
         }
 
-        //逐位检验是否为数字
-        bool isDouble = true;
-        for (auto c : s)
-            if (IsDoubleChar(c) == false) {
-                isDouble = false;
-                break;
+        // 检验是否为浮点数
+        try {
+            std::size_t sz;
+            double d = std::stod(s, &sz);
+            if (sz != s.size()) {
+                throw std::invalid_argument("");
             }
-
-        if (isDouble) //数字
-        {
-            ret.push_back(Num(std::stod(s)));
+            ret.push_back(Num(d));
             continue;
+        } catch (const std::exception &e) {
+#ifndef NDEBUG
+            (e);
+#endif
         }
 
         //识别出函数
