@@ -21,6 +21,14 @@ const char *ParseError::what() const noexcept {
     return whatStr.c_str();
 }
 
+int ParseError::GetLine() const noexcept {
+    return line;
+}
+
+int ParseError::GetPos() const noexcept {
+    return pos;
+}
+
 /* 是基本运算符()+-* /^&|% */
 bool IsBaseOperator(char c) {
     switch (c) {
@@ -140,15 +148,16 @@ std::vector<Token> SplitRough(const std::string &expression) {
         }
 
         if (!IsBaseOperator(c)) {
-            tempBeg = i;
             temp.push_back(c);
         } else {
             if (!temp.empty()) {
                 ret.push_back(Token(0, tempBeg, false, temp));
-                temp.clear();
                 tempBeg = i;
+
+                temp.clear();
             }
-            ret.push_back(Token(0, i, true, std::string{c}));
+            ret.push_back(Token(0, tempBeg, true, std::string{c}));
+            tempBeg = i + 1;
         }
     }
     if (!temp.empty()) {

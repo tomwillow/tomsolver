@@ -23,12 +23,18 @@ TEST(Parse, IllegalChar) {
     try {
         vector<Node> tokens = internal::ParseToTokens("1#+2");
         FAIL();
-    } catch (const ParseError &err) { cout << err.what() << endl; }
+    } catch (const ParseError &err) {
+        cout << err.what() << endl;
+        ASSERT_EQ(err.GetPos(), 0);
+    }
 
     try {
         vector<Node> tokens = internal::ParseToTokens("a*cos(x1) + b*cos(x1-x2) + c*cos(?x1-x2-x3)");
         FAIL();
-    } catch (const ParseError &err) { cout << err.what() << endl; }
+    } catch (const ParseError &err) {
+        cout << err.what() << endl;
+        ASSERT_EQ(err.GetPos(), 33);
+    }
 }
 
 TEST(Parse, PositiveNegative) {

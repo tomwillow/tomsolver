@@ -12,6 +12,10 @@ public:
 
     virtual const char *what() const noexcept override;
 
+    int GetLine() const noexcept;
+
+    int GetPos() const noexcept;
+
 private:
     int line;
     int pos;
