@@ -19,12 +19,20 @@ option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
 message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
 
 if (ENABLE_UNIT_TESTS)
+	# 添加参数：是否从镜像站下载googletest
+	option(USE_MIRROR_GTEST_REPO "Use mirror google test repository at gitcode.net" OFF)
+	if (USE_MIRROR_GTEST_REPO)
+		set(GTEST_URL "https://gitcode.net/mirrors/google/googletest.git")
+	else()
+		set(GTEST_URL "https://github.com/google/googletest.git")
+	endif()
+	
+	message(STATUS "Fetch googletest from ${GTEST_URL}")
+	
 	include(FetchContent)
 	FetchContent_Declare(
 		googletest
-		GIT_REPOSITORY https://github.com/google/googletest.git
-		# origin: https://github.com/google/googletest.git
-		# mirror: https://gitcode.net/mirrors/google/googletest.git
+		GIT_REPOSITORY ${GTEST_URL}
 		GIT_TAG release-1.12.1
 	)
 	# For Windows: Prevent overriding the parent project's compiler/linker settings
