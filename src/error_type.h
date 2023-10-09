@@ -7,7 +7,6 @@ namespace tomsolver {
 enum class ErrorType {
     ERROR_INVALID_NUMBER,                // 出现无效的浮点数(inf, -inf, nan)
     ERROR_ILLEGALCHAR,                   // 出现非法字符
-    ERROR_PARENTHESIS_NOT_MATCH,         // 括号不匹配
     ERROR_INVALID_VARNAME,               // 无效变量名
     ERROR_WRONG_EXPRESSION,              // 表达式逻辑不正确
     ERROR_EMPTY_INPUT,                   // 表达式为空

@@ -12,9 +12,6 @@ std::string GetErrorInfo(ErrorType err) {
     case ErrorType::ERROR_ILLEGALCHAR:
         return u8"illegal character";
         break;
-    case ErrorType::ERROR_PARENTHESIS_NOT_MATCH:
-        return u8"括号不匹配。";
-        break;
     case ErrorType::ERROR_INVALID_VARNAME:
         return u8"不正确的变量名（必须以下划线\"_\"或英文字母开头）。";
         break;

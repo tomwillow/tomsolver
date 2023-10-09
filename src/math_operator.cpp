@@ -167,12 +167,26 @@ bool IsLeft2Right(MathOperator eOperator) noexcept {
     case MathOperator::MATH_NEGATIVE:
     case MathOperator::MATH_POWER: //^
         return false;
+
     // 函数和括号不计结合性
+    case MathOperator::MATH_SIN:
+    case MathOperator::MATH_COS:
+    case MathOperator::MATH_TAN:
+    case MathOperator::MATH_ARCSIN:
+    case MathOperator::MATH_ARCCOS:
+    case MathOperator::MATH_ARCTAN:
+    case MathOperator::MATH_SQRT:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
+    case MathOperator::MATH_LOG10:
+    case MathOperator::MATH_EXP:
+
+    case MathOperator::MATH_LEFT_PARENTHESIS:
+    case MathOperator::MATH_RIGHT_PARENTHESIS:
+        return true;
     default:
         assert(0);
-        break;
     }
-    assert(0);
     return false;
 }
 
@@ -208,6 +222,42 @@ bool InAssociativeLaws(MathOperator eOperator) noexcept {
     case MathOperator::MATH_ADD:
     case MathOperator::MATH_MULTIPLY:
         return true;
+    default:
+        assert(0);
+        break;
+    }
+    assert(0);
+    return false;
+}
+
+bool IsFunction(MathOperator op) noexcept {
+    switch (op) {
+    case MathOperator::MATH_SIN:
+    case MathOperator::MATH_COS:
+    case MathOperator::MATH_TAN:
+    case MathOperator::MATH_ARCSIN:
+    case MathOperator::MATH_ARCCOS:
+    case MathOperator::MATH_ARCTAN:
+    case MathOperator::MATH_SQRT:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
+    case MathOperator::MATH_LOG10:
+    case MathOperator::MATH_EXP:
+        return true;
+
+    case MathOperator::MATH_POSITIVE:
+    case MathOperator::MATH_NEGATIVE:
+    case MathOperator::MATH_MOD:   //%
+    case MathOperator::MATH_AND:   //&
+    case MathOperator::MATH_OR:    //|
+    case MathOperator::MATH_POWER: //^
+    case MathOperator::MATH_MULTIPLY:
+    case MathOperator::MATH_DIVIDE:
+    case MathOperator::MATH_ADD:
+    case MathOperator::MATH_SUB:
+    case MathOperator::MATH_LEFT_PARENTHESIS:
+    case MathOperator::MATH_RIGHT_PARENTHESIS:
+        return false;
     default:
         assert(0);
         break;

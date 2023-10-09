@@ -84,6 +84,11 @@ bool IsLeft2Right(MathOperator eOperator) noexcept;
 bool InAssociativeLaws(MathOperator eOperator) noexcept;
 
 /**
+ * 返回是否是函数
+ */
+bool IsFunction(MathOperator op) noexcept;
+
+/**
  * 是整数 且 为偶数
  * FIXME: 超出long long范围的处理
  */

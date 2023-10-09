@@ -119,6 +119,7 @@ namespace internal {
 
 // 粗切分：利用operator切分
 std::vector<Token> SplitRough(const std::string &expression) {
+    std::shared_ptr<std::string> content = std::make_shared<std::string>(expression);
     std::vector<Token> ret;
 
     int tempBeg = 0;
@@ -135,24 +136,24 @@ std::vector<Token> SplitRough(const std::string &expression) {
             temp.push_back(c);
         } else {
             if (!temp.empty()) {
-                ret.push_back(Token(0, tempBeg, false, temp));
+                ret.push_back(Token(0, tempBeg, false, temp, content));
                 tempBeg = i;
 
                 temp.clear();
             }
-            ret.push_back(Token(0, tempBeg, true, std::string{c}));
+            ret.push_back(Token(0, tempBeg, true, std::string{c}, content));
             tempBeg = i + 1;
         }
     }
     if (!temp.empty()) {
-        ret.push_back(Token(0, tempBeg, false, temp));
+        ret.push_back(Token(0, tempBeg, false, temp, content));
         temp.clear();
     }
 
     return ret;
 }
 
-std::vector<Token> ParseFunctions::ParseToTokens(const std::string &expression) {
+std::deque<Token> ParseFunctions::ParseToTokens(const std::string &expression) {
 
     if (expression.empty()) {
         throw ParseError(0, 0, "empty input", expression);
@@ -160,7 +161,7 @@ std::vector<Token> ParseFunctions::ParseToTokens(const std::string &expression) 
 
     std::vector<Token> tokens = SplitRough(expression);
 
-    std::vector<Token> ret;
+    std::deque<Token> ret;
     // 二次切分：切分出3类元素
     for (size_t i = 0; i < tokens.size(); i++) {
         Token token = std::move(tokens[i]);
@@ -236,5 +237,110 @@ std::vector<Token> ParseFunctions::ParseToTokens(const std::string &expression) 
 
     return ret;
 }
+
+std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder) {
+    std::vector<Token> postOrder;
+    int parenthesisBalance = 0;
+    std::stack<Token> temp;
+    while (inOrder.size() > 0) {
+        Token &f = inOrder.front();
+
+        //数字直接入栈
+        if (f.node->type == NodeType::NUMBER || f.node->type == NodeType::VARIABLE) {
+            postOrder.push_back(std::move(f));
+            inOrder.pop_front();
+            continue;
+        }
+
+        //(左括号直接入栈
+        if (f.node->op == MathOperator::MATH_LEFT_PARENTHESIS) {
+            temp.push(std::move(f));
+            inOrder.pop_front();
+            parenthesisBalance++;
+            continue;
+        }
+
+        if (f.node->op == MathOperator::MATH_RIGHT_PARENTHESIS) //)出现右括号
+        {
+            parenthesisBalance--;
+
+            // 括号balance<0，说明括号不匹配
+            if (parenthesisBalance < 0) {
+                throw ParseError(f.line, f.pos, *f.content, "Parenthesis not match: \"" + f.s + "\"");
+            }
+
+            // pop至左括号
+            while (temp.size() > 0) {
+                if (temp.top().node->op == MathOperator::MATH_LEFT_PARENTHESIS) //(
+                {
+                    temp.pop(); //扔掉左括号
+                    break;
+                } else {
+                    postOrder.push_back(std::move(temp.top())); //入队
+                    temp.pop();
+                }
+            }
+
+            //取出函数
+            if (temp.size() > 0 && IsFunction(temp.top().node->op)) {
+                postOrder.push_back(std::move(temp.top()));
+                temp.pop();
+            }
+
+            // pop所有取正取负
+            while (temp.size() > 0) {
+                if (temp.top().node->op == MathOperator::MATH_POSITIVE ||
+                    temp.top().node->op == MathOperator::MATH_NEGATIVE) {
+                    postOrder.push_back(std::move(temp.top()));
+                    temp.pop();
+                } else
+                    break;
+            }
+            inOrder.pop_front(); //扔掉右括号
+            continue;
+        }
+
+        // f不是括号
+        if (f.node->op == MathOperator::MATH_POSITIVE || f.node->op == MathOperator::MATH_NEGATIVE) {
+            temp.push(std::move(f));
+            inOrder.pop_front();
+            continue;
+        }
+
+        //不是括号也不是正负号
+        if (temp.size() > 0 && IsLeft2Right(temp.top().node->op) == true) //左结合
+            //临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
+            while (temp.size() > 0 && Rank(f.node->op) <= Rank(temp.top().node->op)) {
+                postOrder.push_back(std::move(temp.top())); //符号进入post队列
+                temp.pop();
+            }
+        else
+            //右结合
+            //临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
+            while (temp.size() > 0 && Rank(f.node->op) < Rank(temp.top().node->op)) {
+                postOrder.push_back(std::move(temp.top())); //符号进入post队列
+                temp.pop();
+            };
+
+        temp.push(std::move(f)); //高优先级已全部挤出，当前符号入栈
+        inOrder.pop_front();
+    }
+
+    //剩下的元素全部入栈
+    while (temp.size() > 0) {
+        Token token = std::move(temp.top());
+        temp.pop();
+
+        // 退栈时出现左括号，说明没有找到与之匹配的右括号
+        if (token.node->op == MathOperator::MATH_LEFT_PARENTHESIS) {
+            throw ParseError(token.line, token.pos, *token.content, "Parenthesis not match: \"" + token.s + "\"");
+        }
+
+        postOrder.push_back(std::move(token));
+    }
+
+    return postOrder;
+}
+
 } // namespace internal
 } // namespace tomsolver
