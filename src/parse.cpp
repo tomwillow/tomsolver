@@ -126,7 +126,7 @@ struct Token {
         : line(line), pos(pos), isBaseOperator(isBaseOperator), s(s) {}
 };
 
-//粗切分：利用operator切分
+// 粗切分：利用operator切分
 std::vector<Token> SplitRough(const std::string &expression) {
     std::vector<Token> ret;
 
@@ -170,11 +170,11 @@ std::vector<Node> ParseToTokens(const std::string &expression) {
     std::vector<Token> tokens = SplitRough(expression);
 
     std::vector<Node> ret;
-    //二次切分：切分出3类元素
+    // 二次切分：切分出3类元素
     for (size_t i = 0; i < tokens.size(); i++) {
         const Token &token = tokens[i];
         auto &s = tokens[i].s;
-        if (tokens[i].isBaseOperator) //识别出基本运算符（括号也在其中）
+        if (tokens[i].isBaseOperator) // 识别出基本运算符（括号也在其中）
         {
             Node tempNode = std::make_unique<NodeImpl>(NodeType::OPERATOR, BaseOperatorCharToEnum(s[0]), 0, "");
             ret.push_back(std::move(tempNode));
@@ -190,13 +190,9 @@ std::vector<Node> ParseToTokens(const std::string &expression) {
             }
             ret.push_back(Num(d));
             continue;
-        } catch (const std::exception &e) {
-#ifndef NDEBUG
-            (e);
-#endif
-        }
+        } catch (const std::exception &) {}
 
-        //识别出函数
+        // 识别出函数
         MathOperator op = Str2Function(s);
         if (op != MathOperator::MATH_NULL) {
             Node tempNode = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
@@ -204,18 +200,18 @@ std::vector<Node> ParseToTokens(const std::string &expression) {
             continue;
         }
 
-        //变量
-        //非运算符、数字、函数
-        if (!VarNameIsLegal(s)) //变量名首字符需为下划线或字母
+        // 变量
+        // 非运算符、数字、函数
+        if (!VarNameIsLegal(s)) // 变量名首字符需为下划线或字母
         {
             throw ParseError(token.line, token.pos, expression, "Invalid variable name: \"" + s + "\"");
         }
 
         ret.push_back(Var(s));
     }
-    //此时3类元素均已切分
+    // 此时3类元素均已切分
 
-    //识别取正运算符与取负运算符
+    // 识别取正运算符与取负运算符
     size_t i = 0;
     if (ret[0]->op == MathOperator::MATH_ADD) {
         ret[0]->op = MathOperator::MATH_POSITIVE;

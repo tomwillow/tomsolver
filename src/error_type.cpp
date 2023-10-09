@@ -65,4 +65,8 @@ const char *MathError::what() const noexcept {
     return errInfo.c_str();
 }
 
+ErrorType MathError::GetErrorType() const noexcept {
+    return errorType;
+}
+
 } // namespace tomsolver
