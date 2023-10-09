@@ -22,7 +22,7 @@ public:
                 return false;
             }
 
-            Node cloned = std::move(Clone(itor->second));
+            Node cloned = Clone(itor->second);
             cloned->parent = cur->parent;
             cur = std::move(cloned);
             return true;

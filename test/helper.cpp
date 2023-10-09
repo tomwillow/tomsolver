@@ -83,33 +83,33 @@ std::pair<Node, double> tomsolver::CreateRandomExpresionTree(int len) {
             break;
         case MathOperator::MATH_SIN:
             v = std::sin(v);
-            node = std::move(sin(std::move(node)));
+            node = sin(std::move(node));
             break;
         case MathOperator::MATH_COS:
             v = std::cos(v);
-            node = std::move(cos(std::move(node)));
+            node = cos(std::move(node));
             break;
         case MathOperator::MATH_TAN:
             v = std::tan(v);
-            node = std::move(tan(std::move(node)));
+            node = tan(std::move(node));
             break;
         case MathOperator::MATH_ARCSIN:
             if (v < -1.0 || v > 1.0) {
                 continue;
             }
             v = std::asin(v);
-            node = std::move(asin(std::move(node)));
+            node = asin(std::move(node));
             break;
         case MathOperator::MATH_ARCCOS:
             if (v < -1.0 || v > 1.0) {
                 continue;
             }
             v = std::acos(v);
-            node = std::move(acos(std::move(node)));
+            node = acos(std::move(node));
             break;
         case MathOperator::MATH_ARCTAN:
             v = std::atan(v);
-            node = std::move(atan(std::move(node)));
+            node = atan(std::move(node));
             break;
         default:
             assert(0);

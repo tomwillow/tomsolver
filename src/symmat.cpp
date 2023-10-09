@@ -160,7 +160,7 @@ SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) n
     SymMat ja(rows, cols);
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            ja.data[i][j] = std::move(Diff(equations.data[i][0], vars[j]));
+            ja.data[i][j] = Diff(equations.data[i][0], vars[j]);
         }
     }
     return ja;
