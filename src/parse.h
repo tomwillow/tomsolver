@@ -26,11 +26,14 @@ private:
 
 namespace internal {
 
-/**
- * 解析表达式字符串为记号流。
- * @exception ParseError
- */
-std::vector<Node> ParseToTokens(const std::string &expression);
+class ParseFunctions {
+public:
+    /**
+     * 解析表达式字符串为记号流。
+     * @exception ParseError
+     */
+    static std::vector<Node> ParseToTokens(const std::string &expression);
+};
 
 } // namespace internal
 } // namespace tomsolver

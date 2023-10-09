@@ -161,7 +161,7 @@ std::vector<Token> SplitRough(const std::string &expression) {
     return ret;
 }
 
-std::vector<Node> ParseToTokens(const std::string &expression) {
+std::vector<Node> ParseFunctions::ParseToTokens(const std::string &expression) {
 
     if (expression.empty()) {
         throw ParseError(0, 0, "empty input", expression);
