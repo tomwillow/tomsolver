@@ -342,5 +342,57 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
     return postOrder;
 }
 
+//将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
+Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
+    std::stack<Token> tempStack;
+    //逐个识别PostOrder序列，构建表达式树
+    for (auto &token : postOrder) {
+        switch (token.node->type) {
+        case NodeType::NUMBER:
+        case NodeType::VARIABLE:
+            tempStack.push(std::move(token));
+            break;
+        case NodeType::OPERATOR:
+            if (GetOperatorNum(token.node->op) == 2) {
+                if (tempStack.empty()) {
+                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+                }
+
+                tempStack.top().node->parent = token.node.get();
+                token.node->right = std::move(tempStack.top().node);
+                tempStack.pop();
+
+                if (tempStack.empty()) {
+                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+                }
+
+                tempStack.top().node->parent = token.node.get();
+                token.node->left = std::move(tempStack.top().node);
+                tempStack.pop();
+
+                tempStack.push(std::move(token));
+                continue;
+            }
+
+            // 一元运算符
+            assert(GetOperatorNum(token.node->op) == 1);
+
+            if (tempStack.empty()) {
+                throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+            }
+
+            tempStack.top().node->parent = token.node.get();
+            token.node->left = std::move(tempStack.top().node);
+            tempStack.pop();
+
+            tempStack.push(std::move(token));
+
+            break;
+        }
+    }
+
+    return std::move(tempStack.top().node);
+}
+
 } // namespace internal
 } // namespace tomsolver

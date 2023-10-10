@@ -47,8 +47,15 @@ public:
 
     /**
      * 由in order序列得到post order序列。实质上是把记号流转化为逆波兰表达式。
+     * @exception ParseError
      */
     static std::vector<Token> InOrderToPostOrder(std::deque<Token> &inOrder);
+
+    /**
+     * 将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）。
+     * @exception ParseError
+     */
+    static Node BuildExpressionTree(std::vector<Token> &postOrder);
 };
 
 } // namespace internal

@@ -165,6 +165,25 @@ TEST(Parse, PostOrderError) {
     }
 }
 
+TEST(Parse, BuildTree) {
+    MemoryLeakDetection mld;
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*(2-3)");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        cout << node->ToString() << endl;
+        node->CheckParent();
+    }
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*2-3");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        cout << node->ToString() << endl;
+        node->CheckParent();
+    }
+}
+
 TEST(Parse, Mix) {
     MemoryLeakDetection mld;
 
