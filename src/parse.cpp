@@ -117,15 +117,6 @@ MathOperator Str2Function(const std::string &s) noexcept {
 
 namespace internal {
 
-struct Token {
-    int line;
-    int pos;
-    bool isBaseOperator;
-    std::string s;
-    Token(int line, int pos, bool isBaseOperator, const std::string &s)
-        : line(line), pos(pos), isBaseOperator(isBaseOperator), s(s) {}
-};
-
 // 粗切分：利用operator切分
 std::vector<Token> SplitRough(const std::string &expression) {
     std::vector<Token> ret;
@@ -161,7 +152,7 @@ std::vector<Token> SplitRough(const std::string &expression) {
     return ret;
 }
 
-std::vector<Node> ParseFunctions::ParseToTokens(const std::string &expression) {
+std::vector<Token> ParseFunctions::ParseToTokens(const std::string &expression) {
 
     if (expression.empty()) {
         throw ParseError(0, 0, "empty input", expression);
@@ -169,15 +160,15 @@ std::vector<Node> ParseFunctions::ParseToTokens(const std::string &expression) {
 
     std::vector<Token> tokens = SplitRough(expression);
 
-    std::vector<Node> ret;
+    std::vector<Token> ret;
     // 二次切分：切分出3类元素
     for (size_t i = 0; i < tokens.size(); i++) {
-        const Token &token = tokens[i];
-        auto &s = tokens[i].s;
-        if (tokens[i].isBaseOperator) // 识别出基本运算符（括号也在其中）
+        Token token = std::move(tokens[i]);
+        auto &s = token.s;
+        if (token.isBaseOperator) // 识别出基本运算符（括号也在其中）
         {
-            Node tempNode = std::make_unique<NodeImpl>(NodeType::OPERATOR, BaseOperatorCharToEnum(s[0]), 0, "");
-            ret.push_back(std::move(tempNode));
+            token.node = std::make_unique<NodeImpl>(NodeType::OPERATOR, BaseOperatorCharToEnum(s[0]), 0, "");
+            ret.push_back(std::move(token));
             continue;
         }
 
@@ -188,15 +179,16 @@ std::vector<Node> ParseFunctions::ParseToTokens(const std::string &expression) {
             if (sz != s.size()) {
                 throw std::invalid_argument("");
             }
-            ret.push_back(Num(d));
+            token.node = Num(d);
+            ret.push_back(std::move(token));
             continue;
         } catch (const std::exception &) {}
 
         // 识别出函数
         MathOperator op = Str2Function(s);
         if (op != MathOperator::MATH_NULL) {
-            Node tempNode = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
-            ret.push_back(std::move(tempNode));
+            token.node = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
+            ret.push_back(std::move(token));
             continue;
         }
 
@@ -207,33 +199,34 @@ std::vector<Node> ParseFunctions::ParseToTokens(const std::string &expression) {
             throw ParseError(token.line, token.pos, expression, "Invalid variable name: \"" + s + "\"");
         }
 
-        ret.push_back(Var(s));
+        token.node = Var(s);
+        ret.push_back(std::move(token));
     }
     // 此时3类元素均已切分
 
     // 识别取正运算符与取负运算符
     size_t i = 0;
-    if (ret[0]->op == MathOperator::MATH_ADD) {
-        ret[0]->op = MathOperator::MATH_POSITIVE;
+    if (ret[0].node->op == MathOperator::MATH_ADD) {
+        ret[0].node->op = MathOperator::MATH_POSITIVE;
         i++;
     }
-    if (ret[0]->op == MathOperator::MATH_SUB) {
-        ret[0]->op = MathOperator::MATH_NEGATIVE;
+    if (ret[0].node->op == MathOperator::MATH_SUB) {
+        ret[0].node->op = MathOperator::MATH_NEGATIVE;
         i++;
     }
     for (; i < ret.size();) {
-        if (ret[i]->type == NodeType::OPERATOR && ret[i]->op != MathOperator::MATH_RIGHT_PARENTHESIS) {
+        if (ret[i].node->type == NodeType::OPERATOR && ret[i].node->op != MathOperator::MATH_RIGHT_PARENTHESIS) {
             if (i + 1 < ret.size())
                 i++;
             else
                 break;
-            if (ret[i]->op == MathOperator::MATH_ADD) {
-                ret[i]->op = MathOperator::MATH_POSITIVE;
+            if (ret[i].node->op == MathOperator::MATH_ADD) {
+                ret[i].node->op = MathOperator::MATH_POSITIVE;
                 i++;
                 continue;
             }
-            if (ret[i]->op == MathOperator::MATH_SUB) {
-                ret[i]->op = MathOperator::MATH_NEGATIVE;
+            if (ret[i].node->op == MathOperator::MATH_SUB) {
+                ret[i].node->op = MathOperator::MATH_NEGATIVE;
                 i++;
                 continue;
             }

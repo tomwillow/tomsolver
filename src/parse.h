@@ -26,13 +26,23 @@ private:
 
 namespace internal {
 
+struct Token {
+    int line;
+    int pos;
+    bool isBaseOperator;
+    std::string s;
+    Node node;
+    Token(int line, int pos, bool isBaseOperator, const std::string &s)
+        : line(line), pos(pos), isBaseOperator(isBaseOperator), s(s) {}
+};
+
 class ParseFunctions {
 public:
     /**
      * 解析表达式字符串为记号流。
      * @exception ParseError
      */
-    static std::vector<Node> ParseToTokens(const std::string &expression);
+    static std::vector<Token> ParseToTokens(const std::string &expression);
 };
 
 } // namespace internal
