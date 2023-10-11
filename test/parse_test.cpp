@@ -1,5 +1,6 @@
 #include "parse.h"
 #include "config.h"
+#include "functions.h"
 
 #include "memory_leak_detection.h"
 
@@ -190,7 +191,12 @@ TEST(Parse, Mix) {
     {
         deque<internal::Token> tokens =
             internal::ParseFunctions::ParseToTokens("a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)");
-
         auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        node->CheckParent();
+
+        Node expected = Var("a") * cos(Var("x1")) + Var("b") * cos(Var("x1") - Var("x2")) +
+                        Var("c") * cos(Var("x1") - Var("x2") - Var("x3"));
+        ASSERT_TRUE(node->Equal(expected));
     }
 }
