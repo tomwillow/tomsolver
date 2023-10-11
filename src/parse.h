@@ -34,7 +34,7 @@ struct Token {
     Node node;                            // 节点
     std::shared_ptr<std::string> content; // 整行文本
     Token(int line, int pos, bool isBaseOperator, const std::string &s, const std::shared_ptr<std::string> &content)
-        : line(line), pos(pos), isBaseOperator(isBaseOperator), s(s), content(content) {}
+        : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
 };
 
 class ParseFunctions {
