@@ -171,7 +171,7 @@ TEST(Parse, BuildTree) {
         deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*(2-3)");
         auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
         auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
-        cout << node->ToString() << endl;
+        ASSERT_EQ(node->ToString(), "1*(2-3)");
         node->CheckParent();
     }
 
@@ -179,7 +179,7 @@ TEST(Parse, BuildTree) {
         deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*2-3");
         auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
         auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
-        cout << node->ToString() << endl;
+        ASSERT_EQ(node->ToString(), "1*2-3");
         node->CheckParent();
     }
 }
