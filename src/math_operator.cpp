@@ -1,6 +1,7 @@
 #include "math_operator.h"
 #include "config.h"
 
+#include <limits>
 #include <cassert>
 
 namespace tomsolver {
@@ -263,14 +264,6 @@ bool IsFunction(MathOperator op) noexcept {
         break;
     }
     assert(0);
-    return false;
-}
-
-bool IsIntAndEven(double n) noexcept {
-    long long i = (long long)n;
-    if (std::abs(n - i) <= eps)
-        if (i % 2 == 0)
-            return true;
     return false;
 }
 

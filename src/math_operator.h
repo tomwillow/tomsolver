@@ -6,13 +6,9 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include <limits>
-
 namespace tomsolver {
 
 constexpr double PI = M_PI;
-
-constexpr double eps = std::numeric_limits<double>::epsilon();
 
 template <typename T>
 T radians(T &&t) noexcept {
@@ -26,11 +22,11 @@ T degrees(T &&t) noexcept {
 
 enum class MathOperator {
     MATH_NULL,
-    //一元
+    // 一元
     MATH_POSITIVE,
     MATH_NEGATIVE,
 
-    //函数
+    // 函数
     MATH_SIN,
     MATH_COS,
     MATH_TAN,
@@ -43,7 +39,7 @@ enum class MathOperator {
     MATH_LOG10,
     MATH_EXP,
 
-    //二元
+    // 二元
     MATH_ADD,
     MATH_SUB,
     MATH_MULTIPLY,

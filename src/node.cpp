@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include <vector>
+#include <limits>
 #include <type_traits>
 #include <memory>
 #include <string>
