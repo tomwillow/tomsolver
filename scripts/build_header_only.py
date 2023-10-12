@@ -1,20 +1,28 @@
 import os
-import sys
-import shutil
 import re
 
+# repository的根目录
 root_path = os.path.abspath(os.path.dirname(__file__) + "/..")
 
+# 输出目标的include目录
 include_path = os.path.join(root_path, "include/tomsolver")
 
 if not os.path.isdir(include_path):
     os.makedirs(include_path)
 
+# 分析依赖的起始文件
 root_file = f"{root_path}/src/tomsolver.h"
 src_path = f"{root_path}/src"
 
 
 class MyClass:
+    """
+    这个类用于分析.h或者.cpp文件，读入文件，获取它的include ""的内容和include <>的内容。
+    双引号的header视为内部依赖，尖括号的header视为外部依赖。
+    #pragma once忽略掉。
+    其他的内容存入self.contents。
+    """
+
     def __init__(self, filename):
         with open(filename, "r", encoding="utf-8") as f:
             lines_orig = f.readlines()
@@ -25,12 +33,12 @@ class MyClass:
         # 对外部库的依赖项
         self.depsLib = []
 
-        self.content = []
-
         self.contents = []
+
         for line in lines_orig:
             line = line.strip()
 
+            # 忽略
             if line == "#pragma once":
                 continue
 
@@ -54,10 +62,12 @@ class MyClass:
 # 1. 分析入口文件
 entry = MyClass(f"{root_path}/src/tomsolver.h")
 
-# 2. 从入口文件的include中逐个展开，得到['a.h', 'a.cpp', 'b.h', 'b.cpp']
+# 2. 从入口文件的include中逐个展开，得到['a.h', 'b.h']
+
+# 这里使用BFS来依次遍历依赖关系。innerDeps在这里起到的作用是存储访问过的节点。
 stdDeps = []
 innerDeps = []
-innerDepsClass = {}
+innerDepsClass = {}  # key 是依赖文件字符串; value 是依赖文件的MyClass实例。
 q = ["tomsolver.h"]
 while len(q) > 0:
     f = q[0]
@@ -65,6 +75,8 @@ while len(q) > 0:
 
     c = MyClass(f"{src_path}/{f}")
     innerDepsClass[f] = c
+
+    # 没见过的外部依赖，加入到stdDeps中
     for dep in c.depsLib:
         if dep not in stdDeps:
             stdDeps.append(dep)
@@ -84,16 +96,26 @@ while len(q) > 0:
         innerDeps.insert(insertPos, dep)
         q.append(dep)
 
-        # if not dep.find(".h"):
-        #     continue
+# 从这里开始识别.cpp的依赖
 
-        # depCpp = dep.replace(".h", ".cpp")
-        # if not os.path.isfile(f"{src_path}/{depCpp}"):
-        #     print("[NOTICE] file not exist: ", depCpp)
-        #     continue
+# 为了防止之后for循环中动态向innerDeps加入内容导致循环不结束，所以复制出一个innerDeps的副本
+innerDeps2 = []
+innerDeps2.extend(innerDeps)
+for dep in innerDeps:
+    depCpp = dep.replace(".h", ".cpp")
+    if not os.path.isfile(f"{src_path}/{depCpp}"):
+        print("[NOTICE] file not exist: ", depCpp)
+        continue
 
-        # innerDeps.insert(insertPos + 1, depCpp)
-        # q.append(depCpp)
+    c = MyClass(f"{src_path}/{depCpp}")
+    for dep in c.depsLib:
+        if dep not in stdDeps:
+            stdDeps.append(dep)
+
+    innerDeps2.append(depCpp)
+    innerDepsClass[depCpp] = c
+
+innerDeps = innerDeps2
 
 print("  inner deps: ", innerDeps)
 print("  std deps: ", stdDeps)
