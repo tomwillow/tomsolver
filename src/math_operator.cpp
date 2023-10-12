@@ -271,37 +271,37 @@ double Calc(MathOperator op, double v1, double v2) {
     double ret = std::numeric_limits<double>::quiet_NaN();
     switch (op) {
     case MathOperator::MATH_SIN:
-        ret = sin(v1);
+        ret = std::sin(v1);
         break;
     case MathOperator::MATH_COS:
-        ret = cos(v1);
+        ret = std::cos(v1);
         break;
     case MathOperator::MATH_TAN:
-        ret = tan(v1);
+        ret = std::tan(v1);
         break;
     case MathOperator::MATH_ARCSIN:
-        ret = asin(v1);
+        ret = std::asin(v1);
         break;
     case MathOperator::MATH_ARCCOS:
-        ret = acos(v1);
+        ret = std::acos(v1);
         break;
     case MathOperator::MATH_ARCTAN:
-        ret = atan(v1);
+        ret = std::atan(v1);
         break;
     case MathOperator::MATH_SQRT:
-        ret = sqrt(v1);
+        ret = std::sqrt(v1);
         break;
     case MathOperator::MATH_LOG:
-        ret = log(v1);
+        ret = std::log(v1);
         break;
     case MathOperator::MATH_LOG2:
-        ret = log2(v1);
+        ret = std::log2(v1);
         break;
     case MathOperator::MATH_LOG10:
-        ret = log10(v1);
+        ret = std::log10(v1);
         break;
     case MathOperator::MATH_EXP:
-        ret = exp(v1);
+        ret = std::exp(v1);
         break;
     case MathOperator::MATH_POSITIVE:
         ret = v1;
@@ -321,7 +321,7 @@ double Calc(MathOperator op, double v1, double v2) {
         break;
 
     case MathOperator::MATH_POWER: //^
-        ret = pow(v1, v2);
+        ret = std::pow(v1, v2);
         break;
 
     case MathOperator::MATH_ADD:
