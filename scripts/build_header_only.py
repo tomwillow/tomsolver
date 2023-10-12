@@ -3,7 +3,7 @@ import sys
 import shutil
 import re
 
-root_path = os.path.abspath(os.path.dirname(__file__)+"/..")
+root_path = os.path.abspath(os.path.dirname(__file__) + "/..")
 
 include_path = os.path.join(root_path, "include/tomsolver")
 
@@ -11,6 +11,7 @@ if not os.path.isdir(include_path):
     os.makedirs(include_path)
 
 root_file = f"{root_path}/src/tomsolver.h"
+src_path = f"{root_path}/src"
 
 
 class MyClass:
@@ -26,7 +27,7 @@ class MyClass:
 
         self.content = []
 
-        lines = []
+        self.contents = []
         for line in lines_orig:
             line = line.strip()
 
@@ -43,16 +44,73 @@ class MyClass:
                 self.depsLib.append(libDep.group(1))
                 continue
 
-            lines.append(line)
+            self.contents.append(line)
+
+        print("analysis: ", filename, ":")
+        print("  inner deps: ", self.depsInner)
+        print("  std deps: ", self.depsLib)
 
 
+# 1. 分析入口文件
+entry = MyClass(f"{root_path}/src/tomsolver.h")
 
+# 2. 从入口文件的include中逐个展开，得到['a.h', 'a.cpp', 'b.h', 'b.cpp']
+stdDeps = []
+innerDeps = []
+innerDepsClass = {}
+q = ["tomsolver.h"]
+while len(q) > 0:
+    f = q[0]
+    q.pop(0)
 
-        print(self.depsInner)
-        print(self.depsLib)
+    c = MyClass(f"{src_path}/{f}")
+    innerDepsClass[f] = c
+    for dep in c.depsLib:
+        if dep not in stdDeps:
+            stdDeps.append(dep)
 
+    for dep in c.depsInner:
+        if dep in innerDeps:
+            continue
 
-my = MyClass(f"{root_path}/src/subs.cpp")
+        insertPos = len(innerDeps)
 
-# with open(include_path+"/tomsolver.hpp", "w") as f:
-#     f.write("ddddd")
+        # 如果当前查看的f已经位于依赖列表中，那么它的依赖应该插入到它的前面
+        if f in innerDeps:
+            if dep in innerDeps:
+                innerDeps.remove(dep)
+
+            insertPos = innerDeps.index(f)
+        innerDeps.insert(insertPos, dep)
+        q.append(dep)
+
+        # if not dep.find(".h"):
+        #     continue
+
+        # depCpp = dep.replace(".h", ".cpp")
+        # if not os.path.isfile(f"{src_path}/{depCpp}"):
+        #     print("[NOTICE] file not exist: ", depCpp)
+        #     continue
+
+        # innerDeps.insert(insertPos + 1, depCpp)
+        # q.append(depCpp)
+
+print("  inner deps: ", innerDeps)
+print("  std deps: ", stdDeps)
+
+# 3. 首先写入#pragma once
+with open(f"{include_path}/tomsolver.hpp", "w") as f:
+    f.write("#pragma once\n\n")
+
+    # 4. 写入标准库头文件include
+    for header in stdDeps:
+        f.write(f"#include <{header}>\n")
+
+    # 5. 从依赖列表中逐个把.h的正文写入，把.cpp的正文写入
+    for dep in innerDeps:
+        print("writing content of ", dep, "...")
+        c = innerDepsClass[dep]
+        f.write("\n".join(c.contents))
+        f.write("\n")
+
+print("Done.")
