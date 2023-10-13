@@ -5,10 +5,8 @@ import re
 root_path = os.path.abspath(os.path.dirname(__file__) + "/..")
 
 # 输出目标的include目录
-include_path = os.path.join(root_path, "include/tomsolver")
-
-if not os.path.isdir(include_path):
-    os.makedirs(include_path)
+include_path = os.path.join(root_path, "single/include/tomsolver")
+output_filename = f"{include_path}/tomsolver.hpp"
 
 # 分析依赖的起始文件
 root_file = f"{root_path}/src/tomsolver.h"
@@ -59,8 +57,9 @@ class MyClass:
         print("  std deps: ", self.depsLib)
 
 
-# 1. 分析入口文件
-entry = MyClass(f"{root_path}/src/tomsolver.h")
+# 1. 创建文件夹
+if not os.path.isdir(include_path):
+    os.makedirs(include_path)
 
 # 2. 从入口文件的include中逐个展开，得到['a.h', 'b.h']
 
@@ -121,7 +120,6 @@ print("  inner deps: ", innerDeps)
 print("  std deps: ", stdDeps)
 
 # 3. 首先写入#pragma once
-output_filename = f"{include_path}/tomsolver.hpp"
 with open(output_filename, "w") as f:
     f.write("#pragma once\n\n")
 
