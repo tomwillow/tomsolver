@@ -31,6 +31,9 @@ class MyClass:
         # 对外部库的依赖项
         self.depsLib = []
 
+        # #define的内容
+        self.defines = []
+
         self.contents = []
 
         for line in lines_orig:
@@ -50,6 +53,10 @@ class MyClass:
                 self.depsLib.append(libDep.group(1))
                 continue
 
+            if stripedLine.find("#define") == 0:
+                self.defines.append(stripedLine)
+                continue
+
             self.contents.append(line.rstrip())
 
         print("analysis: ", filename, ":")
@@ -66,6 +73,7 @@ if not os.path.isdir(include_path):
 # 这里使用BFS来依次遍历依赖关系。innerDeps在这里起到的作用是存储访问过的节点。
 stdDeps = []
 innerDeps = []
+defines = []  # 所有的#define内容
 innerDepsClass = {}  # key 是依赖文件字符串; value 是依赖文件的MyClass实例。
 q = ["tomsolver.h"]
 while len(q) > 0:
@@ -95,6 +103,11 @@ while len(q) > 0:
         innerDeps.insert(insertPos, dep)
         q.append(dep)
 
+    # 没见过的#define，加入到defines里面
+    for defs in c.defines:
+        if defs not in defines:
+            defines.append(defs)
+
 # 从这里开始识别.cpp的依赖
 
 # 为了防止之后for循环中动态向innerDeps加入内容导致循环不结束，所以复制出一个innerDeps的副本
@@ -123,18 +136,22 @@ print("  std deps: ", stdDeps)
 with open(output_filename, "w") as f:
     f.write("#pragma once\n\n")
 
-    # 4. 写入标准库头文件include
+    # 4. #define先于#include写入
+    for defs in defines:
+        f.write(f"{defs}\n")
+
+    # 5. 写入标准库头文件include
     for header in stdDeps:
         f.write(f"#include <{header}>\n")
 
-    # 5. 从依赖列表中逐个把.h的正文写入，把.cpp的正文写入
+    # 6. 从依赖列表中逐个把.h的正文写入，把.cpp的正文写入
     for dep in innerDeps:
         print("writing content of ", dep, "...")
         c = innerDepsClass[dep]
         f.write("\n".join(c.contents))
         f.write("\n")
 
-# 6. 用clang-format处理
+# 7. 用clang-format处理
 ret = os.system(f"clang-format -i {output_filename}")
 if ret != 0:
     raise RuntimeError("[ERR] fail to run clang-format")
