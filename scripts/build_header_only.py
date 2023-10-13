@@ -36,23 +36,23 @@ class MyClass:
         self.contents = []
 
         for line in lines_orig:
-            line = line.strip()
+            stripedLine = line.strip()
 
             # 忽略
-            if line == "#pragma once":
+            if stripedLine == "#pragma once":
                 continue
 
-            innerDep = re.match(r"#include\s+\"([a-z_.]+)\"", line)
+            innerDep = re.match(r"#include\s+\"([a-z_.]+)\"", stripedLine)
             if innerDep is not None:
                 self.depsInner.append(innerDep.group(1))
                 continue
 
-            libDep = re.match(r"#include\s+<([a-z_.]+)>", line)
+            libDep = re.match(r"#include\s+<([a-z_.]+)>", stripedLine)
             if libDep is not None:
                 self.depsLib.append(libDep.group(1))
                 continue
 
-            self.contents.append(line)
+            self.contents.append(line.rstrip())
 
         print("analysis: ", filename, ":")
         print("  inner deps: ", self.depsInner)
@@ -121,7 +121,8 @@ print("  inner deps: ", innerDeps)
 print("  std deps: ", stdDeps)
 
 # 3. 首先写入#pragma once
-with open(f"{include_path}/tomsolver.hpp", "w") as f:
+output_filename = f"{include_path}/tomsolver.hpp"
+with open(output_filename, "w") as f:
     f.write("#pragma once\n\n")
 
     # 4. 写入标准库头文件include
@@ -134,5 +135,10 @@ with open(f"{include_path}/tomsolver.hpp", "w") as f:
         c = innerDepsClass[dep]
         f.write("\n".join(c.contents))
         f.write("\n")
+
+# 6. 用clang-format处理
+ret = os.system(f"clang-format -i {output_filename}")
+if ret != 0:
+    raise RuntimeError("[ERR] fail to run clang-format")
 
 print("Done.")
