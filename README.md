@@ -1,17 +1,26 @@
 # tomsolver
 
+Simplest, Well-tested, Non-linear equations solver library by C++14.
+
 ![workflow](https://github.com/tomwillow/tomsolver/actions/workflows/cmake-multi-platform.yml/badge.svg)
 
 origin: https://github.com/tomwillow/tomsolver
 author: Tom Willow
 
-# Introduction
+# Status
 
-Non-linear equations solver library by C++14.
+Developing...But you can use the functions in the "test" folder.
 
-# Support Platform
+# Features
 
-Platform: Linux, Windows, MacOS
+* non-linear equations solve
+* linear equations solve
+* matrix/vector operation
+* symbolic caculation
+
+# Supported Platform
+
+Platform: Linux, Windows
 Compiler: g++, clang, msvc
 
 # Example
