@@ -4,8 +4,10 @@
 
 #include <gtest/gtest.h>
 
-using namespace std;
 using namespace tomsolver;
+
+using std::cout;
+using std::endl;
 
 TEST(Mat, Inverse) {
     MemoryLeakDetection mld;
@@ -29,7 +31,9 @@ TEST(Mat, Inverse) {
         try {
             auto inv = A.Inverse();
             FAIL();
-        } catch (const MathError &e) { cout << "[Expected]" << e.what() << endl; }
+        } catch (const MathError &e) {
+            cout << "[Expected]" << e.what() << endl;
+        }
     }
 }
 

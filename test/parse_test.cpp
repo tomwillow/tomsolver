@@ -8,8 +8,11 @@
 
 #include <random>
 
-using namespace std;
 using namespace tomsolver;
+
+using std::cout;
+using std::deque;
+using std::endl;
 
 TEST(Parse, Base) {
     MemoryLeakDetection mld;
@@ -153,7 +156,9 @@ TEST(Parse, PostOrderError) {
         try {
             auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
             FAIL();
-        } catch (const ParseError &err) { cout << err.what() << endl; }
+        } catch (const ParseError &err) {
+            cout << err.what() << endl;
+        }
     }
 
     {
@@ -162,7 +167,9 @@ TEST(Parse, PostOrderError) {
         try {
             auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
             FAIL();
-        } catch (const ParseError &err) { cout << err.what() << endl; }
+        } catch (const ParseError &err) {
+            cout << err.what() << endl;
+        }
     }
 }
 

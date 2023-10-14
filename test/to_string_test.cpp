@@ -11,6 +11,9 @@
 
 using namespace tomsolver;
 
+using std::cout;
+using std::endl;
+
 TEST(ToString, Base) {
     MemoryLeakDetection mld;
 

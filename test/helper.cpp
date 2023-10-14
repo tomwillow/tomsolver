@@ -7,20 +7,22 @@
 #include <random>
 #include <chrono>
 
-using namespace std;
 using namespace tomsolver;
 
-std::pair<Node, double> tomsolver::CreateRandomExpresionTree(int len) {
-    auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
-    cout << "seed = " << seed << endl;
-    default_random_engine eng(seed);
+using std::cout;
+using std::endl;
 
-    vector<MathOperator> ops{MathOperator::MATH_POSITIVE, MathOperator::MATH_NEGATIVE, MathOperator::MATH_ADD,
-                             MathOperator::MATH_SUB,      MathOperator::MATH_MULTIPLY, MathOperator::MATH_DIVIDE,
-                             MathOperator::MATH_SIN,      MathOperator::MATH_COS,      MathOperator::MATH_TAN,
-                             MathOperator::MATH_ARCSIN,   MathOperator::MATH_ARCCOS,   MathOperator::MATH_ARCTAN};
-    uniform_int_distribution<int> unifOp(0, static_cast<int>(ops.size()) - 1);
-    uniform_real_distribution<double> unifNum(-100.0, 100.0);
+std::pair<Node, double> tomsolver::CreateRandomExpresionTree(int len) {
+    auto seed = static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    cout << "seed = " << seed << endl;
+    std::default_random_engine eng(seed);
+
+    std::vector<MathOperator> ops{MathOperator::MATH_POSITIVE, MathOperator::MATH_NEGATIVE, MathOperator::MATH_ADD,
+                                  MathOperator::MATH_SUB,      MathOperator::MATH_MULTIPLY, MathOperator::MATH_DIVIDE,
+                                  MathOperator::MATH_SIN,      MathOperator::MATH_COS,      MathOperator::MATH_TAN,
+                                  MathOperator::MATH_ARCSIN,   MathOperator::MATH_ARCCOS,   MathOperator::MATH_ARCTAN};
+    std::uniform_int_distribution<int> unifOp(0, static_cast<int>(ops.size()) - 1);
+    std::uniform_real_distribution<double> unifNum(-100.0, 100.0);
     double v = unifNum(eng);
     auto node = Num(v);
 

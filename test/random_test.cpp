@@ -7,19 +7,21 @@
 
 #include <random>
 
-using namespace std;
 using namespace tomsolver;
+
+using std::cout;
+using std::endl;
 
 TEST(Node, Random) {
     MemoryLeakDetection mld;
 
     int maxCount = 10;
 
-    auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
+    auto seed = static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     cout << "seed = " << seed << endl;
-    default_random_engine eng(seed);
+    std::default_random_engine eng(seed);
 
-    uniform_int_distribution<int> unifCount(1, maxCount);
+    std::uniform_int_distribution<int> unifCount(1, maxCount);
     for (int i = 0; i < 10; ++i) {
         int count = unifCount(eng);
 
@@ -80,5 +82,5 @@ TEST(ToString, DoNotStackOverFlow) {
     Node &node = pr.first;
 
     // 输出表达式字符串，不应爆栈
-    string s = node->ToString();
+    std::string s = node->ToString();
 }

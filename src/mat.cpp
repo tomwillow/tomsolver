@@ -5,8 +5,6 @@
 
 #include <cassert>
 
-using namespace std;
-
 namespace tomsolver {
 
 Mat::Mat(int row, int col) noexcept
@@ -151,7 +149,7 @@ int Mat::Cols() const noexcept {
 Vec Mat::ToVec() const {
     assert(rows > 0);
     if (cols != 1) {
-        throw runtime_error("Mat::ToVec fail. rows is not one");
+        throw std::runtime_error("Mat::ToVec fail. rows is not one");
     }
     Vec v(rows);
     v.cols = 1;
@@ -214,7 +212,7 @@ void Mat::Resize(int newRows) noexcept {
 }
 
 Mat &Mat::Zero() noexcept {
-    data = vector<vector<double>>(rows, vector<double>(cols, 0));
+    data = std::vector<std::vector<double>>(rows, std::vector<double>(cols, 0));
     return *this;
 }
 
@@ -259,7 +257,7 @@ double Mat::Min() const noexcept {
 }
 
 void Mat::SetValue(double value) noexcept {
-    data = vector<vector<double>>(rows, vector<double>(cols, value));
+    data = std::vector<std::vector<double>>(rows, std::vector<double>(cols, value));
 }
 
 bool Mat::PositiveDetermine() const noexcept {

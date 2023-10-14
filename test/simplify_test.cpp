@@ -8,8 +8,10 @@
 
 #include <random>
 
-using namespace std;
 using namespace tomsolver;
+
+using std::cout;
+using std::endl;
 
 TEST(Simplify, Base) {
     MemoryLeakDetection mld;

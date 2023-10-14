@@ -11,18 +11,20 @@
 #undef max
 #undef min
 
-using namespace std;
 using namespace tomsolver;
+
+using std::cout;
+using std::endl;
 
 TEST(Function, Trigonometric) {
     MemoryLeakDetection mld;
 
     int count = 100;
 
-    auto seed = static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count());
+    auto seed = static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     cout << "seed = " << seed << endl;
-    default_random_engine eng(seed);
-    uniform_real_distribution<double> unifNum;
+    std::default_random_engine eng(seed);
+    std::uniform_real_distribution<double> unifNum;
 
     for (int i = 0; i < count; ++i) {
         double num = unifNum(eng);
@@ -52,7 +54,9 @@ TEST(Function, InvalidNumber) {
         try {                                                                                                          \
             statement;                                                                                                 \
             FAIL();                                                                                                    \
-        } catch (const MathError &err) { std::cerr << "[Expected Exception]" << err.what() << std::endl; }             \
+        } catch (const MathError &err) {                                                                               \
+            std::cerr << "[Expected Exception]" << err.what() << std::endl;                                            \
+        }                                                                                                              \
     } else {                                                                                                           \
         try {                                                                                                          \
             statement;                                                                                                 \

@@ -4,8 +4,10 @@
 
 #include <gtest/gtest.h>
 
-using namespace std;
 using namespace tomsolver;
+
+using std::cout;
+using std::endl;
 
 TEST(Linear, Base) {
     MemoryLeakDetection mld;
