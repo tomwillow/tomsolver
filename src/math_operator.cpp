@@ -3,6 +3,7 @@
 
 #include <limits>
 #include <cassert>
+#include <cmath>
 
 namespace tomsolver {
 
