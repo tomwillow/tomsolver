@@ -40,3 +40,7 @@ $ cmake ../tomsolver
 $ cmake --build .
 $ ctest
 ```
+
+# Thanks
+
+https://github.com/taehwan642
