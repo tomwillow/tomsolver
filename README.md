@@ -1,10 +1,11 @@
 # tomsolver
 
-Simplest, Well-tested, Non-linear equations solver library by C++14.
-
 ![workflow](https://github.com/tomwillow/tomsolver/actions/workflows/cmake-multi-platform.yml/badge.svg)
 
+Simplest, Well-tested, Non-linear equations solver library by C++14.
+
 origin: https://github.com/tomwillow/tomsolver
+
 author: Tom Willow
 
 # Status
