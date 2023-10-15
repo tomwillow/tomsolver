@@ -1,46 +1,17 @@
 import os
 import re
 
+import util
+
+
 # repository的根目录
 root_dir = os.path.abspath(os.path.dirname(__file__) + "/..")
 
-# 输出目标的include目录
-target_dir = os.path.join(root_dir, "single/include/tomsolver")
-output_filename = f"{target_dir}/tomsolver.hpp"
 
-# 分析依赖的起始文件
-src_dir = f"{root_dir}/src"
-
-include_dirs = [f"{root_dir}/src"]
-
-
-def getFullPath(basename: str) -> str:
+class MyTest:
     """
-    传入一个basename，查找include_dirs里面是否有这个文件，并返回全路径。
-    """
-    for dir in include_dirs:
-        dest = os.path.join(dir, basename)
-        if os.path.isfile(dest):
-            return dest
-    return None
-
-
-def findAllFile(base):
-    """
-    通过迭代方式遍历文件夹下的文件名。
-    """
-    for root, ds, fs in os.walk(base):
-        for f in fs:
-            fullname = os.path.join(root, f)
-            yield fullname
-
-
-class MyClass:
-    """
-    这个类用于分析.h或者.cpp文件，读入文件，获取它的include ""的内容和include <>的内容。
-    双引号的header视为内部依赖，尖括号的header视为外部依赖。
-    #pragma once忽略掉。
-    其他的内容存入self.contents。
+    这个类用于分析xxx_test.cpp文件，提取出TEST(xxx,xxx) {} 内容填入self.contents。
+    其他部分忽略不要。
     """
 
     def __init__(self, filename):
@@ -48,127 +19,110 @@ class MyClass:
         with open(filename, "r", encoding="utf-8") as f:
             lines_orig = f.readlines()
 
-        # 内部依赖项，对于拓扑排序而言就是这个节点的入度
-        self.depsInner = []
+        self.contents = []
 
-        # 对外部库的依赖项
-        self.depsLib = []
+        inTest = False
+        for line in lines_orig:
+            line = line.rstrip()
 
-        # #define的内容
-        self.defines = []
+            if re.match(r"TEST\(\w+,\s+\w+\)\s+{", line):
+                if inTest:
+                    raise RuntimeError("[ERR] parse error at " + line)
+                self.contents.append(line)
+                inTest = True
+                continue
+
+            if line == "}":
+                if not inTest:
+                    raise RuntimeError("[ERR] parse error at " + line)
+                self.contents.append(line)
+                inTest = False
+                continue
+
+            if inTest:
+                self.contents.append(line)
+
+
+class MyTestDepFile:
+    """
+    这个类用于解析测试cpp的依赖文件。内容填入self.contents。
+    """
+
+    def __init__(self, filename):
+        self.filename = filename
+        with open(filename, "r", encoding="utf-8") as f:
+            lines_orig = f.readlines()
 
         self.contents = []
 
         for line in lines_orig:
-            stripedLine = line.strip()
+            line = line.rstrip()
 
             # 忽略
-            if stripedLine == "#pragma once":
+            if line == "#pragma once":
                 continue
 
-            innerDep = re.match(r"#include\s+\"([a-z_.]+)\"", stripedLine)
-            if innerDep is not None:
-                basename = innerDep.group(1)
-                fullname = getFullPath(basename)
-                if fullname is None:
-                    raise RuntimeError("can not find full path of ", basename)
-                self.depsInner.append(fullname)
-                continue
-
-            libDep = re.match(r"#include\s+<([a-z_.]+)>", stripedLine)
-            if libDep is not None:
-                basename = libDep.group(1)
-                self.depsLib.append(basename)
-                continue
-
-            if stripedLine.find("#define") == 0:
-                self.defines.append(stripedLine)
-                continue
-
-            self.contents.append(line.rstrip())
-
-        print("analysis: ", filename, ":")
-        print("  inner deps: ", self.depsInner)
-        print("  std deps: ", self.depsLib)
+            self.contents.append(line)
 
 
-# 1. 创建文件夹
-if not os.path.isdir(target_dir):
-    os.makedirs(target_dir)
+if __name__ == "__main__":
+    # 输出目标的include目录
+    target_dir = os.path.join(root_dir, "single/test")
+    output_filename = f"{target_dir}/all_tests.cpp"
 
+    srcFilenames = []
+    for path in util.findAllFile(f"{root_dir}/test"):
+        if path.find("_test.cpp") != -1:
+            srcFilenames.append(path)
 
-# 2. 把源路径下所有文件都分析一遍
-elements = []
-for path in findAllFile(src_dir):
-    elements.append(MyClass(path))
+    # 1. 创建文件夹
+    if not os.path.isdir(target_dir):
+        os.makedirs(target_dir)
 
+    #
+    elements = []
+    for path in srcFilenames:
+        elements.append(MyTest(path))
 
-# 3. 拓扑排序
-sorted = []
-while len(elements) > 0:
-    temp = []
+    #
+    contents = []
+    contents.extend(MyTestDepFile(f"{root_dir}/test/memory_leak_detection.h").contents)
+    contents.extend(
+        MyTestDepFile(f"{root_dir}/test/memory_leak_detection_win.h").contents
+    )
+    contents.extend(MyTestDepFile(f"{root_dir}/test/helper.cpp").contents)
 
-    # 遍历找到入度为0的节点，加入序列
-    for i in range(len(elements) - 1, -1, -1):
-        cls = elements[i]
-        if len(cls.depsInner) > 0:
+    # 去掉所有#include "xxx"
+    for i in range(len(contents) - 1, -1, -1):
+        line = contents[i]
+        obj = re.match(r"#include\s+\"([a-z_./\\]+)\"", line)
+        if obj is None:
             continue
 
-        # 此时入度为0
-        temp.append(cls)
-        elements.remove(cls)
+        contents.remove(line)
 
-        for t in elements:
-            try:
-                index = t.depsInner.index(cls.filename)
-            except ValueError:
-                continue
-            obj = t.depsInner[index]
-            t.depsInner.remove(obj)
+    # 写入
+    with open(output_filename, "w") as f:
+        # 填入预先准备好的头
+        with open(f"{root_dir}/scripts/all_tests_preheader.cpp", "r") as ff:
+            headerLines = ff.readlines()
 
-    # 如果本轮没有入度为0的元素，代表有环形依赖
-    if len(temp) == 0:
-        print("[FAIL] remain elements: ", elements)
-        raise RuntimeError("topological sort fail")
+        f.writelines(headerLines)
 
-    sorted.extend(temp)
-
-
-# 4. 提取所有的#define，#include <>的内容
-
-allDefines = []
-allStdDeps = []
-for ele in sorted:
-    allDefines.extend(ele.defines)
-    allStdDeps.extend(ele.depsLib)
-allDefines = list(set(allDefines))
-allStdDeps = list(set(allStdDeps))
-allDefines.sort()
-allStdDeps.sort()
-
-
-# 5. 写入
-with open(output_filename, "w") as f:
-    f.write("#pragma once\n\n")
-
-    # define先于#include写入
-    for defs in allDefines:
-        f.write(f"{defs}\n")
-
-    # 写入标准库头文件include
-    for header in allStdDeps:
-        f.write(f"#include <{header}>\n")
-
-    # 逐个把正文写入
-    for ele in sorted:
-        print("writing content of ", ele.filename, "...")
-        f.write("\n".join(ele.contents))
         f.write("\n")
 
+        f.write("\n".join(contents))
+        f.write("\n")
 
-# 6. 用clang-format处理
-ret = os.system(f"clang-format -i {output_filename}")
-if ret != 0:
-    raise RuntimeError("[ERR] fail to run clang-format")
+        # 写入所有测试
+        for ele in elements:
+            print("writing content of ", ele.filename, "...")
+            f.write("\n".join(ele.contents))
+            f.write("\n\n")
 
-print("Done.")
+    # 用clang-format处理
+    ret = os.system(f"clang-format -i {output_filename}")
+    if ret != 0:
+        raise RuntimeError("[ERR] fail to run clang-format")
+
+    print("Done.")

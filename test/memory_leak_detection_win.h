@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef WIN32
+
 #include <windows.h>
 #define _CRTDBG_MAP_ALLOC // to get more details
 #include <stdlib.h>
@@ -41,3 +43,5 @@ private:
     _CrtMemState sNew;
     _CrtMemState sDiff;
 };
+
+#endif

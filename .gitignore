@@ -2,3 +2,4 @@
 output/
 build/
 .vscode/
+__pycache__/
