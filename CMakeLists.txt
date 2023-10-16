@@ -68,3 +68,6 @@ target_link_libraries(TomSolverTest PUBLIC
 
 include(GoogleTest)
 gtest_discover_tests(TomSolverTest)
+
+# =====================================
+add_subdirectory(single)

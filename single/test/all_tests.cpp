@@ -1,12 +1,16 @@
 #include "tomsolver/tomsolver.hpp"
 
+#include <gtest/gtest.h>
+
 #include <cmath>
 #include <random>
 #include <chrono>
+#include <deque>
 
 using namespace tomsolver;
 
 using std::cout;
+using std::deque;
 using std::endl;
 
 #ifdef WIN32
@@ -66,12 +70,12 @@ private:
 #include <random>
 #include <chrono>
 
-using namespace tomsolver;
-
 using std::cout;
 using std::endl;
 
-std::pair<Node, double> tomsolver::CreateRandomExpresionTree(int len) {
+namespace tomsolver {
+
+std::pair<Node, double> CreateRandomExpresionTree(int len) {
     auto seed = static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     cout << "seed = " << seed << endl;
     std::default_random_engine eng(seed);
@@ -180,6 +184,8 @@ std::pair<Node, double> tomsolver::CreateRandomExpresionTree(int len) {
     }
     return {std::move(node), v};
 }
+
+} // namespace tomsolver
 TEST(ToString, Base) {
     MemoryLeakDetection mld;
 
