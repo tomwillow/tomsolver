@@ -605,6 +605,40 @@ std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node 
     return ret;
 }
 
+std::unordered_set<std::string> NodeImpl::GetAllVarNames() const noexcept {
+    // 前序遍历。非递归实现。
+    std::unordered_set<std::string> ret;
+
+    std::stack<const NodeImpl *> stk;
+
+    if (type == NodeType::VARIABLE) {
+        ret.insert(varname);
+    }
+
+    if (right) {
+        stk.push(right.get());
+    }
+    if (left) {
+        stk.push(left.get());
+    }
+    while (!stk.empty()) {
+        const NodeImpl *f = stk.top();
+        stk.pop();
+
+        if (f->type == NodeType::VARIABLE) {
+            ret.insert(f->varname);
+        }
+
+        if (f->right) {
+            stk.push(f->right.get());
+        }
+        if (f->left) {
+            stk.push(f->left.get());
+        }
+    }
+    return ret;
+}
+
 } // namespace internal
 
 Node Clone(const Node &rhs) noexcept {

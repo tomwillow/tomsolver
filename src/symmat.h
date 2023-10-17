@@ -53,6 +53,11 @@ public:
     SymMat &Subs(const VarsTable &varsTable) noexcept;
 
     /**
+     * 返回符号矩阵内出现的所有变量名。
+     */
+    std::unordered_set<std::string> GetAllVarNames() const noexcept;
+
+    /**
      * 如果rhs和自己的维数不匹配会触发assert。
      */
     SymMat operator-(const SymMat &rhs) const noexcept;

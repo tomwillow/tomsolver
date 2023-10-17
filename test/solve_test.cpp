@@ -41,9 +41,6 @@ TEST(Solve, Base) {
     SymVec equations = f - b;
     equations.Subs(VarsTable{{"a", 0.425}, {"b", 0.39243}, {"c", 0.109}});
 
-    // 初值表
-    VarsTable varsTable{{"x1", 1}, {"x2", 1}, {"x3", 1}};
-
     // 期望值
     VarsTable expected{{"x1", 1.5722855035930956}, {"x2", 1.6360330989069252}, {"x3", -0.0637475947386077}};
 
@@ -51,7 +48,7 @@ TEST(Solve, Base) {
     {
         GetConfig().nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
 
-        VarsTable got = Solve(varsTable, equations);
+        VarsTable got = Solve(equations);
         cout << got << endl;
 
         ASSERT_EQ(got, expected);
@@ -61,7 +58,7 @@ TEST(Solve, Base) {
     {
         GetConfig().nonlinearMethod = NonlinearMethod::LM;
 
-        VarsTable got = SolveByLM(varsTable, equations);
+        VarsTable got = Solve(equations);
         cout << got << endl;
 
         ASSERT_EQ(got, expected);

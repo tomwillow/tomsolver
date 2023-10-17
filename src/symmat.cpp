@@ -92,6 +92,17 @@ SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
     return *this;
 }
 
+std::unordered_set<std::string> SymMat::GetAllVarNames() const noexcept {
+    std::unordered_set<std::string> ret;
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            auto varNames = data[i][j]->GetAllVarNames();
+            ret.insert(varNames.begin(), varNames.end());
+        }
+    }
+    return ret;
+}
+
 SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
     assert(rhs.Rows() == Rows() && rhs.Cols() == Cols());
     SymMat ret(Rows(), Cols());

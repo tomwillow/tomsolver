@@ -218,4 +218,11 @@ VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
                         std::to_string(static_cast<int>(GetConfig().nonlinearMethod)));
 }
 
+VarsTable Solve(const SymVec &equations) {
+    auto varNames = equations.GetAllVarNames();
+    std::vector<std::string> vecVarNames(varNames.begin(), varNames.end());
+    VarsTable varsTable(std::move(vecVarNames), GetConfig().initialValue);
+    return Solve(varsTable, equations);
+}
+
 } // namespace tomsolver

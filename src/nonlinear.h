@@ -39,4 +39,11 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations);
  */
 VarsTable Solve(const VarsTable &varsTable, const SymVec &equations);
 
+/**
+ * 解非线性方程组equations。
+ * 变量名通过分析equations得到。初值通过GetConfig()得到。
+ * @exception runtime_error 迭代次数超出限制
+ */
+VarsTable Solve(const SymVec &equations);
+
 } // namespace tomsolver
