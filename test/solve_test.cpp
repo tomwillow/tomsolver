@@ -1,7 +1,7 @@
 #include "nonlinear.h"
 #include "config.h"
 #include "functions.h"
-#include "linear.h"
+#include "parse.h"
 
 #include "memory_leak_detection.h"
 
@@ -28,13 +28,11 @@ TEST(Solve, Base) {
                     a*sin(x(1)) + b*sin(x(1)-x(2)) + c*sin(x(1)-x(2)-x(3)),
                     x(1)-x(2)-x(3)    ];
     */
-    Node f1 = Var("a") * cos(Var("x1")) + Var("b") * cos(Var("x1") - Var("x2")) +
-              Var("c") * cos(Var("x1") - Var("x2") - Var("x3"));
-    Node f2 = Var("a") * sin(Var("x1")) + Var("b") * sin(Var("x1") - Var("x2")) +
-              Var("c") * sin(Var("x1") - Var("x2") - Var("x3"));
-    Node f3 = Var("x1") - Var("x2") - Var("x3");
+    Node f1 = Parse("a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)");
+    Node f2 = Parse("a*sin(x1) + b*sin(x1-x2) + c*sin(x1-x2-x3)");
+    Node f3 = Parse("x1-x2-x3");
 
-    SymVec f{Clone(f1), Clone(f2), Clone(f3)};
+    SymVec f{Move(f1), Move(f2), Move(f3)};
 
     // 目标位置为：[0.5 0.4 0]
     SymVec b{Num(0.5), Num(0.4), Num(0)};

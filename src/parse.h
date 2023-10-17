@@ -59,4 +59,11 @@ public:
 };
 
 } // namespace internal
+
+/**
+ * 把字符串解析为表达式。
+ * @exception ParseError
+ */
+Node Parse(const std::string &expression);
+
 } // namespace tomsolver

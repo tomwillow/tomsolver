@@ -245,7 +245,7 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
     while (inOrder.size() > 0) {
         Token &f = inOrder.front();
 
-        //数字直接入栈
+        // 数字直接入栈
         if (f.node->type == NodeType::NUMBER || f.node->type == NodeType::VARIABLE) {
             postOrder.push_back(std::move(f));
             inOrder.pop_front();
@@ -273,15 +273,15 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
             while (temp.size() > 0) {
                 if (temp.top().node->op == MathOperator::MATH_LEFT_PARENTHESIS) //(
                 {
-                    temp.pop(); //扔掉左括号
+                    temp.pop(); // 扔掉左括号
                     break;
                 } else {
-                    postOrder.push_back(std::move(temp.top())); //入队
+                    postOrder.push_back(std::move(temp.top())); // 入队
                     temp.pop();
                 }
             }
 
-            //取出函数
+            // 取出函数
             if (temp.size() > 0 && IsFunction(temp.top().node->op)) {
                 postOrder.push_back(std::move(temp.top()));
                 temp.pop();
@@ -296,7 +296,7 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
                 } else
                     break;
             }
-            inOrder.pop_front(); //扔掉右括号
+            inOrder.pop_front(); // 扔掉右括号
             continue;
         }
 
@@ -307,26 +307,26 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
             continue;
         }
 
-        //不是括号也不是正负号
-        if (temp.size() > 0 && IsLeft2Right(temp.top().node->op) == true) //左结合
-            //临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
+        // 不是括号也不是正负号
+        if (temp.size() > 0 && IsLeft2Right(temp.top().node->op) == true) // 左结合
+            // 临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
             while (temp.size() > 0 && Rank(f.node->op) <= Rank(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top())); //符号进入post队列
+                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
                 temp.pop();
             }
         else
-            //右结合
-            //临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
+            // 右结合
+            // 临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
             while (temp.size() > 0 && Rank(f.node->op) < Rank(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top())); //符号进入post队列
+                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
                 temp.pop();
             };
 
-        temp.push(std::move(f)); //高优先级已全部挤出，当前符号入栈
+        temp.push(std::move(f)); // 高优先级已全部挤出，当前符号入栈
         inOrder.pop_front();
     }
 
-    //剩下的元素全部入栈
+    // 剩下的元素全部入栈
     while (temp.size() > 0) {
         Token token = std::move(temp.top());
         temp.pop();
@@ -342,10 +342,10 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
     return postOrder;
 }
 
-//将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
+// 将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
 Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
     std::stack<Token> tempStack;
-    //逐个识别PostOrder序列，构建表达式树
+    // 逐个识别PostOrder序列，构建表达式树
     for (auto &token : postOrder) {
         switch (token.node->type) {
         case NodeType::NUMBER:
@@ -395,4 +395,12 @@ Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
 }
 
 } // namespace internal
+
+Node Parse(const std::string &expression) {
+    std::deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens(expression);
+    auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+    auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+    return node;
+}
+
 } // namespace tomsolver
