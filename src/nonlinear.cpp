@@ -22,7 +22,7 @@ double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::functi
 
         auto l = f(x_new).Norm2();
         auto r = (f(x).AsMat() + gamma * alpha * df(x).Transpose() * d).Norm2();
-        if (l <= r) //检验条件
+        if (l <= r) // 检验条件
         {
             break;
         } else
@@ -205,6 +205,17 @@ success:
 
 overIterate:
     throw runtime_error("迭代次数超出限制");
+}
+
+VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
+    switch (GetConfig().nonlinearMethod) {
+    case NonlinearMethod::NEWTON_RAPHSON:
+        return SolveByNewtonRaphson(varsTable, equations);
+    case NonlinearMethod::LM:
+        return SolveByLM(varsTable, equations);
+    }
+    throw runtime_error("invalid config.NonlinearMethod value: " +
+                        std::to_string(static_cast<int>(GetConfig().nonlinearMethod)));
 }
 
 } // namespace tomsolver

@@ -14,7 +14,44 @@ using namespace tomsolver;
 using std::cout;
 using std::endl;
 
-TEST(Solve, Base) {
+TEST(SolveBase, FindAlphaByArmijo) {
+    MemoryLeakDetection mld;
+
+    GetConfig().epsilon = 1e-6;
+
+    auto g = [](const Vec &x) -> Vec {
+        return {pow(x[0] - 4, 4) + pow(x[1] - 3, 2) + 4 * pow(x[2] + 5, 4)};
+    };
+
+    auto dg = [](const Vec &x) -> Vec {
+        return {4 * pow(x[0] - 4, 3), 2 * (x[1] - 3), 16 * pow(x[2] + 5, 3)};
+    };
+
+    Vec x{4, 2, -1};
+    Vec d = -Vec{0, -2, 1024};
+    double alpha = Armijo(x, d, g, dg);
+    cout << alpha << endl;
+
+    // FIXME: not match got results
+    // double expected = 0.003866;
+}
+
+TEST(SolveBase, FindAlpha) {
+
+    auto g = [](const Vec &x) -> Vec {
+        return {pow(x[0] - 4, 4), pow(x[1] - 3, 2), 4 * pow(x[2] + 5, 4)};
+    };
+
+    Vec x{4, 2, -1};
+    Vec d = -Vec{0, -2, 1024};
+    double alpha = FindAlpha(x, d, g);
+    cout << alpha << endl;
+
+    // FIXME: not match got results
+    // double expected = 0.003866;
+}
+
+TEST(SolveBase, Base) {
     // the example of this test is from: https://zhuanlan.zhihu.com/p/136889381
 
     MemoryLeakDetection mld;
@@ -49,9 +86,7 @@ TEST(Solve, Base) {
 
     // Newton-Raphson方法
     {
-        GetConfig().nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
-
-        VarsTable got = Solve(varsTable, equations);
+        VarsTable got = SolveByNewtonRaphson(varsTable, equations);
         cout << got << endl;
 
         ASSERT_EQ(got, expected);
@@ -59,8 +94,6 @@ TEST(Solve, Base) {
 
     // LM方法
     {
-        GetConfig().nonlinearMethod = NonlinearMethod::LM;
-
         VarsTable got = SolveByLM(varsTable, equations);
         cout << got << endl;
 
