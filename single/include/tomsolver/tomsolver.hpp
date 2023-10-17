@@ -16,11 +16,14 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace tomsolver {
 
 enum class LogLevel { OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL };
+
+enum class NonlinearMethod { NEWTON_RAPHSON, LM };
 
 struct Config {
     /**
@@ -36,6 +39,16 @@ struct Config {
      * 最大迭代次数限制
      */
     int maxIterations = 100;
+
+    /**
+     * 求解方法
+     */
+    NonlinearMethod nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
+
+    /**
+     * 非线性方程求解时，当没有为VarsTable传初值时，设定的初值
+     */
+    double initialValue = 1.0;
 
     Config();
 
@@ -1158,6 +1171,11 @@ struct NodeImpl {
      * 化简。
      */
     NodeImpl &Simplify() noexcept;
+
+    /**
+     * 返回表达式内出现的所有变量名。
+     */
+    std::unordered_set<std::string> GetAllVarNames() const noexcept;
 
     /**
      * 检查整个节点数的parent指针是否正确。
@@ -3017,6 +3035,40 @@ std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node 
     return ret;
 }
 
+std::unordered_set<std::string> NodeImpl::GetAllVarNames() const noexcept {
+    // 前序遍历。非递归实现。
+    std::unordered_set<std::string> ret;
+
+    std::stack<const NodeImpl *> stk;
+
+    if (type == NodeType::VARIABLE) {
+        ret.insert(varname);
+    }
+
+    if (right) {
+        stk.push(right.get());
+    }
+    if (left) {
+        stk.push(left.get());
+    }
+    while (!stk.empty()) {
+        const NodeImpl *f = stk.top();
+        stk.pop();
+
+        if (f->type == NodeType::VARIABLE) {
+            ret.insert(f->varname);
+        }
+
+        if (f->right) {
+            stk.push(f->right.get());
+        }
+        if (f->left) {
+            stk.push(f->left.get());
+        }
+    }
+    return ret;
+}
+
 } // namespace internal
 
 Node Clone(const Node &rhs) noexcept {
@@ -3122,6 +3174,13 @@ public:
 };
 
 } // namespace internal
+
+/**
+ * 把字符串解析为表达式。
+ * @exception ParseError
+ */
+Node Parse(const std::string &expression);
+
 } // namespace tomsolver
 
 namespace tomsolver {
@@ -3306,6 +3365,11 @@ public:
     SymMat &Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
 
     SymMat &Subs(const VarsTable &varsTable) noexcept;
+
+    /**
+     * 返回符号矩阵内出现的所有变量名。
+     */
+    std::unordered_set<std::string> GetAllVarNames() const noexcept;
 
     /**
      * 如果rhs和自己的维数不匹配会触发assert。
@@ -3804,6 +3868,17 @@ SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
     return *this;
 }
 
+std::unordered_set<std::string> SymMat::GetAllVarNames() const noexcept {
+    std::unordered_set<std::string> ret;
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            auto varNames = data[i][j]->GetAllVarNames();
+            ret.insert(varNames.begin(), varNames.end());
+        }
+    }
+    return ret;
+}
+
 SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
     assert(rhs.Rows() == Rows() && rhs.Cols() == Cols());
     SymMat ret(Rows(), Cols());
@@ -4119,7 +4194,7 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
     while (inOrder.size() > 0) {
         Token &f = inOrder.front();
 
-        //数字直接入栈
+        // 数字直接入栈
         if (f.node->type == NodeType::NUMBER || f.node->type == NodeType::VARIABLE) {
             postOrder.push_back(std::move(f));
             inOrder.pop_front();
@@ -4147,15 +4222,15 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
             while (temp.size() > 0) {
                 if (temp.top().node->op == MathOperator::MATH_LEFT_PARENTHESIS) //(
                 {
-                    temp.pop(); //扔掉左括号
+                    temp.pop(); // 扔掉左括号
                     break;
                 } else {
-                    postOrder.push_back(std::move(temp.top())); //入队
+                    postOrder.push_back(std::move(temp.top())); // 入队
                     temp.pop();
                 }
             }
 
-            //取出函数
+            // 取出函数
             if (temp.size() > 0 && IsFunction(temp.top().node->op)) {
                 postOrder.push_back(std::move(temp.top()));
                 temp.pop();
@@ -4170,7 +4245,7 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
                 } else
                     break;
             }
-            inOrder.pop_front(); //扔掉右括号
+            inOrder.pop_front(); // 扔掉右括号
             continue;
         }
 
@@ -4181,26 +4256,26 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
             continue;
         }
 
-        //不是括号也不是正负号
-        if (temp.size() > 0 && IsLeft2Right(temp.top().node->op) == true) //左结合
-            //临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
+        // 不是括号也不是正负号
+        if (temp.size() > 0 && IsLeft2Right(temp.top().node->op) == true) // 左结合
+            // 临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
             while (temp.size() > 0 && Rank(f.node->op) <= Rank(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top())); //符号进入post队列
+                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
                 temp.pop();
             }
         else
-            //右结合
-            //临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
+            // 右结合
+            // 临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
             while (temp.size() > 0 && Rank(f.node->op) < Rank(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top())); //符号进入post队列
+                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
                 temp.pop();
             };
 
-        temp.push(std::move(f)); //高优先级已全部挤出，当前符号入栈
+        temp.push(std::move(f)); // 高优先级已全部挤出，当前符号入栈
         inOrder.pop_front();
     }
 
-    //剩下的元素全部入栈
+    // 剩下的元素全部入栈
     while (temp.size() > 0) {
         Token token = std::move(temp.top());
         temp.pop();
@@ -4216,10 +4291,10 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
     return postOrder;
 }
 
-//将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
+// 将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
 Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
     std::stack<Token> tempStack;
-    //逐个识别PostOrder序列，构建表达式树
+    // 逐个识别PostOrder序列，构建表达式树
     for (auto &token : postOrder) {
         switch (token.node->type) {
         case NodeType::NUMBER:
@@ -4269,6 +4344,14 @@ Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
 }
 
 } // namespace internal
+
+Node Parse(const std::string &expression) {
+    std::deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens(expression);
+    auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+    auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+    return node;
+}
+
 } // namespace tomsolver
 
 namespace tomsolver {
@@ -4871,6 +4954,20 @@ VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equatio
  */
 VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations);
 
+/**
+ * 解非线性方程组equations。
+ * 初值及变量名通过varsTable传入。
+ * @exception runtime_error 迭代次数超出限制
+ */
+VarsTable Solve(const VarsTable &varsTable, const SymVec &equations);
+
+/**
+ * 解非线性方程组equations。
+ * 变量名通过分析equations得到。初值通过GetConfig()得到。
+ * @exception runtime_error 迭代次数超出限制
+ */
+VarsTable Solve(const SymVec &equations);
+
 } // namespace tomsolver
 
 using std::cout;
@@ -4889,7 +4986,7 @@ double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::functi
 
         auto l = f(x_new).Norm2();
         auto r = (f(x).AsMat() + gamma * alpha * df(x).Transpose() * d).Norm2();
-        if (l <= r) //检验条件
+        if (l <= r) // 检验条件
         {
             break;
         } else
@@ -5072,6 +5169,24 @@ success:
 
 overIterate:
     throw runtime_error("迭代次数超出限制");
+}
+
+VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
+    switch (GetConfig().nonlinearMethod) {
+    case NonlinearMethod::NEWTON_RAPHSON:
+        return SolveByNewtonRaphson(varsTable, equations);
+    case NonlinearMethod::LM:
+        return SolveByLM(varsTable, equations);
+    }
+    throw runtime_error("invalid config.NonlinearMethod value: " +
+                        std::to_string(static_cast<int>(GetConfig().nonlinearMethod)));
+}
+
+VarsTable Solve(const SymVec &equations) {
+    auto varNames = equations.GetAllVarNames();
+    std::vector<std::string> vecVarNames(varNames.begin(), varNames.end());
+    VarsTable varsTable(std::move(vecVarNames), GetConfig().initialValue);
+    return Solve(varsTable, equations);
 }
 
 } // namespace tomsolver
