@@ -14,6 +14,7 @@ if __name__ == "__main__":
     srcFilenames = []
     for path in util.findAllFile(f"{root_dir}/src"):
         srcFilenames.append(path)
+    srcFilenames.sort()
 
     include_dirs = [f"{root_dir}/src"]
 

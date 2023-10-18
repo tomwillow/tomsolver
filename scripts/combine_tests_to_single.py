@@ -74,6 +74,7 @@ if __name__ == "__main__":
     for path in util.findAllFile(f"{root_dir}/test"):
         if path.find("_test.cpp") != -1:
             srcFilenames.append(path)
+    srcFilenames.sort()
 
     # 1. 创建文件夹
     if not os.path.isdir(target_dir):
@@ -102,7 +103,7 @@ if __name__ == "__main__":
         contents.remove(line)
 
     # 写入
-    with open(output_filename, "w") as f:
+    with open(output_filename, "w", encoding="utf-8") as f:
         # 填入预先准备好的头
         with open(f"{root_dir}/scripts/all_tests_preheader.cpp", "r") as ff:
             headerLines = ff.readlines()

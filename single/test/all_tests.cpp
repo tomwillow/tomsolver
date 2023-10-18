@@ -191,89 +191,204 @@ std::pair<Node, double> CreateRandomExpresionTree(int len) {
 }
 
 } // namespace tomsolver
-TEST(ToString, Base) {
+TEST(Diff, Base) {
     MemoryLeakDetection mld;
 
-    ASSERT_EQ(ToString(0.0), "0");
-    ASSERT_EQ(ToString(1.0), "1");
-    ASSERT_EQ(ToString(0.1), "0.1");
-    ASSERT_EQ(ToString(0.12), "0.12");
-    ASSERT_EQ(ToString(0.123456789123450), "0.12345678912345");
-    ASSERT_EQ(ToString(1234567890.0), "1234567890");
+    Node n = Var("a");
+    ASSERT_TRUE(Diff(n, "a")->Equal(Num(1)));
+    ASSERT_TRUE(Diff(n, "b")->Equal(Num(0)));
 
-    // 15位
-    ASSERT_EQ(ToString(123456789012345), "123456789012345");
-    ASSERT_EQ(ToString(-123456789012345), "-123456789012345");
+    ASSERT_TRUE(Diff(Num(1), "a")->Equal(Num(0)));
 
-    // 16位
-    ASSERT_EQ(ToString(1234567890123456), "1234567890123456");
-    ASSERT_EQ(ToString(-1234567890123456), "-1234567890123456");
-
-    ASSERT_EQ(ToString(1.0e0), "1");
-    ASSERT_EQ(ToString(1e0), "1");
-    ASSERT_EQ(ToString(1e1), "10");
-    ASSERT_EQ(ToString(1e15), "1000000000000000");
-    ASSERT_EQ(ToString(1e16), "1e+16");
-    ASSERT_EQ(ToString(1.0e16), "1e+16");
-    ASSERT_EQ(ToString(1e-16), "9.9999999999999998e-17");
-    ASSERT_EQ(ToString(1.0e-16), "9.9999999999999998e-17");
-
-    ASSERT_EQ(ToString(std::numeric_limits<double>::min()), "2.2250738585072014e-308");
-    ASSERT_EQ(ToString(std::numeric_limits<double>::max()), "1.7976931348623157e+308");
-    ASSERT_EQ(ToString(std::numeric_limits<double>::denorm_min()), "4.9406564584124654e-324");
-    ASSERT_EQ(ToString(std::numeric_limits<double>::lowest()), "-1.7976931348623157e+308");
+    // diff(a+b, a) == 1
+    Node n2 = n + Var("b");
+    ASSERT_TRUE(Diff(n2, "a")->Equal(Num(1)));
 }
-
-TEST(Subs, Base) {
+TEST(Diff, Negative) {
     MemoryLeakDetection mld;
 
-    Node n = Var("x");
-    ASSERT_EQ(Subs(n, "x", Var("y"))->ToString(), "y");
+    Node n = -Var("a");
+    auto dn = Diff(n, "a");
+    ASSERT_TRUE(dn->Equal(Num(-1)));
+    ASSERT_TRUE(Diff(n, "b")->Equal(Num(0)));
 
-    ASSERT_EQ(Subs(n, "x", Num(100))->ToString(), "100");
+    ASSERT_TRUE(Diff(-Num(1), "a")->Equal(Num(0)));
 
-    ASSERT_DOUBLE_EQ(Subs(std::move(n), "x", Num(99))->Vpa(), 99.0);
-    ASSERT_EQ(n, nullptr);
+    // diff(-a+ -b, a) == -1
+    Node n2 = n + -Var("b");
+    auto dn2a = Diff(n2, "a");
+    ASSERT_TRUE(dn2a->Equal(Num(-1)));
+    auto dn2b = Diff(n2, "b");
+    ASSERT_TRUE(dn2b->Equal(Num(-1)));
+
+    // diff(-a+ +b, a) == -1
+    Node n3 = n + +Var("b");
+    ASSERT_TRUE(Diff(n3, "a")->Equal(Num(-1)));
+    ASSERT_TRUE(Diff(n3, "b")->Equal(Num(1)));
 }
-TEST(Subs, Combine) {
+TEST(Diff, Sin) {
     MemoryLeakDetection mld;
 
     {
-        // x*y+sin(x)
-        Node n = Var("x") * Var("y") + sin(Var("x"));
-
-        n = Subs(std::move(n), "x", Var("x") + Num(1));
-
-        ASSERT_EQ(n->ToString(), "(x+1)*y+sin(x+1)");
-    }
-
-    {
-        // r*sin(x+y)
-        Node n = Var("r") * sin(Var("x") + Var("y"));
-
-        // -> 100*sin(360deg+30deg) == 50
-        n = Subs(std::move(n), "x", Num(radians(360.0)));
-        n = Subs(std::move(n), "y", Num(radians(30.0)));
-        n = Subs(std::move(n), "r", Num(100));
-
-        ASSERT_DOUBLE_EQ(n->Vpa(), 50.0);
+        // sin'x = cos x
+        Node n = sin(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(cos(Var("x"))));
     }
 }
-TEST(Subs, Multiple) {
+TEST(Diff, Cos) {
     MemoryLeakDetection mld;
 
     {
-        // x*y+sin(x)
-        Node n = Var("x") * Var("y") + sin(Var("x"));
-
-        // 交换x y
-        n = Subs(std::move(n), {"x", "y"}, {Var("y"), Var("x")});
-        ASSERT_EQ(n->ToString(), "y*x+sin(y)");
-
-        // x -> cos(y)
-        n = Subs(std::move(n), {"x"}, {cos(Var("y"))});
-        ASSERT_EQ(n->ToString(), "y*cos(y)+sin(y)");
+        // cos'x = -sin x
+        Node n = cos(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(-sin(Var("x"))));
     }
+}
+TEST(Diff, Multiply) {
+    MemoryLeakDetection mld;
+
+    // diff(5*a, a) == 5
+    ASSERT_TRUE(Diff(Num(5) * Var("a"), "a")->Equal(Num(5)));
+
+    // diff(b*5, b) == 5
+    ASSERT_TRUE(Diff(Var("b") * Num(5), "b")->Equal(Num(5)));
+
+    {
+        // diff(a*b, a) == b
+        Node n = Var("a") * Var("b");
+        Node dn = Diff(n, "a");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Var("b")));
+    }
+
+    {
+        // diff(a*b*a, a) ==
+        Node n = Var("a") * Var("b") * Var("a");
+        Node dn = Diff(n, "a");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+    }
+}
+TEST(Diff, Combine) {
+    MemoryLeakDetection mld;
+
+    {
+        // diff(sin(a*b+c)*1*a, a)
+        Node n = sin(Var("a") * Var("b") + Var("c")) * Num(1) * Var("a");
+        Node dn = Diff(n, "a");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_EQ(dn->ToString(), "cos(a*b+c)*b*a+sin(a*b+c)");
+    }
+
+    {
+        // diff(sin(cos(x)+sin(x)), x) =
+        Node n = sin(cos(Var("x")) + sin(Var("x")));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_EQ(dn->ToString(), "cos(cos(x)+sin(x))*(-(sin(x))+cos(x))");
+    }
+}
+
+TEST(Function, Trigonometric) {
+    MemoryLeakDetection mld;
+
+    int count = 100;
+
+    auto seed = static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    cout << "seed = " << seed << endl;
+    std::default_random_engine eng(seed);
+    std::uniform_real_distribution<double> unifNum;
+
+    for (int i = 0; i < count; ++i) {
+        double num = unifNum(eng);
+        ASSERT_DOUBLE_EQ(sin(Num(num))->Vpa(), sin(num));
+        ASSERT_DOUBLE_EQ(cos(Num(num))->Vpa(), cos(num));
+        ASSERT_DOUBLE_EQ(tan(Num(num))->Vpa(), tan(num));
+        ASSERT_DOUBLE_EQ(asin(Num(num))->Vpa(), asin(num));
+        ASSERT_DOUBLE_EQ(acos(Num(num))->Vpa(), acos(num));
+        ASSERT_DOUBLE_EQ(atan(Num(num))->Vpa(), atan(num));
+        ASSERT_DOUBLE_EQ(sqrt(Num(num))->Vpa(), sqrt(num));
+        ASSERT_DOUBLE_EQ(log(Num(num))->Vpa(), log(num));
+        ASSERT_DOUBLE_EQ(log2(Num(num))->Vpa(), log2(num));
+        ASSERT_DOUBLE_EQ(log10(Num(num))->Vpa(), log10(num));
+        ASSERT_DOUBLE_EQ(exp(Num(num))->Vpa(), exp(num));
+    }
+}
+TEST(Function, InvalidNumber) {
+    MemoryLeakDetection mld;
+    double inf = std::numeric_limits<double>::infinity();
+    double inf2 = -std::numeric_limits<double>::infinity();
+    double nan = std::numeric_limits<double>::quiet_NaN();
+    double dblMax = std::numeric_limits<double>::max();
+
+#define MY_ASSERT_THROW(statement, shouldThrow)                                                                        \
+    if (shouldThrow) {                                                                                                 \
+        try {                                                                                                          \
+            statement;                                                                                                 \
+            FAIL();                                                                                                    \
+        } catch (const MathError &err) {                                                                               \
+            std::cerr << "[Expected Exception]" << err.what() << std::endl;                                            \
+        }                                                                                                              \
+    } else {                                                                                                           \
+        try {                                                                                                          \
+            statement;                                                                                                 \
+        } catch (const MathError &err) {                                                                               \
+            std::cerr << "[Unexpected Exception]" << err.what() << std::endl;                                          \
+            FAIL();                                                                                                    \
+        }                                                                                                              \
+    }
+
+    auto Test = [&](bool shouldThrow) {
+        MY_ASSERT_THROW((Num(inf) + Num(1))->Vpa(), shouldThrow);
+        MY_ASSERT_THROW((Num(inf2) + Num(1))->Vpa(), shouldThrow);
+        MY_ASSERT_THROW((Num(nan) + Num(1))->Vpa(), shouldThrow);
+
+        MY_ASSERT_THROW((Num(1) / Num(0))->Vpa(), shouldThrow);
+
+        // pow(DBL_DOUELB, 2)
+        MY_ASSERT_THROW((Num(dblMax) ^ Num(2))->Vpa(), shouldThrow);
+
+        MY_ASSERT_THROW(asin(Num(1.1))->Vpa(), shouldThrow);
+        MY_ASSERT_THROW(asin(Num(-1.1))->Vpa(), shouldThrow);
+
+        MY_ASSERT_THROW(acos(Num(1.1))->Vpa(), shouldThrow);
+        MY_ASSERT_THROW(acos(Num(-1.1))->Vpa(), shouldThrow);
+
+        MY_ASSERT_THROW(sqrt(Num(-0.1))->Vpa(), shouldThrow);
+
+        MY_ASSERT_THROW(log(Num(0))->Vpa(), shouldThrow);
+        MY_ASSERT_THROW(log2(Num(0))->Vpa(), shouldThrow);
+        MY_ASSERT_THROW(log10(Num(0))->Vpa(), shouldThrow);
+    };
+
+    // 默认配置下，无效值应该抛异常
+    Test(true);
+
+    // 手动关闭无效值检查，不应抛异常
+    {
+        GetConfig().throwOnInvalidValue = false;
+
+        Test(false);
+
+        // 恢复配置
+        GetConfig().Reset();
+    }
+}
+TEST(Function, ToString) {
+    MemoryLeakDetection mld;
+
+    Node f = Var("r") * sin(Var("omega") / Num(2.0) + Var("phi")) + Var("c");
+
+    ASSERT_EQ(f->ToString(), "r*sin(omega/2+phi)+c");
 }
 
 TEST(Linear, Base) {
@@ -289,91 +404,44 @@ TEST(Linear, Base) {
     ASSERT_EQ(x, expected);
 }
 
-TEST(SymMat, Base) {
+TEST(Mat, Inverse) {
     MemoryLeakDetection mld;
 
-    SymVec a{Var("a"), Var("b"), Var("c")};
-
-    cout << a.ToString() << endl;
-
-    Node x = Var("x");
-    Node y = Var("y");
-    Node f1 = (sin(x) ^ Num(2)) + x * y + y - Num(3);
-    Node f2 = Num(4) * x + (y ^ Num(2));
-
-    SymVec f{std::move(f1), std::move(f2)};
-
-    cout << f.ToString() << endl;
-}
-
-TEST(Node, Random) {
-    MemoryLeakDetection mld;
-
-    int maxCount = 10;
-
-    auto seed = static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-    cout << "seed = " << seed << endl;
-    std::default_random_engine eng(seed);
-
-    std::uniform_int_distribution<int> unifCount(1, maxCount);
-    for (int i = 0; i < 10; ++i) {
-        int count = unifCount(eng);
-
-        auto pr = CreateRandomExpresionTree(count);
-        Node &node = pr.first;
-        double v = pr.second;
-
-        node->CheckParent();
-
-        double result = node->Vpa();
-        cout << node->ToString() << endl;
-        cout << "\t result = " << result << endl;
-        cout << "\t expected = " << v << endl;
-        ASSERT_DOUBLE_EQ(result, v);
-
-        // clone
-        Node n2 = Clone(node);
-        ASSERT_DOUBLE_EQ(result, n2->Vpa());
-        n2->CheckParent();
-
-        cout << endl;
+    {
+        Mat A = {{1, 2}, {3, 4}};
+        auto inv = A.Inverse();
+        Mat expected = {{-2, 1}, {1.5, -0.5}};
+        ASSERT_EQ(inv, expected);
+    }
+    {
+        Mat A = {{1, 2, 3}, {4, 5, 6}, {-2, 7, 8}};
+        auto inv = A.Inverse();
+        Mat expected = {{-0.083333333333333, 0.208333333333333, -0.125000000000000},
+                        {-1.833333333333333, 0.583333333333333, 0.250000000000000},
+                        {1.583333333333333, -0.458333333333333, -0.125000000000000}};
+        ASSERT_EQ(inv, expected);
+    }
+    {
+        Mat A = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+        try {
+            auto inv = A.Inverse();
+            FAIL();
+        } catch (const MathError &e) {
+            cout << "[Expected]" << e.what() << endl;
+        }
     }
 }
-TEST(Clone, DoNotStackOverFlow) {
+TEST(Mat, PositiveDetermine) {
     MemoryLeakDetection mld;
 
-    // 构造一个随机的长表达式
-    auto pr = CreateRandomExpresionTree(10000);
-    Node &node = pr.first;
-
-    // clone，不应爆栈
-    Node n2 = Clone(node);
-
-    ASSERT_TRUE(node->Equal(n2));
-}
-TEST(Vpa, DoNotStackOverFlow) {
-    MemoryLeakDetection mld;
-
-    // 构造一个随机的长表达式
-    auto pr = CreateRandomExpresionTree(10000);
-    Node &node = pr.first;
-    double v = pr.second;
-
-    double result = node->Vpa();
-
-    cout << "\t result = " << result << endl;
-    cout << "\t expected = " << v << endl;
-    ASSERT_DOUBLE_EQ(result, v);
-}
-TEST(ToString, DoNotStackOverFlow) {
-    MemoryLeakDetection mld;
-
-    // 构造一个随机的长表达式
-    auto pr = CreateRandomExpresionTree(10000);
-    Node &node = pr.first;
-
-    // 输出表达式字符串，不应爆栈
-    std::string s = node->ToString();
+    {
+        Mat A = {{1, 1, 1, 1}, {1, 2, 3, 4}, {1, 3, 6, 10}, {1, 4, 10, 20}};
+        ASSERT_TRUE(A.PositiveDetermine());
+    }
+    {
+        Mat A = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+        ASSERT_TRUE(!A.PositiveDetermine());
+    }
 }
 
 TEST(Node, Num) {
@@ -654,151 +722,364 @@ TEST(Node, Equal) {
     ASSERT_TRUE((Var("a") + Var("b") * Var("c"))->Equal(n));
 }
 
-TEST(Mat, Inverse) {
+TEST(Parse, Base) {
+    MemoryLeakDetection mld;
+    std::setlocale(LC_ALL, ".UTF8");
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1+2");
+        ASSERT_TRUE(tokens[0].node->Equal(Num(1)));
+        ASSERT_TRUE(tokens[1].node->Equal(internal::Operator(MathOperator::MATH_ADD)));
+        ASSERT_TRUE(tokens[2].node->Equal(Num(2)));
+    }
+}
+TEST(Parse, Number) {
     MemoryLeakDetection mld;
 
     {
-        Mat A = {{1, 2}, {3, 4}};
-        auto inv = A.Inverse();
-        Mat expected = {{-2, 1}, {1.5, -0.5}};
-        ASSERT_EQ(inv, expected);
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens(".12345");
+        ASSERT_TRUE(tokens[0].node->Equal(Num(.12345)));
     }
+
     {
-        Mat A = {{1, 2, 3}, {4, 5, 6}, {-2, 7, 8}};
-        auto inv = A.Inverse();
-        Mat expected = {{-0.083333333333333, 0.208333333333333, -0.125000000000000},
-                        {-1.833333333333333, 0.583333333333333, 0.250000000000000},
-                        {1.583333333333333, -0.458333333333333, -0.125000000000000}};
-        ASSERT_EQ(inv, expected);
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("7891.123");
+        ASSERT_TRUE(tokens[0].node->Equal(Num(7891.123)));
     }
+
     {
-        Mat A = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1e0");
+        ASSERT_TRUE(tokens[0].node->Equal(Num(1e0)));
+    }
+
+    std::default_random_engine eng(
+        static_cast<long>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+
+    std::uniform_real_distribution<double> unif;
+
+    for (int i = 0; i < 100; ++i) {
+        double d = unif(eng);
+        std::string expected = tomsolver::ToString(d);
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens(expected);
+        ASSERT_EQ(expected, tokens[0].node->ToString());
+    }
+}
+TEST(Parse, IllegalChar) {
+    MemoryLeakDetection mld;
+
+    try {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1#+2");
+        FAIL();
+    } catch (const SingleParseError &err) {
+        cout << err.what() << endl;
+        ASSERT_EQ(err.GetPos(), 0);
+    }
+
+    try {
+        deque<internal::Token> tokens =
+            internal::ParseFunctions::ParseToTokens("a*cos(x1) + b*cos(x1-x2) + c*cos(?x1-x2-x3)");
+        FAIL();
+    } catch (const SingleParseError &err) {
+        cout << err.what() << endl;
+        ASSERT_EQ(err.GetPos(), 33);
+    }
+}
+TEST(Parse, PositiveNegative) {
+    MemoryLeakDetection mld;
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1/+2");
+        ASSERT_TRUE(tokens[0].node->Equal(Num(1)));
+        ASSERT_TRUE(tokens[1].node->Equal(internal::Operator(MathOperator::MATH_DIVIDE)));
+        ASSERT_TRUE(tokens[2].node->Equal(internal::Operator(MathOperator::MATH_POSITIVE)));
+        ASSERT_TRUE(tokens[3].node->Equal(Num(2)));
+    }
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1/-2");
+        ASSERT_TRUE(tokens[0].node->Equal(Num(1)));
+        ASSERT_TRUE(tokens[1].node->Equal(internal::Operator(MathOperator::MATH_DIVIDE)));
+        ASSERT_TRUE(tokens[2].node->Equal(internal::Operator(MathOperator::MATH_NEGATIVE)));
+        ASSERT_TRUE(tokens[3].node->Equal(Num(2)));
+    }
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("-1--2");
+        ASSERT_TRUE(tokens[0].node->Equal(internal::Operator(MathOperator::MATH_NEGATIVE)));
+        ASSERT_TRUE(tokens[1].node->Equal(Num(1)));
+        ASSERT_TRUE(tokens[2].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
+        ASSERT_TRUE(tokens[3].node->Equal(internal::Operator(MathOperator::MATH_NEGATIVE)));
+        ASSERT_TRUE(tokens[4].node->Equal(Num(2)));
+    }
+}
+TEST(Parse, PostOrder) {
+    MemoryLeakDetection mld;
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*(2-3)");
+
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+
+        ASSERT_TRUE(postOrder[0].node->Equal(Num(1)));
+        ASSERT_TRUE(postOrder[1].node->Equal(Num(2)));
+        ASSERT_TRUE(postOrder[2].node->Equal(Num(3)));
+        ASSERT_TRUE(postOrder[3].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
+        ASSERT_TRUE(postOrder[4].node->Equal(internal::Operator(MathOperator::MATH_MULTIPLY)));
+    }
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*2-3");
+
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+
+        ASSERT_TRUE(postOrder[0].node->Equal(Num(1)));
+        ASSERT_TRUE(postOrder[1].node->Equal(Num(2)));
+        ASSERT_TRUE(postOrder[2].node->Equal(internal::Operator(MathOperator::MATH_MULTIPLY)));
+        ASSERT_TRUE(postOrder[3].node->Equal(Num(3)));
+        ASSERT_TRUE(postOrder[4].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
+    }
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("2^3^4");
+
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+
+        ASSERT_TRUE(postOrder[0].node->Equal(Num(2)));
+        ASSERT_TRUE(postOrder[1].node->Equal(Num(3)));
+        ASSERT_TRUE(postOrder[2].node->Equal(Num(4)));
+        ASSERT_TRUE(postOrder[3].node->Equal(internal::Operator(MathOperator::MATH_POWER)));
+        ASSERT_TRUE(postOrder[4].node->Equal(internal::Operator(MathOperator::MATH_POWER)));
+    }
+}
+TEST(Parse, PostOrderError) {
+    MemoryLeakDetection mld;
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*2-3)");
+
         try {
-            auto inv = A.Inverse();
+            auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
             FAIL();
-        } catch (const MathError &e) {
-            cout << "[Expected]" << e.what() << endl;
+        } catch (const ParseError &err) {
+            cout << err.what() << endl;
+        }
+    }
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("(1*2-3");
+
+        try {
+            auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+            FAIL();
+        } catch (const ParseError &err) {
+            cout << err.what() << endl;
         }
     }
 }
-TEST(Mat, PositiveDetermine) {
+TEST(Parse, BuildTree) {
+    MemoryLeakDetection mld;
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*(2-3)");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        ASSERT_EQ(node->ToString(), "1*(2-3)");
+        node->CheckParent();
+    }
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*2-3");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        ASSERT_EQ(node->ToString(), "1*2-3");
+        node->CheckParent();
+    }
+}
+TEST(Parse, Mix) {
     MemoryLeakDetection mld;
 
     {
-        Mat A = {{1, 1, 1, 1}, {1, 2, 3, 4}, {1, 3, 6, 10}, {1, 4, 10, 20}};
-        ASSERT_TRUE(A.PositiveDetermine());
+        deque<internal::Token> tokens =
+            internal::ParseFunctions::ParseToTokens("a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        node->CheckParent();
+
+        Node expected = Var("a") * cos(Var("x1")) + Var("b") * cos(Var("x1") - Var("x2")) +
+                        Var("c") * cos(Var("x1") - Var("x2") - Var("x3"));
+        ASSERT_TRUE(node->Equal(expected));
     }
-    {
-        Mat A = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
-        ASSERT_TRUE(!A.PositiveDetermine());
+
+    try {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("x(1)*cos(2)");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        FAIL();
+    } catch (const ParseError &err) {
+        cout << err.what() << endl;
+    }
+
+    try {
+        deque<internal::Token> tokens =
+            internal::ParseFunctions::ParseToTokens("x(1)*cos(x(2)) + x(2)*sin(x(1)) - 0.5");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        FAIL();
+    } catch (const ParseError &err) {
+        cout << err.what() << endl;
     }
 }
 
-TEST(Diff, Base) {
+TEST(Power, Base) {
     MemoryLeakDetection mld;
 
-    Node n = Var("a");
-    ASSERT_TRUE(Diff(n, "a")->Equal(Num(1)));
-    ASSERT_TRUE(Diff(n, "b")->Equal(Num(0)));
+    Node n = Num(2) ^ Num(3);
+    ASSERT_EQ(n->ToString(), "2^3");
+    ASSERT_DOUBLE_EQ(n->Vpa(), 8);
 
-    ASSERT_TRUE(Diff(Num(1), "a")->Equal(Num(0)));
+    // CATION!
+    Node n2 = Num(2) ^ Num(3) ^ Num(2);
+    ASSERT_EQ(n2->ToString(), "(2^3)^2");
+    ASSERT_DOUBLE_EQ(n2->Vpa(), 64);
 
-    // diff(a+b, a) == 1
-    Node n2 = n + Var("b");
-    ASSERT_TRUE(Diff(n2, "a")->Equal(Num(1)));
+    // CATION!
+    Node n3 = Num(2) ^ (Num(3) ^ Num(2));
+    ASSERT_EQ(n3->ToString(), "2^(3^2)");
+    ASSERT_DOUBLE_EQ(n3->Vpa(), 512);
 }
-TEST(Diff, Negative) {
+
+TEST(Node, Random) {
     MemoryLeakDetection mld;
 
-    Node n = -Var("a");
-    auto dn = Diff(n, "a");
-    ASSERT_TRUE(dn->Equal(Num(-1)));
-    ASSERT_TRUE(Diff(n, "b")->Equal(Num(0)));
+    int maxCount = 10;
 
-    ASSERT_TRUE(Diff(-Num(1), "a")->Equal(Num(0)));
+    auto seed = static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    cout << "seed = " << seed << endl;
+    std::default_random_engine eng(seed);
 
-    // diff(-a+ -b, a) == -1
-    Node n2 = n + -Var("b");
-    auto dn2a = Diff(n2, "a");
-    ASSERT_TRUE(dn2a->Equal(Num(-1)));
-    auto dn2b = Diff(n2, "b");
-    ASSERT_TRUE(dn2b->Equal(Num(-1)));
+    std::uniform_int_distribution<int> unifCount(1, maxCount);
+    for (int i = 0; i < 10; ++i) {
+        int count = unifCount(eng);
 
-    // diff(-a+ +b, a) == -1
-    Node n3 = n + +Var("b");
-    ASSERT_TRUE(Diff(n3, "a")->Equal(Num(-1)));
-    ASSERT_TRUE(Diff(n3, "b")->Equal(Num(1)));
-}
-TEST(Diff, Sin) {
-    MemoryLeakDetection mld;
+        auto pr = CreateRandomExpresionTree(count);
+        Node &node = pr.first;
+        double v = pr.second;
 
-    {
-        // sin'x = cos x
-        Node n = sin(Var("x"));
-        Node dn = Diff(n, "x");
-        dn->CheckParent();
-        cout << dn->ToString() << endl;
-        ASSERT_TRUE(dn->Equal(cos(Var("x"))));
-    }
-}
-TEST(Diff, Cos) {
-    MemoryLeakDetection mld;
+        node->CheckParent();
 
-    {
-        // cos'x = -sin x
-        Node n = cos(Var("x"));
-        Node dn = Diff(n, "x");
-        dn->CheckParent();
-        cout << dn->ToString() << endl;
-        ASSERT_TRUE(dn->Equal(-sin(Var("x"))));
+        double result = node->Vpa();
+        cout << node->ToString() << endl;
+        cout << "\t result = " << result << endl;
+        cout << "\t expected = " << v << endl;
+        ASSERT_DOUBLE_EQ(result, v);
+
+        // clone
+        Node n2 = Clone(node);
+        ASSERT_DOUBLE_EQ(result, n2->Vpa());
+        n2->CheckParent();
+
+        cout << endl;
     }
 }
-TEST(Diff, Multiply) {
+TEST(Clone, DoNotStackOverFlow) {
     MemoryLeakDetection mld;
 
-    // diff(5*a, a) == 5
-    ASSERT_TRUE(Diff(Num(5) * Var("a"), "a")->Equal(Num(5)));
+    // 构造一个随机的长表达式
+    auto pr = CreateRandomExpresionTree(10000);
+    Node &node = pr.first;
 
-    // diff(b*5, b) == 5
-    ASSERT_TRUE(Diff(Var("b") * Num(5), "b")->Equal(Num(5)));
+    // clone，不应爆栈
+    Node n2 = Clone(node);
+
+    ASSERT_TRUE(node->Equal(n2));
+}
+TEST(Vpa, DoNotStackOverFlow) {
+    MemoryLeakDetection mld;
+
+    // 构造一个随机的长表达式
+    auto pr = CreateRandomExpresionTree(10000);
+    Node &node = pr.first;
+    double v = pr.second;
+
+    double result = node->Vpa();
+
+    cout << "\t result = " << result << endl;
+    cout << "\t expected = " << v << endl;
+    ASSERT_DOUBLE_EQ(result, v);
+}
+TEST(ToString, DoNotStackOverFlow) {
+    MemoryLeakDetection mld;
+
+    // 构造一个随机的长表达式
+    auto pr = CreateRandomExpresionTree(10000);
+    Node &node = pr.first;
+
+    // 输出表达式字符串，不应爆栈
+    std::string s = node->ToString();
+}
+
+TEST(Simplify, Base) {
+    MemoryLeakDetection mld;
+
+    Node n = sin(Num(0));
+    n->Simplify();
+
+    ASSERT_EQ(n->ToString(), "0");
+
+    Node n2 = Num(1) + Num(2) * Num(3);
+    n2->Simplify();
+
+    ASSERT_EQ(n2->ToString(), "7");
+
+    ASSERT_TRUE(n2->Equal(Num(7)));
+}
+TEST(Simplify, Add) {
+    MemoryLeakDetection mld;
 
     {
-        // diff(a*b, a) == b
-        Node n = Var("a") * Var("b");
-        Node dn = Diff(n, "a");
-        dn->CheckParent();
-        cout << dn->ToString() << endl;
-        ASSERT_TRUE(dn->Equal(Var("b")));
+        Node n = Var("x") + Num(0);
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "x");
+        n->CheckParent();
     }
 
     {
-        // diff(a*b*a, a) ==
-        Node n = Var("a") * Var("b") * Var("a");
-        Node dn = Diff(n, "a");
-        dn->CheckParent();
-        cout << dn->ToString() << endl;
+        Node n = Num(0) + Var("x");
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "x");
+        n->CheckParent();
     }
 }
-TEST(Diff, Combine) {
+TEST(Simplify, Multiply) {
     MemoryLeakDetection mld;
 
     {
-        // diff(sin(a*b+c)*1*a, a)
-        Node n = sin(Var("a") * Var("b") + Var("c")) * Num(1) * Var("a");
-        Node dn = Diff(n, "a");
-        dn->CheckParent();
-        cout << dn->ToString() << endl;
-        ASSERT_EQ(dn->ToString(), "cos(a*b+c)*b*a+sin(a*b+c)");
+        Node n = Var("x") * Num(1) * Var("y") * Var("z");
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "x*y*z");
+        n->CheckParent();
     }
 
     {
-        // diff(sin(cos(x)+sin(x)), x) =
-        Node n = sin(cos(Var("x")) + sin(Var("x")));
-        Node dn = Diff(n, "x");
-        dn->CheckParent();
-        cout << dn->ToString() << endl;
-        ASSERT_EQ(dn->ToString(), "cos(cos(x)+sin(x))*(-(sin(x))+cos(x))");
+        Node n = cos(Var("x")) * Num(1);
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "cos(x)");
+        n->CheckParent();
     }
+
+    {
+        Node n = Num(1) * Var("x") * Num(0) + Num(0) * Var("y");
+        n->Simplify();
+        ASSERT_EQ(n->ToString(), "0");
+        n->CheckParent();
+    }
+}
+TEST(Simplify, DoNotStackOverFlow) {
+    MemoryLeakDetection mld;
+
+    // 构造一个随机的长表达式
+    auto pr = CreateRandomExpresionTree(100000);
+    Node &node = pr.first;
+
+    node->Simplify();
 }
 
 TEST(SolveBase, FindAlphaByArmijo) {
@@ -935,366 +1216,104 @@ TEST(Solve, Base) {
     }
 }
 
-TEST(Simplify, Base) {
+TEST(Subs, Base) {
     MemoryLeakDetection mld;
 
-    Node n = sin(Num(0));
-    n->Simplify();
+    Node n = Var("x");
+    ASSERT_EQ(Subs(n, "x", Var("y"))->ToString(), "y");
 
-    ASSERT_EQ(n->ToString(), "0");
+    ASSERT_EQ(Subs(n, "x", Num(100))->ToString(), "100");
 
-    Node n2 = Num(1) + Num(2) * Num(3);
-    n2->Simplify();
-
-    ASSERT_EQ(n2->ToString(), "7");
-
-    ASSERT_TRUE(n2->Equal(Num(7)));
+    ASSERT_DOUBLE_EQ(Subs(std::move(n), "x", Num(99))->Vpa(), 99.0);
+    ASSERT_EQ(n, nullptr);
 }
-TEST(Simplify, Add) {
+TEST(Subs, Combine) {
     MemoryLeakDetection mld;
 
     {
-        Node n = Var("x") + Num(0);
-        n->Simplify();
-        ASSERT_EQ(n->ToString(), "x");
-        n->CheckParent();
+        // x*y+sin(x)
+        Node n = Var("x") * Var("y") + sin(Var("x"));
+
+        n = Subs(std::move(n), "x", Var("x") + Num(1));
+
+        ASSERT_EQ(n->ToString(), "(x+1)*y+sin(x+1)");
     }
 
     {
-        Node n = Num(0) + Var("x");
-        n->Simplify();
-        ASSERT_EQ(n->ToString(), "x");
-        n->CheckParent();
-    }
-}
-TEST(Simplify, Multiply) {
-    MemoryLeakDetection mld;
+        // r*sin(x+y)
+        Node n = Var("r") * sin(Var("x") + Var("y"));
 
-    {
-        Node n = Var("x") * Num(1) * Var("y") * Var("z");
-        n->Simplify();
-        ASSERT_EQ(n->ToString(), "x*y*z");
-        n->CheckParent();
-    }
+        // -> 100*sin(360deg+30deg) == 50
+        n = Subs(std::move(n), "x", Num(radians(360.0)));
+        n = Subs(std::move(n), "y", Num(radians(30.0)));
+        n = Subs(std::move(n), "r", Num(100));
 
-    {
-        Node n = cos(Var("x")) * Num(1);
-        n->Simplify();
-        ASSERT_EQ(n->ToString(), "cos(x)");
-        n->CheckParent();
-    }
-
-    {
-        Node n = Num(1) * Var("x") * Num(0) + Num(0) * Var("y");
-        n->Simplify();
-        ASSERT_EQ(n->ToString(), "0");
-        n->CheckParent();
+        ASSERT_DOUBLE_EQ(n->Vpa(), 50.0);
     }
 }
-TEST(Simplify, DoNotStackOverFlow) {
-    MemoryLeakDetection mld;
-
-    // 构造一个随机的长表达式
-    auto pr = CreateRandomExpresionTree(100000);
-    Node &node = pr.first;
-
-    node->Simplify();
-}
-
-TEST(Parse, Base) {
-    MemoryLeakDetection mld;
-    std::setlocale(LC_ALL, ".UTF8");
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1+2");
-        ASSERT_TRUE(tokens[0].node->Equal(Num(1)));
-        ASSERT_TRUE(tokens[1].node->Equal(internal::Operator(MathOperator::MATH_ADD)));
-        ASSERT_TRUE(tokens[2].node->Equal(Num(2)));
-    }
-}
-TEST(Parse, Number) {
+TEST(Subs, Multiple) {
     MemoryLeakDetection mld;
 
     {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens(".12345");
-        ASSERT_TRUE(tokens[0].node->Equal(Num(.12345)));
-    }
+        // x*y+sin(x)
+        Node n = Var("x") * Var("y") + sin(Var("x"));
 
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("7891.123");
-        ASSERT_TRUE(tokens[0].node->Equal(Num(7891.123)));
-    }
+        // 交换x y
+        n = Subs(std::move(n), {"x", "y"}, {Var("y"), Var("x")});
+        ASSERT_EQ(n->ToString(), "y*x+sin(y)");
 
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1e0");
-        ASSERT_TRUE(tokens[0].node->Equal(Num(1e0)));
-    }
-
-    std::default_random_engine eng(
-        static_cast<long>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
-
-    std::uniform_real_distribution<double> unif;
-
-    for (int i = 0; i < 100; ++i) {
-        double d = unif(eng);
-        std::string expected = tomsolver::ToString(d);
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens(expected);
-        ASSERT_EQ(expected, tokens[0].node->ToString());
-    }
-}
-TEST(Parse, IllegalChar) {
-    MemoryLeakDetection mld;
-
-    try {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1#+2");
-        FAIL();
-    } catch (const ParseError &err) {
-        cout << err.what() << endl;
-        ASSERT_EQ(err.GetPos(), 0);
-    }
-
-    try {
-        deque<internal::Token> tokens =
-            internal::ParseFunctions::ParseToTokens("a*cos(x1) + b*cos(x1-x2) + c*cos(?x1-x2-x3)");
-        FAIL();
-    } catch (const ParseError &err) {
-        cout << err.what() << endl;
-        ASSERT_EQ(err.GetPos(), 33);
-    }
-}
-TEST(Parse, PositiveNegative) {
-    MemoryLeakDetection mld;
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1/+2");
-        ASSERT_TRUE(tokens[0].node->Equal(Num(1)));
-        ASSERT_TRUE(tokens[1].node->Equal(internal::Operator(MathOperator::MATH_DIVIDE)));
-        ASSERT_TRUE(tokens[2].node->Equal(internal::Operator(MathOperator::MATH_POSITIVE)));
-        ASSERT_TRUE(tokens[3].node->Equal(Num(2)));
-    }
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1/-2");
-        ASSERT_TRUE(tokens[0].node->Equal(Num(1)));
-        ASSERT_TRUE(tokens[1].node->Equal(internal::Operator(MathOperator::MATH_DIVIDE)));
-        ASSERT_TRUE(tokens[2].node->Equal(internal::Operator(MathOperator::MATH_NEGATIVE)));
-        ASSERT_TRUE(tokens[3].node->Equal(Num(2)));
-    }
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("-1--2");
-        ASSERT_TRUE(tokens[0].node->Equal(internal::Operator(MathOperator::MATH_NEGATIVE)));
-        ASSERT_TRUE(tokens[1].node->Equal(Num(1)));
-        ASSERT_TRUE(tokens[2].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
-        ASSERT_TRUE(tokens[3].node->Equal(internal::Operator(MathOperator::MATH_NEGATIVE)));
-        ASSERT_TRUE(tokens[4].node->Equal(Num(2)));
-    }
-}
-TEST(Parse, PostOrder) {
-    MemoryLeakDetection mld;
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*(2-3)");
-
-        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
-
-        ASSERT_TRUE(postOrder[0].node->Equal(Num(1)));
-        ASSERT_TRUE(postOrder[1].node->Equal(Num(2)));
-        ASSERT_TRUE(postOrder[2].node->Equal(Num(3)));
-        ASSERT_TRUE(postOrder[3].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
-        ASSERT_TRUE(postOrder[4].node->Equal(internal::Operator(MathOperator::MATH_MULTIPLY)));
-    }
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*2-3");
-
-        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
-
-        ASSERT_TRUE(postOrder[0].node->Equal(Num(1)));
-        ASSERT_TRUE(postOrder[1].node->Equal(Num(2)));
-        ASSERT_TRUE(postOrder[2].node->Equal(internal::Operator(MathOperator::MATH_MULTIPLY)));
-        ASSERT_TRUE(postOrder[3].node->Equal(Num(3)));
-        ASSERT_TRUE(postOrder[4].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
-    }
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("2^3^4");
-
-        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
-
-        ASSERT_TRUE(postOrder[0].node->Equal(Num(2)));
-        ASSERT_TRUE(postOrder[1].node->Equal(Num(3)));
-        ASSERT_TRUE(postOrder[2].node->Equal(Num(4)));
-        ASSERT_TRUE(postOrder[3].node->Equal(internal::Operator(MathOperator::MATH_POWER)));
-        ASSERT_TRUE(postOrder[4].node->Equal(internal::Operator(MathOperator::MATH_POWER)));
-    }
-}
-TEST(Parse, PostOrderError) {
-    MemoryLeakDetection mld;
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*2-3)");
-
-        try {
-            auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
-            FAIL();
-        } catch (const ParseError &err) {
-            cout << err.what() << endl;
-        }
-    }
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("(1*2-3");
-
-        try {
-            auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
-            FAIL();
-        } catch (const ParseError &err) {
-            cout << err.what() << endl;
-        }
-    }
-}
-TEST(Parse, BuildTree) {
-    MemoryLeakDetection mld;
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*(2-3)");
-        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
-        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
-        ASSERT_EQ(node->ToString(), "1*(2-3)");
-        node->CheckParent();
-    }
-
-    {
-        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1*2-3");
-        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
-        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
-        ASSERT_EQ(node->ToString(), "1*2-3");
-        node->CheckParent();
-    }
-}
-TEST(Parse, Mix) {
-    MemoryLeakDetection mld;
-
-    {
-        deque<internal::Token> tokens =
-            internal::ParseFunctions::ParseToTokens("a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)");
-        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
-        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
-        node->CheckParent();
-
-        Node expected = Var("a") * cos(Var("x1")) + Var("b") * cos(Var("x1") - Var("x2")) +
-                        Var("c") * cos(Var("x1") - Var("x2") - Var("x3"));
-        ASSERT_TRUE(node->Equal(expected));
+        // x -> cos(y)
+        n = Subs(std::move(n), {"x"}, {cos(Var("y"))});
+        ASSERT_EQ(n->ToString(), "y*cos(y)+sin(y)");
     }
 }
 
-TEST(Power, Base) {
+TEST(SymMat, Base) {
     MemoryLeakDetection mld;
 
-    Node n = Num(2) ^ Num(3);
-    ASSERT_EQ(n->ToString(), "2^3");
-    ASSERT_DOUBLE_EQ(n->Vpa(), 8);
+    SymVec a{Var("a"), Var("b"), Var("c")};
 
-    // CATION!
-    Node n2 = Num(2) ^ Num(3) ^ Num(2);
-    ASSERT_EQ(n2->ToString(), "(2^3)^2");
-    ASSERT_DOUBLE_EQ(n2->Vpa(), 64);
+    cout << a.ToString() << endl;
 
-    // CATION!
-    Node n3 = Num(2) ^ (Num(3) ^ Num(2));
-    ASSERT_EQ(n3->ToString(), "2^(3^2)");
-    ASSERT_DOUBLE_EQ(n3->Vpa(), 512);
+    Node x = Var("x");
+    Node y = Var("y");
+    Node f1 = (sin(x) ^ Num(2)) + x * y + y - Num(3);
+    Node f2 = Num(4) * x + (y ^ Num(2));
+
+    SymVec f{std::move(f1), std::move(f2)};
+
+    cout << f.ToString() << endl;
 }
 
-TEST(Function, Trigonometric) {
+TEST(ToString, Base) {
     MemoryLeakDetection mld;
 
-    int count = 100;
+    ASSERT_EQ(ToString(0.0), "0");
+    ASSERT_EQ(ToString(1.0), "1");
+    ASSERT_EQ(ToString(0.1), "0.1");
+    ASSERT_EQ(ToString(0.12), "0.12");
+    ASSERT_EQ(ToString(0.123456789123450), "0.12345678912345");
+    ASSERT_EQ(ToString(1234567890.0), "1234567890");
 
-    auto seed = static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-    cout << "seed = " << seed << endl;
-    std::default_random_engine eng(seed);
-    std::uniform_real_distribution<double> unifNum;
+    // 15位
+    ASSERT_EQ(ToString(123456789012345), "123456789012345");
+    ASSERT_EQ(ToString(-123456789012345), "-123456789012345");
 
-    for (int i = 0; i < count; ++i) {
-        double num = unifNum(eng);
-        ASSERT_DOUBLE_EQ(sin(Num(num))->Vpa(), sin(num));
-        ASSERT_DOUBLE_EQ(cos(Num(num))->Vpa(), cos(num));
-        ASSERT_DOUBLE_EQ(tan(Num(num))->Vpa(), tan(num));
-        ASSERT_DOUBLE_EQ(asin(Num(num))->Vpa(), asin(num));
-        ASSERT_DOUBLE_EQ(acos(Num(num))->Vpa(), acos(num));
-        ASSERT_DOUBLE_EQ(atan(Num(num))->Vpa(), atan(num));
-        ASSERT_DOUBLE_EQ(sqrt(Num(num))->Vpa(), sqrt(num));
-        ASSERT_DOUBLE_EQ(log(Num(num))->Vpa(), log(num));
-        ASSERT_DOUBLE_EQ(log2(Num(num))->Vpa(), log2(num));
-        ASSERT_DOUBLE_EQ(log10(Num(num))->Vpa(), log10(num));
-        ASSERT_DOUBLE_EQ(exp(Num(num))->Vpa(), exp(num));
-    }
-}
-TEST(Function, InvalidNumber) {
-    MemoryLeakDetection mld;
-    double inf = std::numeric_limits<double>::infinity();
-    double inf2 = -std::numeric_limits<double>::infinity();
-    double nan = std::numeric_limits<double>::quiet_NaN();
-    double dblMax = std::numeric_limits<double>::max();
+    // 16位
+    ASSERT_EQ(ToString(1234567890123456), "1234567890123456");
+    ASSERT_EQ(ToString(-1234567890123456), "-1234567890123456");
 
-#define MY_ASSERT_THROW(statement, shouldThrow)                                                                        \
-    if (shouldThrow) {                                                                                                 \
-        try {                                                                                                          \
-            statement;                                                                                                 \
-            FAIL();                                                                                                    \
-        } catch (const MathError &err) {                                                                               \
-            std::cerr << "[Expected Exception]" << err.what() << std::endl;                                            \
-        }                                                                                                              \
-    } else {                                                                                                           \
-        try {                                                                                                          \
-            statement;                                                                                                 \
-        } catch (const MathError &err) {                                                                               \
-            std::cerr << "[Unexpected Exception]" << err.what() << std::endl;                                          \
-            FAIL();                                                                                                    \
-        }                                                                                                              \
-    }
+    ASSERT_EQ(ToString(1.0e0), "1");
+    ASSERT_EQ(ToString(1e0), "1");
+    ASSERT_EQ(ToString(1e1), "10");
+    ASSERT_EQ(ToString(1e15), "1000000000000000");
+    ASSERT_EQ(ToString(1e16), "1e+16");
+    ASSERT_EQ(ToString(1.0e16), "1e+16");
+    ASSERT_EQ(ToString(1e-16), "9.9999999999999998e-17");
+    ASSERT_EQ(ToString(1.0e-16), "9.9999999999999998e-17");
 
-    auto Test = [&](bool shouldThrow) {
-        MY_ASSERT_THROW((Num(inf) + Num(1))->Vpa(), shouldThrow);
-        MY_ASSERT_THROW((Num(inf2) + Num(1))->Vpa(), shouldThrow);
-        MY_ASSERT_THROW((Num(nan) + Num(1))->Vpa(), shouldThrow);
-
-        MY_ASSERT_THROW((Num(1) / Num(0))->Vpa(), shouldThrow);
-
-        // pow(DBL_DOUELB, 2)
-        MY_ASSERT_THROW((Num(dblMax) ^ Num(2))->Vpa(), shouldThrow);
-
-        MY_ASSERT_THROW(asin(Num(1.1))->Vpa(), shouldThrow);
-        MY_ASSERT_THROW(asin(Num(-1.1))->Vpa(), shouldThrow);
-
-        MY_ASSERT_THROW(acos(Num(1.1))->Vpa(), shouldThrow);
-        MY_ASSERT_THROW(acos(Num(-1.1))->Vpa(), shouldThrow);
-
-        MY_ASSERT_THROW(sqrt(Num(-0.1))->Vpa(), shouldThrow);
-
-        MY_ASSERT_THROW(log(Num(0))->Vpa(), shouldThrow);
-        MY_ASSERT_THROW(log2(Num(0))->Vpa(), shouldThrow);
-        MY_ASSERT_THROW(log10(Num(0))->Vpa(), shouldThrow);
-    };
-
-    // 默认配置下，无效值应该抛异常
-    Test(true);
-
-    // 手动关闭无效值检查，不应抛异常
-    {
-        GetConfig().throwOnInvalidValue = false;
-
-        Test(false);
-
-        // 恢复配置
-        GetConfig().Reset();
-    }
-}
-TEST(Function, ToString) {
-    MemoryLeakDetection mld;
-
-    Node f = Var("r") * sin(Var("omega") / Num(2.0) + Var("phi")) + Var("c");
-
-    ASSERT_EQ(f->ToString(), "r*sin(omega/2+phi)+c");
+    ASSERT_EQ(ToString(std::numeric_limits<double>::min()), "2.2250738585072014e-308");
+    ASSERT_EQ(ToString(std::numeric_limits<double>::max()), "1.7976931348623157e+308");
+    ASSERT_EQ(ToString(std::numeric_limits<double>::denorm_min()), "4.9406564584124654e-324");
+    ASSERT_EQ(ToString(std::numeric_limits<double>::lowest()), "-1.7976931348623157e+308");
 }

@@ -21,6 +21,110 @@
 
 namespace tomsolver {
 
+enum class ErrorType {
+    ERROR_INVALID_NUMBER,                // 出现无效的浮点数(inf, -inf, nan)
+    ERROR_ILLEGALCHAR,                   // 出现非法字符
+    ERROR_INVALID_VARNAME,               // 无效变量名
+    ERROR_WRONG_EXPRESSION,              // 表达式逻辑不正确
+    ERROR_EMPTY_INPUT,                   // 表达式为空
+    ERROR_UNDEFINED_VARIABLE,            // 未定义的变量
+    ERROR_SUBS_NOT_EQUAL,                // 替换与被替换数量不对等
+    ERROR_NOT_LINK_VARIABLETABLE,        // 未链接变量表
+    ERROR_OUTOF_DOMAIN,                  // 计算超出定义域
+    ERROR_VAR_COUNT_NOT_EQUAL_NUM_COUNT, // 定义变量时变量数量与初始值不等
+    ERROR_VAR_HAS_BEEN_DEFINED,          // 变量重定义
+    ERROR_INDETERMINATE_EQUATION,        // 不定方程
+    ERROR_SINGULAR_MATRIX,               // 矩阵奇异
+    ERROR_INFINITY_SOLUTIONS,            // 无穷多解
+    ERROR_OVER_DETERMINED_EQUATIONS      // 方程组过定义
+};
+
+std::string GetErrorInfo(ErrorType err);
+
+class MathError : public std::exception {
+public:
+    MathError(ErrorType errorType, const std::string &extInfo)
+        : errorType(errorType), errInfo(GetErrorInfo(errorType) + " : " + extInfo) {}
+
+    virtual const char *what() const noexcept override;
+
+    ErrorType GetErrorType() const noexcept;
+
+private:
+    ErrorType errorType;
+    std::string errInfo;
+};
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+std::string GetErrorInfo(ErrorType err) {
+    switch (err) {
+    case ErrorType::ERROR_INVALID_NUMBER:
+        return u8"invalid number";
+        break;
+    case ErrorType::ERROR_ILLEGALCHAR:
+        return u8"illegal character";
+        break;
+    case ErrorType::ERROR_INVALID_VARNAME:
+        return u8"不正确的变量名（必须以下划线\"_\"或英文字母开头）。";
+        break;
+    case ErrorType::ERROR_WRONG_EXPRESSION:
+        return u8"错误的表达式。";
+        break;
+    case ErrorType::ERROR_EMPTY_INPUT:
+        return u8"表达式为空。";
+        break;
+    case ErrorType::ERROR_UNDEFINED_VARIABLE:
+        return u8"未定义的变量。";
+        break;
+    case ErrorType::ERROR_SUBS_NOT_EQUAL:
+        return u8"替换与被替换数目不等。";
+        break;
+    case ErrorType::ERROR_NOT_LINK_VARIABLETABLE:
+        return u8"程序未链接变量表。";
+        break;
+    case ErrorType::ERROR_OUTOF_DOMAIN:
+        return u8"超出定义域。";
+        break;
+    case ErrorType::ERROR_VAR_COUNT_NOT_EQUAL_NUM_COUNT:
+        return u8"变量名与初始值数量不对等。";
+        break;
+    case ErrorType::ERROR_VAR_HAS_BEEN_DEFINED:
+        return u8"变量重定义";
+        break;
+    case ErrorType::ERROR_INDETERMINATE_EQUATION:
+        return u8"不定方程";
+        break;
+    case ErrorType::ERROR_SINGULAR_MATRIX:
+        return u8"矩阵奇异";
+        break;
+    case ErrorType::ERROR_INFINITY_SOLUTIONS:
+        return u8"无穷多解";
+        break;
+    case ErrorType::ERROR_OVER_DETERMINED_EQUATIONS:
+        return u8"方程组过定义";
+        break;
+    default:
+        assert(0);
+        break;
+    }
+    return u8"GetErrorInfo: bug";
+}
+
+const char *MathError::what() const noexcept {
+    return errInfo.c_str();
+}
+
+ErrorType MathError::GetErrorType() const noexcept {
+    return errorType;
+}
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
 enum class LogLevel { OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL };
 
 enum class NonlinearMethod { NEWTON_RAPHSON, LM };
@@ -63,135 +167,6 @@ private:
 std::string ToString(double value) noexcept;
 
 Config &GetConfig() noexcept;
-
-} // namespace tomsolver
-//#pragma once
-//
-//#include "TVariableTable.h"
-//#include "error_type.h"
-//
-//#include <queue>
-//#include <stack>
-//
-// namespace tomsolver {
-//
-// class TExpressionTree {
-// private:
-//#define MAX_VAR_NAME 32 //同时也是浮点数转字符串的最大长度
-//#define MIN_DOUBLE 1e-6
-//
-//    void Release();
-//
-//    static std::string EnumOperatorToTChar(enumMathOperator eOperator);
-//
-//    bool isBaseOperator(char c);
-//    bool isDoubleChar(char c);
-//
-//    static enumMathOperator BaseOperatorCharToEnum(char c);
-//    static enumMathOperator Str2Function(std::string s);
-//
-//    TVariableTable *pVariableTable;
-//    int iVarAppearedCount;
-//    TNode *LastVarNode;
-//    // TVariableTable SelfVariableTable;
-//    void InQueue2PostQueue(std::queue<TNode *> &InOrder, std::vector<TNode *> &PostOrder);
-//    void ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder);
-//    static std::string Node2Str(const TNode &node);
-//    void BuildExpressionTree(std::vector<TNode *> &PostOrder);
-//    void Simplify(TNode *now);
-//    void GetNodeNum(TNode *now, int &n);
-//    int GetNodeNum(TNode *head);
-//    void DeleteNode(TNode *node);
-//    void DeleteNodeTraversal(TNode *node);
-//    TNode *CopyNodeTree(TNode *oldNode);
-//    // std::string  FindVariableTableFrom(const std::string varstr, std::vector<std::string >
-//    // newVariableTable);//查找变量是否在变量表中，没有则返回NULL
-//    void GetVariablePos(TNode *now, const std::string var, std::vector<TNode *> &VarsPos);
-//    void GetVariablePos(const std::string var, std::vector<TNode *> &VarsPos);
-//    void CopyVariableTable(std::vector<std::string> &Dest, const std::vector<std::string> source);
-//    // void ReplaceNodeVariable(TNode *now, std::vector<std::string > &newVariableTable);
-//    bool CanCalc(TNode *now);
-//    void LinkParent(TNode *child, TNode *ignore);
-//    TNode *NewNode(enumNodeType eType, enumMathOperator eOperator = MATH_NULL);
-//    void ReleaseVectorTNode(std::vector<TNode *> vec);
-//    void Vpa_inner(TNode *now);
-//    void Solve(TNode *now, TNode *&write_pos);
-//    void CheckOnlyOneVar(TNode *now);
-//    void Subs_inner(TNode *node, std::string ptVar, double value);
-//
-// public:
-//    TNode *head;
-//    void Reset();
-//    void Vpa(bool bOutput);
-//    void LinkVariableTable(TVariableTable *p); //链接变量表
-//    void Read(const std::string expression, bool bOutput);
-//    void Read(double num, bool bOutput); //读入只有1个数字的表达式
-//
-//    //所有操作符未完成
-//    std::string Solve(std::string &var,
-//                      double &value); //求解单变量方程 不验证可求解性，需提前调用HasOnlyOneVar确认 不改动表达式内容
-//    std::string OutputStr();
-//    void Simplify(bool bOutput);                            //化简
-//    std::string Diff(std::string var, int n, bool bOutput); //对变量求导
-//    void Subs(std::string ptVar, double value, bool output);
-//    void Subs(const std::string vars, const std::string nums,
-//              bool output); // vars为被替换变量，nums为替换表达式，以空格分隔
-//    void Subs(std::vector<std::string> VarsVector, std::vector<double> NumsVector, bool output);
-//    bool CanCalc();                     //检查是否还有变量存在，可以计算则返回true
-//    bool IsSingleVar();                 //检查是否为一元(not used)
-//    bool HasOnlyOneVar();               //只有一个变量（只有刚read才有效）
-//    bool CheckOnlyOneVar();             //只有一个变量（实时验证）
-//    double Value(bool operateHeadNode); //不验证可计算性，必须与CanCalc合用
-//    std::string
-//    Calc(double *result = NULL); //计算表达式的值，若传入了result则把结果存入。返回值为结果字符串或表达式串。
-//
-//    TExpressionTree &operator=(const TExpressionTree &expr);
-//    TExpressionTree &operator+(const TExpressionTree &expr);
-//    TExpressionTree &operator*(double value);
-//    TExpressionTree &operator+(double value);
-//    TExpressionTree &operator-(double value);
-//
-//    TExpressionTree();
-//    ~TExpressionTree();
-//};
-//
-//} // namespace tomsolver
-
-namespace tomsolver {
-
-enum class ErrorType {
-    ERROR_INVALID_NUMBER,                // 出现无效的浮点数(inf, -inf, nan)
-    ERROR_ILLEGALCHAR,                   // 出现非法字符
-    ERROR_INVALID_VARNAME,               // 无效变量名
-    ERROR_WRONG_EXPRESSION,              // 表达式逻辑不正确
-    ERROR_EMPTY_INPUT,                   // 表达式为空
-    ERROR_UNDEFINED_VARIABLE,            // 未定义的变量
-    ERROR_SUBS_NOT_EQUAL,                // 替换与被替换数量不对等
-    ERROR_NOT_LINK_VARIABLETABLE,        // 未链接变量表
-    ERROR_OUTOF_DOMAIN,                  // 计算超出定义域
-    ERROR_VAR_COUNT_NOT_EQUAL_NUM_COUNT, // 定义变量时变量数量与初始值不等
-    ERROR_VAR_HAS_BEEN_DEFINED,          // 变量重定义
-    ERROR_INDETERMINATE_EQUATION,        // 不定方程
-    ERROR_SINGULAR_MATRIX,               // 矩阵奇异
-    ERROR_INFINITY_SOLUTIONS,            // 无穷多解
-    ERROR_OVER_DETERMINED_EQUATIONS      // 方程组过定义
-};
-
-std::string GetErrorInfo(ErrorType err);
-
-class MathError : public std::exception {
-public:
-    MathError(ErrorType errorType, const std::string &extInfo)
-        : errorType(errorType), errInfo(GetErrorInfo(errorType) + " : " + extInfo) {}
-
-    virtual const char *what() const noexcept override;
-
-    ErrorType GetErrorType() const noexcept;
-
-private:
-    ErrorType errorType;
-    std::string errInfo;
-};
 
 } // namespace tomsolver
 
@@ -291,15 +266,106 @@ const char *Config::GetDoubleFormatStr() const noexcept {
 }
 
 } // namespace tomsolver
-//#include "TExpressionTree.h"
+// #pragma once
 //
-//#include "error_type.h"
+// #include "TVariableTable.h"
+// #include "error_type.h"
 //
-//#include <string>
-//#define _USE_MATH_DEFINES
-//#include <math.h>
+// #include <queue>
+// #include <stack>
 //
-//#include <cassert>
+//  namespace tomsolver {
+//
+//  class TExpressionTree {
+//  private:
+// #define MAX_VAR_NAME 32 //同时也是浮点数转字符串的最大长度
+// #define MIN_DOUBLE 1e-6
+//
+//     void Release();
+//
+//     static std::string EnumOperatorToTChar(enumMathOperator eOperator);
+//
+//     bool isBaseOperator(char c);
+//     bool isDoubleChar(char c);
+//
+//     static enumMathOperator BaseOperatorCharToEnum(char c);
+//     static enumMathOperator Str2Function(std::string s);
+//
+//     TVariableTable *pVariableTable;
+//     int iVarAppearedCount;
+//     TNode *LastVarNode;
+//     // TVariableTable SelfVariableTable;
+//     void InQueue2PostQueue(std::queue<TNode *> &InOrder, std::vector<TNode *> &PostOrder);
+//     void ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder);
+//     static std::string Node2Str(const TNode &node);
+//     void BuildExpressionTree(std::vector<TNode *> &PostOrder);
+//     void Simplify(TNode *now);
+//     void GetNodeNum(TNode *now, int &n);
+//     int GetNodeNum(TNode *head);
+//     void DeleteNode(TNode *node);
+//     void DeleteNodeTraversal(TNode *node);
+//     TNode *CopyNodeTree(TNode *oldNode);
+//     // std::string  FindVariableTableFrom(const std::string varstr, std::vector<std::string >
+//     // newVariableTable);//查找变量是否在变量表中，没有则返回NULL
+//     void GetVariablePos(TNode *now, const std::string var, std::vector<TNode *> &VarsPos);
+//     void GetVariablePos(const std::string var, std::vector<TNode *> &VarsPos);
+//     void CopyVariableTable(std::vector<std::string> &Dest, const std::vector<std::string> source);
+//     // void ReplaceNodeVariable(TNode *now, std::vector<std::string > &newVariableTable);
+//     bool CanCalc(TNode *now);
+//     void LinkParent(TNode *child, TNode *ignore);
+//     TNode *NewNode(enumNodeType eType, enumMathOperator eOperator = MATH_NULL);
+//     void ReleaseVectorTNode(std::vector<TNode *> vec);
+//     void Vpa_inner(TNode *now);
+//     void Solve(TNode *now, TNode *&write_pos);
+//     void CheckOnlyOneVar(TNode *now);
+//     void Subs_inner(TNode *node, std::string ptVar, double value);
+//
+//  public:
+//     TNode *head;
+//     void Reset();
+//     void Vpa(bool bOutput);
+//     void LinkVariableTable(TVariableTable *p); //链接变量表
+//     void Read(const std::string expression, bool bOutput);
+//     void Read(double num, bool bOutput); //读入只有1个数字的表达式
+//
+//     //所有操作符未完成
+//     std::string Solve(std::string &var,
+//                       double &value); //求解单变量方程 不验证可求解性，需提前调用HasOnlyOneVar确认 不改动表达式内容
+//     std::string OutputStr();
+//     void Simplify(bool bOutput);                            //化简
+//     std::string Diff(std::string var, int n, bool bOutput); //对变量求导
+//     void Subs(std::string ptVar, double value, bool output);
+//     void Subs(const std::string vars, const std::string nums,
+//               bool output); // vars为被替换变量，nums为替换表达式，以空格分隔
+//     void Subs(std::vector<std::string> VarsVector, std::vector<double> NumsVector, bool output);
+//     bool CanCalc();                     //检查是否还有变量存在，可以计算则返回true
+//     bool IsSingleVar();                 //检查是否为一元(not used)
+//     bool HasOnlyOneVar();               //只有一个变量（只有刚read才有效）
+//     bool CheckOnlyOneVar();             //只有一个变量（实时验证）
+//     double Value(bool operateHeadNode); //不验证可计算性，必须与CanCalc合用
+//     std::string
+//     Calc(double *result = NULL); //计算表达式的值，若传入了result则把结果存入。返回值为结果字符串或表达式串。
+//
+//     TExpressionTree &operator=(const TExpressionTree &expr);
+//     TExpressionTree &operator+(const TExpressionTree &expr);
+//     TExpressionTree &operator*(double value);
+//     TExpressionTree &operator+(double value);
+//     TExpressionTree &operator-(double value);
+//
+//     TExpressionTree();
+//     ~TExpressionTree();
+// };
+//
+// } // namespace tomsolver
+// #include "TExpressionTree.h"
+//
+// #include "error_type.h"
+//
+// #include <string>
+// #define _USE_MATH_DEFINES
+// #include <math.h>
+//
+// #include <cassert>
 //
 //
 //
@@ -730,66 +796,453 @@ const char *Config::GetDoubleFormatStr() const noexcept {
 
 namespace tomsolver {
 
-std::string GetErrorInfo(ErrorType err) {
-    switch (err) {
-    case ErrorType::ERROR_INVALID_NUMBER:
-        return u8"invalid number";
-        break;
-    case ErrorType::ERROR_ILLEGALCHAR:
-        return u8"illegal character";
-        break;
-    case ErrorType::ERROR_INVALID_VARNAME:
-        return u8"不正确的变量名（必须以下划线\"_\"或英文字母开头）。";
-        break;
-    case ErrorType::ERROR_WRONG_EXPRESSION:
-        return u8"错误的表达式。";
-        break;
-    case ErrorType::ERROR_EMPTY_INPUT:
-        return u8"表达式为空。";
-        break;
-    case ErrorType::ERROR_UNDEFINED_VARIABLE:
-        return u8"未定义的变量。";
-        break;
-    case ErrorType::ERROR_SUBS_NOT_EQUAL:
-        return u8"替换与被替换数目不等。";
-        break;
-    case ErrorType::ERROR_NOT_LINK_VARIABLETABLE:
-        return u8"程序未链接变量表。";
-        break;
-    case ErrorType::ERROR_OUTOF_DOMAIN:
-        return u8"超出定义域。";
-        break;
-    case ErrorType::ERROR_VAR_COUNT_NOT_EQUAL_NUM_COUNT:
-        return u8"变量名与初始值数量不对等。";
-        break;
-    case ErrorType::ERROR_VAR_HAS_BEEN_DEFINED:
-        return u8"变量重定义";
-        break;
-    case ErrorType::ERROR_INDETERMINATE_EQUATION:
-        return u8"不定方程";
-        break;
-    case ErrorType::ERROR_SINGULAR_MATRIX:
-        return u8"矩阵奇异";
-        break;
-    case ErrorType::ERROR_INFINITY_SOLUTIONS:
-        return u8"无穷多解";
-        break;
-    case ErrorType::ERROR_OVER_DETERMINED_EQUATIONS:
-        return u8"方程组过定义";
+constexpr double PI = M_PI;
+
+template <typename T>
+T radians(T &&t) noexcept {
+    return std::forward<T>(t) / 180.0 * PI;
+}
+
+template <typename T>
+T degrees(T &&t) noexcept {
+    return std::forward<T>(t) * 180.0 / PI;
+}
+
+enum class MathOperator {
+    MATH_NULL,
+    // 一元
+    MATH_POSITIVE,
+    MATH_NEGATIVE,
+
+    // 函数
+    MATH_SIN,
+    MATH_COS,
+    MATH_TAN,
+    MATH_ARCSIN,
+    MATH_ARCCOS,
+    MATH_ARCTAN,
+    MATH_SQRT,
+    MATH_LOG,
+    MATH_LOG2,
+    MATH_LOG10,
+    MATH_EXP,
+
+    // 二元
+    MATH_ADD,
+    MATH_SUB,
+    MATH_MULTIPLY,
+    MATH_DIVIDE,
+    MATH_POWER,
+    MATH_AND,
+    MATH_OR,
+    MATH_MOD,
+
+    MATH_LEFT_PARENTHESIS,
+    MATH_RIGHT_PARENTHESIS
+};
+
+/**
+ * 操作符转std::string
+ */
+std::string MathOperatorToStr(MathOperator op);
+
+/**
+ * 取得操作数的数量。
+ */
+int GetOperatorNum(MathOperator op) noexcept;
+
+/**
+* 返回运算符的优先级
+
+*/
+int Rank(MathOperator op) noexcept;
+
+/**
+ * 返回运算符结合性
+ */
+bool IsLeft2Right(MathOperator eOperator) noexcept;
+
+/**
+ * 返回是否满足交换律
+ */
+bool InAssociativeLaws(MathOperator eOperator) noexcept;
+
+/**
+ * 返回是否是函数
+ */
+bool IsFunction(MathOperator op) noexcept;
+
+/**
+ * 是整数 且 为偶数
+ * FIXME: 超出long long范围的处理
+ */
+bool IsIntAndEven(double n) noexcept;
+
+double Calc(MathOperator op, double v1, double v2);
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+std::string MathOperatorToStr(MathOperator op) {
+    switch (op) {
+    case MathOperator::MATH_NULL:
+        assert(0);
+        return "";
+    // 一元
+    case MathOperator::MATH_POSITIVE:
+        return "+";
+    case MathOperator::MATH_NEGATIVE:
+        return "-";
+    // 函数
+    case MathOperator::MATH_SIN:
+        return "sin";
+    case MathOperator::MATH_COS:
+        return "cos";
+    case MathOperator::MATH_TAN:
+        return "tan";
+    case MathOperator::MATH_ARCSIN:
+        return "asin";
+    case MathOperator::MATH_ARCCOS:
+        return "acos";
+    case MathOperator::MATH_ARCTAN:
+        return "atan";
+    case MathOperator::MATH_SQRT:
+        return "sqrt";
+    case MathOperator::MATH_LOG:
+        return "log";
+    case MathOperator::MATH_LOG2:
+        return "log2";
+    case MathOperator::MATH_LOG10:
+        return "log10";
+    case MathOperator::MATH_EXP:
+        return "exp";
+    // 二元
+    case MathOperator::MATH_ADD:
+        return "+";
+    case MathOperator::MATH_SUB:
+        return "-";
+    case MathOperator::MATH_MULTIPLY:
+        return "*";
+    case MathOperator::MATH_DIVIDE:
+        return "/";
+    case MathOperator::MATH_POWER:
+        return "^";
+    case MathOperator::MATH_AND:
+        return "&";
+    case MathOperator::MATH_OR:
+        return "|";
+    case MathOperator::MATH_MOD:
+        return "%";
+    case MathOperator::MATH_LEFT_PARENTHESIS:
+        return "(";
+    case MathOperator::MATH_RIGHT_PARENTHESIS:
+        return ")";
+    }
+    assert(0);
+    return "err";
+}
+
+int GetOperatorNum(MathOperator op) noexcept {
+    switch (op) {
+    case MathOperator::MATH_POSITIVE: // 正负号
+    case MathOperator::MATH_NEGATIVE:
+
+    case MathOperator::MATH_SIN:
+    case MathOperator::MATH_COS:
+    case MathOperator::MATH_TAN:
+    case MathOperator::MATH_ARCSIN:
+    case MathOperator::MATH_ARCCOS:
+    case MathOperator::MATH_ARCTAN:
+    case MathOperator::MATH_SQRT:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
+    case MathOperator::MATH_LOG10:
+    case MathOperator::MATH_EXP:
+        return 1;
+
+    case MathOperator::MATH_ADD:
+    case MathOperator::MATH_SUB:
+    case MathOperator::MATH_MULTIPLY:
+    case MathOperator::MATH_DIVIDE:
+    case MathOperator::MATH_POWER: //^
+    case MathOperator::MATH_AND:   //&
+    case MathOperator::MATH_OR:    //|
+    case MathOperator::MATH_MOD:   //%
+        return 2;
+
+    case MathOperator::MATH_LEFT_PARENTHESIS:
+    case MathOperator::MATH_RIGHT_PARENTHESIS:
+        assert(0);
         break;
     default:
         assert(0);
         break;
     }
-    return u8"GetErrorInfo: bug";
+    assert(0);
+    return 0;
 }
 
-const char *MathError::what() const noexcept {
-    return errInfo.c_str();
+int Rank(MathOperator op) noexcept {
+    switch (op) {
+    case MathOperator::MATH_SIN:
+    case MathOperator::MATH_COS:
+    case MathOperator::MATH_TAN:
+    case MathOperator::MATH_ARCSIN:
+    case MathOperator::MATH_ARCCOS:
+    case MathOperator::MATH_ARCTAN:
+    case MathOperator::MATH_SQRT:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
+    case MathOperator::MATH_LOG10:
+    case MathOperator::MATH_EXP:
+        return 15;
+
+    case MathOperator::MATH_POSITIVE: // 除了函数，所有运算符均可将正负号挤出
+    case MathOperator::MATH_NEGATIVE:
+        return 14;
+
+    case MathOperator::MATH_MOD: //%
+        return 13;
+
+    case MathOperator::MATH_AND: //&
+    case MathOperator::MATH_OR:  //|
+        return 12;
+
+    case MathOperator::MATH_POWER: //^
+        return 11;
+
+    case MathOperator::MATH_MULTIPLY:
+    case MathOperator::MATH_DIVIDE:
+        return 10;
+
+    case MathOperator::MATH_ADD:
+    case MathOperator::MATH_SUB:
+        return 5;
+
+    case MathOperator::MATH_LEFT_PARENTHESIS: // 左右括号优先级小是为了不被其余任何运算符挤出
+    case MathOperator::MATH_RIGHT_PARENTHESIS:
+        return 0;
+    default:
+        assert(0);
+        break;
+    }
+    assert(0);
+    return 0;
 }
 
-ErrorType MathError::GetErrorType() const noexcept {
-    return errorType;
+bool IsLeft2Right(MathOperator eOperator) noexcept {
+    switch (eOperator) {
+    case MathOperator::MATH_MOD: //%
+    case MathOperator::MATH_AND: //&
+    case MathOperator::MATH_OR:  //|
+    case MathOperator::MATH_MULTIPLY:
+    case MathOperator::MATH_DIVIDE:
+    case MathOperator::MATH_ADD:
+    case MathOperator::MATH_SUB:
+        return true;
+
+    case MathOperator::MATH_POSITIVE: // 正负号为右结合
+    case MathOperator::MATH_NEGATIVE:
+    case MathOperator::MATH_POWER: //^
+        return false;
+
+    // 函数和括号不计结合性
+    case MathOperator::MATH_SIN:
+    case MathOperator::MATH_COS:
+    case MathOperator::MATH_TAN:
+    case MathOperator::MATH_ARCSIN:
+    case MathOperator::MATH_ARCCOS:
+    case MathOperator::MATH_ARCTAN:
+    case MathOperator::MATH_SQRT:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
+    case MathOperator::MATH_LOG10:
+    case MathOperator::MATH_EXP:
+
+    case MathOperator::MATH_LEFT_PARENTHESIS:
+    case MathOperator::MATH_RIGHT_PARENTHESIS:
+        return true;
+    default:
+        assert(0);
+    }
+    return false;
+}
+
+bool InAssociativeLaws(MathOperator eOperator) noexcept {
+    switch (eOperator) {
+
+    case MathOperator::MATH_POSITIVE: // 正负号
+    case MathOperator::MATH_NEGATIVE:
+
+    case MathOperator::MATH_SQRT:
+    case MathOperator::MATH_SIN:
+    case MathOperator::MATH_COS:
+    case MathOperator::MATH_TAN:
+    case MathOperator::MATH_ARCSIN:
+    case MathOperator::MATH_ARCCOS:
+    case MathOperator::MATH_ARCTAN:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
+    case MathOperator::MATH_LOG10:
+    case MathOperator::MATH_EXP:
+
+    case MathOperator::MATH_MOD:   //%
+    case MathOperator::MATH_AND:   //&
+    case MathOperator::MATH_OR:    //|
+    case MathOperator::MATH_POWER: //^
+    case MathOperator::MATH_DIVIDE:
+    case MathOperator::MATH_SUB:
+
+    case MathOperator::MATH_LEFT_PARENTHESIS:
+    case MathOperator::MATH_RIGHT_PARENTHESIS:
+        return false;
+
+    case MathOperator::MATH_ADD:
+    case MathOperator::MATH_MULTIPLY:
+        return true;
+    default:
+        assert(0);
+        break;
+    }
+    assert(0);
+    return false;
+}
+
+bool IsFunction(MathOperator op) noexcept {
+    switch (op) {
+    case MathOperator::MATH_SIN:
+    case MathOperator::MATH_COS:
+    case MathOperator::MATH_TAN:
+    case MathOperator::MATH_ARCSIN:
+    case MathOperator::MATH_ARCCOS:
+    case MathOperator::MATH_ARCTAN:
+    case MathOperator::MATH_SQRT:
+    case MathOperator::MATH_LOG:
+    case MathOperator::MATH_LOG2:
+    case MathOperator::MATH_LOG10:
+    case MathOperator::MATH_EXP:
+        return true;
+
+    case MathOperator::MATH_POSITIVE:
+    case MathOperator::MATH_NEGATIVE:
+    case MathOperator::MATH_MOD:   //%
+    case MathOperator::MATH_AND:   //&
+    case MathOperator::MATH_OR:    //|
+    case MathOperator::MATH_POWER: //^
+    case MathOperator::MATH_MULTIPLY:
+    case MathOperator::MATH_DIVIDE:
+    case MathOperator::MATH_ADD:
+    case MathOperator::MATH_SUB:
+    case MathOperator::MATH_LEFT_PARENTHESIS:
+    case MathOperator::MATH_RIGHT_PARENTHESIS:
+        return false;
+    default:
+        assert(0);
+        break;
+    }
+    assert(0);
+    return false;
+}
+
+double Calc(MathOperator op, double v1, double v2) {
+    double ret = std::numeric_limits<double>::quiet_NaN();
+    switch (op) {
+    case MathOperator::MATH_SIN:
+        ret = std::sin(v1);
+        break;
+    case MathOperator::MATH_COS:
+        ret = std::cos(v1);
+        break;
+    case MathOperator::MATH_TAN:
+        ret = std::tan(v1);
+        break;
+    case MathOperator::MATH_ARCSIN:
+        ret = std::asin(v1);
+        break;
+    case MathOperator::MATH_ARCCOS:
+        ret = std::acos(v1);
+        break;
+    case MathOperator::MATH_ARCTAN:
+        ret = std::atan(v1);
+        break;
+    case MathOperator::MATH_SQRT:
+        ret = std::sqrt(v1);
+        break;
+    case MathOperator::MATH_LOG:
+        ret = std::log(v1);
+        break;
+    case MathOperator::MATH_LOG2:
+        ret = std::log2(v1);
+        break;
+    case MathOperator::MATH_LOG10:
+        ret = std::log10(v1);
+        break;
+    case MathOperator::MATH_EXP:
+        ret = std::exp(v1);
+        break;
+    case MathOperator::MATH_POSITIVE:
+        ret = v1;
+        break;
+    case MathOperator::MATH_NEGATIVE:
+        ret = -v1;
+        break;
+
+    case MathOperator::MATH_MOD: //%
+        ret = (int)v1 % (int)v2;
+        break;
+    case MathOperator::MATH_AND: //&
+        ret = (int)v1 & (int)v2;
+        break;
+    case MathOperator::MATH_OR: //|
+        ret = (int)v1 | (int)v2;
+        break;
+
+    case MathOperator::MATH_POWER: //^
+        ret = std::pow(v1, v2);
+        break;
+
+    case MathOperator::MATH_ADD:
+        ret = v1 + v2;
+        break;
+    case MathOperator::MATH_SUB:
+        ret = v1 - v2;
+        break;
+    case MathOperator::MATH_MULTIPLY:
+        ret = v1 * v2;
+        break;
+    case MathOperator::MATH_DIVIDE:
+        ret = v1 / v2;
+        break;
+    default:
+        assert(0 && "[Calc] bug.");
+        break;
+    }
+
+    if (GetConfig().throwOnInvalidValue == false) {
+        return ret;
+    }
+
+    bool isInvalid = (ret == std::numeric_limits<double>::infinity()) ||
+                     (ret == -std::numeric_limits<double>::infinity()) || (ret != ret);
+    if (isInvalid) {
+        std::string info;
+        info = "expression: \"";
+        switch (GetOperatorNum(op)) {
+        case 1:
+            info += MathOperatorToStr(op) + " " + ToString(v1);
+            break;
+        case 2:
+            info += ToString(v1) + " " + MathOperatorToStr(op) + " " + ToString(v2);
+            break;
+        default:
+            assert(0);
+        }
+        info += "\"";
+        throw MathError(ErrorType::ERROR_INVALID_NUMBER, info);
+    }
+
+    return ret;
 }
 
 } // namespace tomsolver
@@ -1018,450 +1471,6 @@ public:
  * 向量点乘。
  */
 double Dot(const Vec &a, const Vec &b) noexcept;
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-constexpr double PI = M_PI;
-
-template <typename T>
-T radians(T &&t) noexcept {
-    return std::forward<T>(t) / 180.0 * PI;
-}
-
-template <typename T>
-T degrees(T &&t) noexcept {
-    return std::forward<T>(t) * 180.0 / PI;
-}
-
-enum class MathOperator {
-    MATH_NULL,
-    // 一元
-    MATH_POSITIVE,
-    MATH_NEGATIVE,
-
-    // 函数
-    MATH_SIN,
-    MATH_COS,
-    MATH_TAN,
-    MATH_ARCSIN,
-    MATH_ARCCOS,
-    MATH_ARCTAN,
-    MATH_SQRT,
-    MATH_LOG,
-    MATH_LOG2,
-    MATH_LOG10,
-    MATH_EXP,
-
-    // 二元
-    MATH_ADD,
-    MATH_SUB,
-    MATH_MULTIPLY,
-    MATH_DIVIDE,
-    MATH_POWER,
-    MATH_AND,
-    MATH_OR,
-    MATH_MOD,
-
-    MATH_LEFT_PARENTHESIS,
-    MATH_RIGHT_PARENTHESIS
-};
-
-/**
- * 操作符转std::string
- */
-std::string MathOperatorToStr(MathOperator op);
-
-/**
- * 取得操作数的数量。
- */
-int GetOperatorNum(MathOperator op) noexcept;
-
-/**
-* 返回运算符的优先级
-
-*/
-int Rank(MathOperator op) noexcept;
-
-/**
- * 返回运算符结合性
- */
-bool IsLeft2Right(MathOperator eOperator) noexcept;
-
-/**
- * 返回是否满足交换律
- */
-bool InAssociativeLaws(MathOperator eOperator) noexcept;
-
-/**
- * 返回是否是函数
- */
-bool IsFunction(MathOperator op) noexcept;
-
-/**
- * 是整数 且 为偶数
- * FIXME: 超出long long范围的处理
- */
-bool IsIntAndEven(double n) noexcept;
-
-double Calc(MathOperator op, double v1, double v2);
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-enum class NodeType { NUMBER, OPERATOR, VARIABLE };
-
-// 前置声明
-namespace internal {
-struct NodeImpl;
-}
-class SymMat;
-
-/**
- * 表达式节点。
- */
-using Node = std::unique_ptr<internal::NodeImpl>;
-
-namespace internal {
-
-/**
- * 单个节点的实现。通常应该以std::unique_ptr包裹。
- */
-struct NodeImpl {
-
-    NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
-        : type(type), op(op), value(value), varname(varname), parent(nullptr) {}
-
-    NodeImpl(const NodeImpl &rhs) noexcept;
-    NodeImpl &operator=(const NodeImpl &rhs) noexcept;
-
-    NodeImpl(NodeImpl &&rhs) noexcept;
-    NodeImpl &operator=(NodeImpl &&rhs) noexcept;
-
-    ~NodeImpl();
-
-    bool Equal(const std::unique_ptr<NodeImpl> &rhs) const noexcept;
-
-    /**
-     * 把整个节点以中序遍历的顺序输出为字符串。
-     * 例如：
-     *      Node n = (Var("a") + Num(1)) * Var("b");
-     *   则
-     *      n->ToString() == "(a+1.000000)*b"
-     */
-    std::string ToString() const noexcept;
-
-    /**
-     * 计算出整个表达式的数值。不改变自身。
-     * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
-     */
-    double Vpa() const;
-
-    /**
-     * 计算出整个表达式的数值。不改变自身。
-     * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
-     */
-    NodeImpl &Calc();
-
-    /**
-     * 化简。
-     */
-    NodeImpl &Simplify() noexcept;
-
-    /**
-     * 返回表达式内出现的所有变量名。
-     */
-    std::unordered_set<std::string> GetAllVarNames() const noexcept;
-
-    /**
-     * 检查整个节点数的parent指针是否正确。
-     */
-    void CheckParent() const noexcept;
-
-private:
-    NodeType type;
-    MathOperator op;
-    double value;
-    std::string varname;
-    const NodeImpl *parent;
-    std::unique_ptr<NodeImpl> left, right;
-
-    /**
-     * 本节点如果是OPERATOR，检查操作数数量和left, right指针是否匹配。
-     */
-    void CheckOperatorNum() const noexcept;
-
-    /**
-     * 节点转string。仅限本节点，不含子节点。
-     */
-    std::string NodeToStr() const noexcept;
-
-    void ToStringRecursively(std::string &output) const noexcept;
-
-    void ToStringNonRecursively(std::string &output) const noexcept;
-
-    /**
-     * 计算表达式数值。递归实现。
-     * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 不符合定义域, 除0等情况。
-     */
-    double VpaRecursively() const;
-
-    /**
-     * 计算表达式数值。非递归实现。
-     * 性能弱于递归实现。但不会导致栈溢出。
-     * 根据benchmark，生成一组含4000个随机四则运算节点的表达式，生成1000次，Release下测试耗时3000ms。递归实现耗时2500ms。
-     * 粗略计算，即 1333 ops/ms。
-     * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 不符合定义域, 除0等情况。
-     */
-    double VpaNonRecursively() const;
-
-    /**
-     * 释放整个节点树，除了自己。
-     * 实际是二叉树的非递归后序遍历。
-     */
-    void Release() noexcept;
-
-    friend std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node &&right) noexcept;
-
-    friend std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
-    friend std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
-
-    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
-                             std::unique_ptr<NodeImpl> &&n1) noexcept;
-    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
-                             const std::unique_ptr<NodeImpl> &n1) noexcept;
-
-    friend std::ostream &operator<<(std::ostream &out, const std::unique_ptr<NodeImpl> &n) noexcept;
-
-    template <typename T>
-    friend std::unique_ptr<NodeImpl> UnaryOperator(MathOperator op, T &&n) noexcept;
-
-    template <typename T1, typename T2>
-    friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
-
-    friend class tomsolver::SymMat;
-    friend class DiffFunctions;
-    friend class SubsFunctions;
-    friend class ParseFunctions;
-};
-
-std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
-
-std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
-
-/**
- * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
- * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
- */
-void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept;
-
-/**
- * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
- * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
- */
-void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std::unique_ptr<NodeImpl> &n1) noexcept;
-
-/**
- * 重载std::ostream的<<操作符以输出一个Node节点。
- */
-std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::NodeImpl> &n) noexcept;
-
-template <typename T>
-std::unique_ptr<NodeImpl> UnaryOperator(MathOperator op, T &&n) noexcept {
-    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
-    CopyOrMoveTo(ret.get(), ret->left, std::forward<T>(n));
-    return ret;
-}
-
-template <typename T1, typename T2>
-std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
-    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
-    CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
-    CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
-    return ret;
-}
-
-/**
- * 新建一个运算符节点。
- */
-std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left = nullptr, Node &&right = nullptr) noexcept;
-
-} // namespace internal
-
-Node Clone(const Node &rhs) noexcept;
-
-/**
- * 对节点进行移动。等同于std::move。
- */
-Node Move(Node &rhs) noexcept;
-
-/**
- * 新建一个数值节点。
- */
-std::unique_ptr<internal::NodeImpl> Num(double num) noexcept;
-
-/**
- * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
- */
-bool VarNameIsLegal(const std::string &varname) noexcept;
-
-/**
- * 新建一个变量节点。
- * @exception runtime_error 名字不合法
- */
-std::unique_ptr<internal::NodeImpl> Var(const std::string &varname);
-
-template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
-operator+(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator+=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
-operator-(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T1>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
-operator-(T1 &&n1) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T1>(n1));
-}
-
-template <typename T1>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
-operator+(T1 &&n1) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T1>(n1));
-}
-
-template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator-=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
-operator*(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator*=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
-operator/(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator/=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
-operator^(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_POWER, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator^=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_POWER, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-/**
- * 变量表。
- * 内部保存了多个变量名及其数值的对应关系。
- */
-class VarsTable {
-public:
-    /**
-     * 新建变量表。
-     * @param vars 变量数组
-     * @param initValue 初值
-     */
-    VarsTable(const std::vector<std::string> &vars, double initValue);
-
-    /**
-     * 新建变量表。
-     * @param vars 变量数组
-     * @param initValue 初值
-     */
-    explicit VarsTable(const std::initializer_list<std::pair<std::string, double>> &initList);
-
-    /**
-     * 新建变量表。
-     * @param vars 变量数组
-     * @param initValue 初值
-     */
-    explicit VarsTable(const std::unordered_map<std::string, double> &table) noexcept;
-
-    /**
-     * 变量数量。
-     */
-    int VarNums() const noexcept;
-
-    /**
-     * 返回std::vector容器包装的变量名数组。
-     */
-    const std::vector<std::string> &Vars() const noexcept;
-
-    /**
-     * 返回所有变量名对应的值的数值向量。
-     */
-    const Vec &Values() const noexcept;
-
-    /**
-     * 设置数值向量。
-     */
-    void SetValues(const Vec &v) noexcept;
-
-    std::unordered_map<std::string, double>::const_iterator begin() const noexcept;
-
-    std::unordered_map<std::string, double>::const_iterator end() const noexcept;
-
-    std::unordered_map<std::string, double>::const_iterator cbegin() const noexcept;
-
-    std::unordered_map<std::string, double>::const_iterator cend() const noexcept;
-
-    bool operator==(const VarsTable &rhs) const noexcept;
-
-private:
-    std::vector<std::string> vars;
-    Vec values;
-    std::unordered_map<std::string, double> table;
-};
-
-std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept;
 
 } // namespace tomsolver
 
@@ -1931,60 +1940,213 @@ std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept {
 
 namespace tomsolver {
 
-template <typename T>
-Node sin(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_SIN, std::forward<T>(n));
+Vec SolveLinear(const Mat &A, const Vec &b);
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+void SwapRow(Mat &A, Vec &b, int i, int j) {
+    if (i == j)
+        return;
+    std::swap(A[i], A[j]);
+    std::swap(b[i], b[j]);
 }
 
-template <typename T>
-Node cos(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_COS, std::forward<T>(n));
+Vec SolveLinear(const Mat &AA, const Vec &bb) {
+    Mat A(AA);
+    Vec b(bb);
+
+    int rows = A.Rows(); // 行数
+    int cols = rows;     // 列数=未知数个数
+
+    int RankA = rows, RankAb = rows; // 初始值
+
+    assert(rows == b.Rows()); // A行数不等于b行数
+
+    Vec ret(rows);
+
+    if (rows > 0)
+        cols = static_cast<int>(A[0].size());
+    if (cols != rows) // 不是方阵
+    {
+        if (rows > cols)
+            throw MathError(ErrorType::ERROR_OVER_DETERMINED_EQUATIONS, ""); // 过定义方程组
+        else                                                                 // 不定方程组
+            ret.Resize(cols);
+    }
+
+    std::vector<decltype(rows)> TrueRowNumber(cols);
+
+    // 列主元消元法
+    for (decltype(rows) y = 0, x = 0; y < rows && x < cols; y++, x++) {
+        // if (A[i].size() != rows)
+
+        // 从当前行(y)到最后一行(rows-1)中，找出x列最大的一行与y行交换
+        int maxAbsRowIndex = GetMaxAbsRowIndex(A, y, rows - 1, x);
+        A.SwapRow(y, maxAbsRowIndex);
+        b.SwapRow(y, maxAbsRowIndex);
+
+        while (std::abs(A[y][x]) < GetConfig().epsilon) // 如果当前值为0  x一直递增到非0
+        {
+            x++;
+            if (x == cols)
+                break;
+
+            // 交换本行与最大行
+            maxAbsRowIndex = GetMaxAbsRowIndex(A, y, rows - 1, x);
+            A.SwapRow(y, maxAbsRowIndex);
+            b.SwapRow(y, maxAbsRowIndex);
+        }
+
+        if (x != cols && x > y) {
+            TrueRowNumber[y] = x; // 补齐方程时 当前行应换到x行
+        }
+
+        if (x == cols) // 本行全为0
+        {
+            RankA = y;
+            if (std::abs(b[y]) < GetConfig().epsilon)
+                RankAb = y;
+
+            if (RankA != RankAb) // 奇异，且系数矩阵及增广矩阵秩不相等->无解
+                throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "");
+            else
+                break; // 跳出for，得到特解
+        }
+
+        // 主对角线化为1
+        double m_num = A[y][x];
+        for (decltype(rows) j = y; j < cols; j++) // y行第j个->第cols个
+            A[y][j] /= m_num;
+        b[y] /= m_num;
+
+        // 每行化为0
+        for (decltype(rows) row = y + 1; row < rows; row++) // 下1行->最后1行
+        {
+            if (std::abs(A[row][x]) < GetConfig().epsilon)
+                ;
+            else {
+                double mi = A[row][x];
+                for (auto col = x; col < cols; col++) // row行第x个->第cols个
+                {
+                    A[row][col] -= A[y][col] * mi;
+                }
+                b[row] -= b[y] * mi;
+            }
+        }
+    }
+
+    bool bIndeterminateEquation = false; // 设置此变量是因为后面rows将=cols，标记以判断是否为不定方程组
+
+    // 若为不定方程组，空缺行全填0继续运算
+    if (rows != cols) {
+        A.Resize(cols);                    // A改为cols行
+        for (auto i = rows; i < cols; i++) // A从rows行开始每行cols个数
+            A[i].resize(cols);
+        b.Resize(cols);
+        rows = cols;
+        bIndeterminateEquation = true;
+
+        // 调整顺序
+        for (int i = rows - 1; i >= 0; i--) {
+            if (TrueRowNumber[i] != 0) {
+                A.SwapRow(i, TrueRowNumber[i]);
+                b.SwapRow(i, TrueRowNumber[i]);
+            }
+        }
+    }
+
+    // 后置换得到x
+    double sum_others = 0.0;
+    for (int i = rows - 1; i >= 0; i--) // 最后1行->第1行
+    {
+        sum_others = 0.0;
+        for (decltype(rows) j = i + 1; j < rows; j++) // 本列 后的元素乘以已知x 加总
+        {
+            sum_others += A[i][j] * ret[j];
+        }
+        ret[i] = b[i] - sum_others;
+    }
+
+    if (RankA < cols && RankA == RankAb) {
+        if (bIndeterminateEquation)
+            throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION, "");
+        else
+            throw MathError(ErrorType::ERROR_INFINITY_SOLUTIONS, "");
+    }
+
+    return ret;
 }
 
-template <typename T>
-Node tan(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_TAN, std::forward<T>(n));
-}
+} // namespace tomsolver
 
-template <typename T>
-Node asin(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_ARCSIN, std::forward<T>(n));
-}
+namespace tomsolver {
 
-template <typename T>
-Node acos(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_ARCCOS, std::forward<T>(n));
-}
+/**
+ * 变量表。
+ * 内部保存了多个变量名及其数值的对应关系。
+ */
+class VarsTable {
+public:
+    /**
+     * 新建变量表。
+     * @param vars 变量数组
+     * @param initValue 初值
+     */
+    VarsTable(const std::vector<std::string> &vars, double initValue);
 
-template <typename T>
-Node atan(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_ARCTAN, std::forward<T>(n));
-}
+    /**
+     * 新建变量表。
+     * @param vars 变量数组
+     * @param initValue 初值
+     */
+    explicit VarsTable(const std::initializer_list<std::pair<std::string, double>> &initList);
 
-template <typename T>
-Node sqrt(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_SQRT, std::forward<T>(n));
-}
+    /**
+     * 新建变量表。
+     * @param vars 变量数组
+     * @param initValue 初值
+     */
+    explicit VarsTable(const std::unordered_map<std::string, double> &table) noexcept;
 
-template <typename T>
-Node log(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_LOG, std::forward<T>(n));
-}
+    /**
+     * 变量数量。
+     */
+    int VarNums() const noexcept;
 
-template <typename T>
-Node log2(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_LOG2, std::forward<T>(n));
-}
+    /**
+     * 返回std::vector容器包装的变量名数组。
+     */
+    const std::vector<std::string> &Vars() const noexcept;
 
-template <typename T>
-Node log10(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_LOG10, std::forward<T>(n));
-}
+    /**
+     * 返回所有变量名对应的值的数值向量。
+     */
+    const Vec &Values() const noexcept;
 
-template <typename T>
-Node exp(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_EXP, std::forward<T>(n));
-}
+    /**
+     * 设置数值向量。
+     */
+    void SetValues(const Vec &v) noexcept;
+
+    std::unordered_map<std::string, double>::const_iterator begin() const noexcept;
+
+    std::unordered_map<std::string, double>::const_iterator end() const noexcept;
+
+    std::unordered_map<std::string, double>::const_iterator cbegin() const noexcept;
+
+    std::unordered_map<std::string, double>::const_iterator cend() const noexcept;
+
+    bool operator==(const VarsTable &rhs) const noexcept;
+
+private:
+    std::vector<std::string> vars;
+    Vec values;
+    std::unordered_map<std::string, double> table;
+};
+
+std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept;
 
 } // namespace tomsolver
 
@@ -2075,371 +2237,287 @@ std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
 
 namespace tomsolver {
 
-Vec SolveLinear(const Mat &A, const Vec &b);
+enum class NodeType { NUMBER, OPERATOR, VARIABLE };
 
-} // namespace tomsolver
-
-namespace tomsolver {
-
-std::string MathOperatorToStr(MathOperator op) {
-    switch (op) {
-    case MathOperator::MATH_NULL:
-        assert(0);
-        return "";
-    // 一元
-    case MathOperator::MATH_POSITIVE:
-        return "+";
-    case MathOperator::MATH_NEGATIVE:
-        return "-";
-    // 函数
-    case MathOperator::MATH_SIN:
-        return "sin";
-    case MathOperator::MATH_COS:
-        return "cos";
-    case MathOperator::MATH_TAN:
-        return "tan";
-    case MathOperator::MATH_ARCSIN:
-        return "asin";
-    case MathOperator::MATH_ARCCOS:
-        return "acos";
-    case MathOperator::MATH_ARCTAN:
-        return "atan";
-    case MathOperator::MATH_SQRT:
-        return "sqrt";
-    case MathOperator::MATH_LOG:
-        return "log";
-    case MathOperator::MATH_LOG2:
-        return "log2";
-    case MathOperator::MATH_LOG10:
-        return "log10";
-    case MathOperator::MATH_EXP:
-        return "exp";
-    // 二元
-    case MathOperator::MATH_ADD:
-        return "+";
-    case MathOperator::MATH_SUB:
-        return "-";
-    case MathOperator::MATH_MULTIPLY:
-        return "*";
-    case MathOperator::MATH_DIVIDE:
-        return "/";
-    case MathOperator::MATH_POWER:
-        return "^";
-    case MathOperator::MATH_AND:
-        return "&";
-    case MathOperator::MATH_OR:
-        return "|";
-    case MathOperator::MATH_MOD:
-        return "%";
-    case MathOperator::MATH_LEFT_PARENTHESIS:
-        return "(";
-    case MathOperator::MATH_RIGHT_PARENTHESIS:
-        return ")";
-    }
-    assert(0);
-    return "err";
+// 前置声明
+namespace internal {
+struct NodeImpl;
 }
+class SymMat;
 
-int GetOperatorNum(MathOperator op) noexcept {
-    switch (op) {
-    case MathOperator::MATH_POSITIVE: // 正负号
-    case MathOperator::MATH_NEGATIVE:
+/**
+ * 表达式节点。
+ */
+using Node = std::unique_ptr<internal::NodeImpl>;
 
-    case MathOperator::MATH_SIN:
-    case MathOperator::MATH_COS:
-    case MathOperator::MATH_TAN:
-    case MathOperator::MATH_ARCSIN:
-    case MathOperator::MATH_ARCCOS:
-    case MathOperator::MATH_ARCTAN:
-    case MathOperator::MATH_SQRT:
-    case MathOperator::MATH_LOG:
-    case MathOperator::MATH_LOG2:
-    case MathOperator::MATH_LOG10:
-    case MathOperator::MATH_EXP:
-        return 1;
+namespace internal {
 
-    case MathOperator::MATH_ADD:
-    case MathOperator::MATH_SUB:
-    case MathOperator::MATH_MULTIPLY:
-    case MathOperator::MATH_DIVIDE:
-    case MathOperator::MATH_POWER: //^
-    case MathOperator::MATH_AND:   //&
-    case MathOperator::MATH_OR:    //|
-    case MathOperator::MATH_MOD:   //%
-        return 2;
+/**
+ * 单个节点的实现。通常应该以std::unique_ptr包裹。
+ */
+struct NodeImpl {
 
-    case MathOperator::MATH_LEFT_PARENTHESIS:
-    case MathOperator::MATH_RIGHT_PARENTHESIS:
-        assert(0);
-        break;
-    default:
-        assert(0);
-        break;
-    }
-    assert(0);
-    return 0;
-}
+    NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
+        : type(type), op(op), value(value), varname(varname), parent(nullptr) {}
 
-int Rank(MathOperator op) noexcept {
-    switch (op) {
-    case MathOperator::MATH_SIN:
-    case MathOperator::MATH_COS:
-    case MathOperator::MATH_TAN:
-    case MathOperator::MATH_ARCSIN:
-    case MathOperator::MATH_ARCCOS:
-    case MathOperator::MATH_ARCTAN:
-    case MathOperator::MATH_SQRT:
-    case MathOperator::MATH_LOG:
-    case MathOperator::MATH_LOG2:
-    case MathOperator::MATH_LOG10:
-    case MathOperator::MATH_EXP:
-        return 15;
+    NodeImpl(const NodeImpl &rhs) noexcept;
+    NodeImpl &operator=(const NodeImpl &rhs) noexcept;
 
-    case MathOperator::MATH_POSITIVE: // 除了函数，所有运算符均可将正负号挤出
-    case MathOperator::MATH_NEGATIVE:
-        return 14;
+    NodeImpl(NodeImpl &&rhs) noexcept;
+    NodeImpl &operator=(NodeImpl &&rhs) noexcept;
 
-    case MathOperator::MATH_MOD: //%
-        return 13;
+    ~NodeImpl();
 
-    case MathOperator::MATH_AND: //&
-    case MathOperator::MATH_OR:  //|
-        return 12;
+    bool Equal(const std::unique_ptr<NodeImpl> &rhs) const noexcept;
 
-    case MathOperator::MATH_POWER: //^
-        return 11;
+    /**
+     * 把整个节点以中序遍历的顺序输出为字符串。
+     * 例如：
+     *      Node n = (Var("a") + Num(1)) * Var("b");
+     *   则
+     *      n->ToString() == "(a+1.000000)*b"
+     */
+    std::string ToString() const noexcept;
 
-    case MathOperator::MATH_MULTIPLY:
-    case MathOperator::MATH_DIVIDE:
-        return 10;
+    /**
+     * 计算出整个表达式的数值。不改变自身。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
+     */
+    double Vpa() const;
 
-    case MathOperator::MATH_ADD:
-    case MathOperator::MATH_SUB:
-        return 5;
+    /**
+     * 计算出整个表达式的数值。不改变自身。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
+     */
+    NodeImpl &Calc();
 
-    case MathOperator::MATH_LEFT_PARENTHESIS: // 左右括号优先级小是为了不被其余任何运算符挤出
-    case MathOperator::MATH_RIGHT_PARENTHESIS:
-        return 0;
-    default:
-        assert(0);
-        break;
-    }
-    assert(0);
-    return 0;
-}
+    /**
+     * 化简。
+     */
+    NodeImpl &Simplify() noexcept;
 
-bool IsLeft2Right(MathOperator eOperator) noexcept {
-    switch (eOperator) {
-    case MathOperator::MATH_MOD: //%
-    case MathOperator::MATH_AND: //&
-    case MathOperator::MATH_OR:  //|
-    case MathOperator::MATH_MULTIPLY:
-    case MathOperator::MATH_DIVIDE:
-    case MathOperator::MATH_ADD:
-    case MathOperator::MATH_SUB:
-        return true;
+    /**
+     * 返回表达式内出现的所有变量名。
+     */
+    std::unordered_set<std::string> GetAllVarNames() const noexcept;
 
-    case MathOperator::MATH_POSITIVE: // 正负号为右结合
-    case MathOperator::MATH_NEGATIVE:
-    case MathOperator::MATH_POWER: //^
-        return false;
+    /**
+     * 检查整个节点数的parent指针是否正确。
+     */
+    void CheckParent() const noexcept;
 
-    // 函数和括号不计结合性
-    case MathOperator::MATH_SIN:
-    case MathOperator::MATH_COS:
-    case MathOperator::MATH_TAN:
-    case MathOperator::MATH_ARCSIN:
-    case MathOperator::MATH_ARCCOS:
-    case MathOperator::MATH_ARCTAN:
-    case MathOperator::MATH_SQRT:
-    case MathOperator::MATH_LOG:
-    case MathOperator::MATH_LOG2:
-    case MathOperator::MATH_LOG10:
-    case MathOperator::MATH_EXP:
+private:
+    NodeType type;
+    MathOperator op;
+    double value;
+    std::string varname;
+    const NodeImpl *parent;
+    std::unique_ptr<NodeImpl> left, right;
 
-    case MathOperator::MATH_LEFT_PARENTHESIS:
-    case MathOperator::MATH_RIGHT_PARENTHESIS:
-        return true;
-    default:
-        assert(0);
-    }
-    return false;
-}
+    /**
+     * 本节点如果是OPERATOR，检查操作数数量和left, right指针是否匹配。
+     */
+    void CheckOperatorNum() const noexcept;
 
-bool InAssociativeLaws(MathOperator eOperator) noexcept {
-    switch (eOperator) {
+    /**
+     * 节点转string。仅限本节点，不含子节点。
+     */
+    std::string NodeToStr() const noexcept;
 
-    case MathOperator::MATH_POSITIVE: // 正负号
-    case MathOperator::MATH_NEGATIVE:
+    void ToStringRecursively(std::string &output) const noexcept;
 
-    case MathOperator::MATH_SQRT:
-    case MathOperator::MATH_SIN:
-    case MathOperator::MATH_COS:
-    case MathOperator::MATH_TAN:
-    case MathOperator::MATH_ARCSIN:
-    case MathOperator::MATH_ARCCOS:
-    case MathOperator::MATH_ARCTAN:
-    case MathOperator::MATH_LOG:
-    case MathOperator::MATH_LOG2:
-    case MathOperator::MATH_LOG10:
-    case MathOperator::MATH_EXP:
+    void ToStringNonRecursively(std::string &output) const noexcept;
 
-    case MathOperator::MATH_MOD:   //%
-    case MathOperator::MATH_AND:   //&
-    case MathOperator::MATH_OR:    //|
-    case MathOperator::MATH_POWER: //^
-    case MathOperator::MATH_DIVIDE:
-    case MathOperator::MATH_SUB:
+    /**
+     * 计算表达式数值。递归实现。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 不符合定义域, 除0等情况。
+     */
+    double VpaRecursively() const;
 
-    case MathOperator::MATH_LEFT_PARENTHESIS:
-    case MathOperator::MATH_RIGHT_PARENTHESIS:
-        return false;
+    /**
+     * 计算表达式数值。非递归实现。
+     * 性能弱于递归实现。但不会导致栈溢出。
+     * 根据benchmark，生成一组含4000个随机四则运算节点的表达式，生成1000次，Release下测试耗时3000ms。递归实现耗时2500ms。
+     * 粗略计算，即 1333 ops/ms。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 不符合定义域, 除0等情况。
+     */
+    double VpaNonRecursively() const;
 
-    case MathOperator::MATH_ADD:
-    case MathOperator::MATH_MULTIPLY:
-        return true;
-    default:
-        assert(0);
-        break;
-    }
-    assert(0);
-    return false;
-}
+    /**
+     * 释放整个节点树，除了自己。
+     * 实际是二叉树的非递归后序遍历。
+     */
+    void Release() noexcept;
 
-bool IsFunction(MathOperator op) noexcept {
-    switch (op) {
-    case MathOperator::MATH_SIN:
-    case MathOperator::MATH_COS:
-    case MathOperator::MATH_TAN:
-    case MathOperator::MATH_ARCSIN:
-    case MathOperator::MATH_ARCCOS:
-    case MathOperator::MATH_ARCTAN:
-    case MathOperator::MATH_SQRT:
-    case MathOperator::MATH_LOG:
-    case MathOperator::MATH_LOG2:
-    case MathOperator::MATH_LOG10:
-    case MathOperator::MATH_EXP:
-        return true;
+    friend std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node &&right) noexcept;
 
-    case MathOperator::MATH_POSITIVE:
-    case MathOperator::MATH_NEGATIVE:
-    case MathOperator::MATH_MOD:   //%
-    case MathOperator::MATH_AND:   //&
-    case MathOperator::MATH_OR:    //|
-    case MathOperator::MATH_POWER: //^
-    case MathOperator::MATH_MULTIPLY:
-    case MathOperator::MATH_DIVIDE:
-    case MathOperator::MATH_ADD:
-    case MathOperator::MATH_SUB:
-    case MathOperator::MATH_LEFT_PARENTHESIS:
-    case MathOperator::MATH_RIGHT_PARENTHESIS:
-        return false;
-    default:
-        assert(0);
-        break;
-    }
-    assert(0);
-    return false;
-}
+    friend std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+    friend std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
 
-double Calc(MathOperator op, double v1, double v2) {
-    double ret = std::numeric_limits<double>::quiet_NaN();
-    switch (op) {
-    case MathOperator::MATH_SIN:
-        ret = std::sin(v1);
-        break;
-    case MathOperator::MATH_COS:
-        ret = std::cos(v1);
-        break;
-    case MathOperator::MATH_TAN:
-        ret = std::tan(v1);
-        break;
-    case MathOperator::MATH_ARCSIN:
-        ret = std::asin(v1);
-        break;
-    case MathOperator::MATH_ARCCOS:
-        ret = std::acos(v1);
-        break;
-    case MathOperator::MATH_ARCTAN:
-        ret = std::atan(v1);
-        break;
-    case MathOperator::MATH_SQRT:
-        ret = std::sqrt(v1);
-        break;
-    case MathOperator::MATH_LOG:
-        ret = std::log(v1);
-        break;
-    case MathOperator::MATH_LOG2:
-        ret = std::log2(v1);
-        break;
-    case MathOperator::MATH_LOG10:
-        ret = std::log10(v1);
-        break;
-    case MathOperator::MATH_EXP:
-        ret = std::exp(v1);
-        break;
-    case MathOperator::MATH_POSITIVE:
-        ret = v1;
-        break;
-    case MathOperator::MATH_NEGATIVE:
-        ret = -v1;
-        break;
+    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
+                             std::unique_ptr<NodeImpl> &&n1) noexcept;
+    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
+                             const std::unique_ptr<NodeImpl> &n1) noexcept;
 
-    case MathOperator::MATH_MOD: //%
-        ret = (int)v1 % (int)v2;
-        break;
-    case MathOperator::MATH_AND: //&
-        ret = (int)v1 & (int)v2;
-        break;
-    case MathOperator::MATH_OR: //|
-        ret = (int)v1 | (int)v2;
-        break;
+    friend std::ostream &operator<<(std::ostream &out, const std::unique_ptr<NodeImpl> &n) noexcept;
 
-    case MathOperator::MATH_POWER: //^
-        ret = std::pow(v1, v2);
-        break;
+    template <typename T>
+    friend std::unique_ptr<NodeImpl> UnaryOperator(MathOperator op, T &&n) noexcept;
 
-    case MathOperator::MATH_ADD:
-        ret = v1 + v2;
-        break;
-    case MathOperator::MATH_SUB:
-        ret = v1 - v2;
-        break;
-    case MathOperator::MATH_MULTIPLY:
-        ret = v1 * v2;
-        break;
-    case MathOperator::MATH_DIVIDE:
-        ret = v1 / v2;
-        break;
-    default:
-        assert(0 && "[Calc] bug.");
-        break;
-    }
+    template <typename T1, typename T2>
+    friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 
-    if (GetConfig().throwOnInvalidValue == false) {
-        return ret;
-    }
+    friend class tomsolver::SymMat;
+    friend class DiffFunctions;
+    friend class SubsFunctions;
+    friend class ParseFunctions;
+};
 
-    bool isInvalid = (ret == std::numeric_limits<double>::infinity()) ||
-                     (ret == -std::numeric_limits<double>::infinity()) || (ret != ret);
-    if (isInvalid) {
-        std::string info;
-        info = "expression: \"";
-        switch (GetOperatorNum(op)) {
-        case 1:
-            info += MathOperatorToStr(op) + " " + ToString(v1);
-            break;
-        case 2:
-            info += ToString(v1) + " " + MathOperatorToStr(op) + " " + ToString(v2);
-            break;
-        default:
-            assert(0);
-        }
-        info += "\"";
-        throw MathError(ErrorType::ERROR_INVALID_NUMBER, info);
-    }
+std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
 
+std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+
+/**
+ * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
+ * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
+ */
+void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept;
+
+/**
+ * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
+ * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
+ */
+void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std::unique_ptr<NodeImpl> &n1) noexcept;
+
+/**
+ * 重载std::ostream的<<操作符以输出一个Node节点。
+ */
+std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::NodeImpl> &n) noexcept;
+
+template <typename T>
+std::unique_ptr<NodeImpl> UnaryOperator(MathOperator op, T &&n) noexcept {
+    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
+    CopyOrMoveTo(ret.get(), ret->left, std::forward<T>(n));
     return ret;
+}
+
+template <typename T1, typename T2>
+std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
+    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
+    CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
+    CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
+    return ret;
+}
+
+/**
+ * 新建一个运算符节点。
+ */
+std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left = nullptr, Node &&right = nullptr) noexcept;
+
+} // namespace internal
+
+Node Clone(const Node &rhs) noexcept;
+
+/**
+ * 对节点进行移动。等同于std::move。
+ */
+Node Move(Node &rhs) noexcept;
+
+/**
+ * 新建一个数值节点。
+ */
+std::unique_ptr<internal::NodeImpl> Num(double num) noexcept;
+
+/**
+ * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
+ */
+bool VarNameIsLegal(const std::string &varname) noexcept;
+
+/**
+ * 新建一个变量节点。
+ * @exception runtime_error 名字不合法
+ */
+std::unique_ptr<internal::NodeImpl> Var(const std::string &varname);
+
+template <typename T1, typename T2>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+operator+(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
+operator+=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
+template <typename T1, typename T2>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+operator-(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T1>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+operator-(T1 &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T1>(n1));
+}
+
+template <typename T1>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+operator+(T1 &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T1>(n1));
+}
+
+template <typename T>
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
+operator-=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
+template <typename T1, typename T2>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+operator*(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
+operator*=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
+template <typename T1, typename T2>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+operator/(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
+operator/=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
+template <typename T1, typename T2>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+operator^(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_POWER, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
+operator^=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_POWER, std::move(n1), std::forward<T>(n2));
+    return n1;
 }
 
 } // namespace tomsolver
@@ -3113,354 +3191,60 @@ std::unique_ptr<internal::NodeImpl> Var(const std::string &varname) {
 
 namespace tomsolver {
 
-Node Simplify(const Node &node) noexcept;
-
-Node Simplify(Node &&node) noexcept;
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-class ParseError : public std::runtime_error {
-public:
-    ParseError(int line, int pos, const std::string &content, const std::string &errInfo);
-
-    virtual const char *what() const noexcept override;
-
-    int GetLine() const noexcept;
-
-    int GetPos() const noexcept;
-
-private:
-    int line;            // 行号
-    int pos;             // 第几个字符
-    std::string content; // 整行文本
-    std::string errInfo; // 报错信息
-    std::string whatStr; // 完整的错误信息
-};
-
-namespace internal {
-
-struct Token {
-    std::string s;                        // token内容
-    int line;                             // 行号
-    int pos;                              // 第几个字符
-    bool isBaseOperator;                  // 是否为基本运算符（单个字符的运算符以及左右括号）
-    Node node;                            // 节点
-    std::shared_ptr<std::string> content; // 整行文本
-    Token(int line, int pos, bool isBaseOperator, const std::string &s, const std::shared_ptr<std::string> &content)
-        : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
-};
-
-class ParseFunctions {
-public:
-    /**
-     * 解析表达式字符串为in order记号流。其实就是做词法分析。
-     * @exception ParseError
-     */
-    static std::deque<Token> ParseToTokens(const std::string &expression);
-
-    /**
-     * 由in order序列得到post order序列。实质上是把记号流转化为逆波兰表达式。
-     * @exception ParseError
-     */
-    static std::vector<Token> InOrderToPostOrder(std::deque<Token> &inOrder);
-
-    /**
-     * 将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）。
-     * @exception ParseError
-     */
-    static Node BuildExpressionTree(std::vector<Token> &postOrder);
-};
-
-} // namespace internal
-
-/**
- * 把字符串解析为表达式。
- * @exception ParseError
- */
-Node Parse(const std::string &expression);
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-void SwapRow(Mat &A, Vec &b, int i, int j) {
-    if (i == j)
-        return;
-    std::swap(A[i], A[j]);
-    std::swap(b[i], b[j]);
+template <typename T>
+Node sin(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_SIN, std::forward<T>(n));
 }
 
-Vec SolveLinear(const Mat &AA, const Vec &bb) {
-    Mat A(AA);
-    Vec b(bb);
-
-    int rows = A.Rows(); // 行数
-    int cols = rows;     // 列数=未知数个数
-
-    int RankA = rows, RankAb = rows; // 初始值
-
-    assert(rows == b.Rows()); // A行数不等于b行数
-
-    Vec ret(rows);
-
-    if (rows > 0)
-        cols = static_cast<int>(A[0].size());
-    if (cols != rows) // 不是方阵
-    {
-        if (rows > cols)
-            throw MathError(ErrorType::ERROR_OVER_DETERMINED_EQUATIONS, ""); // 过定义方程组
-        else                                                                 // 不定方程组
-            ret.Resize(cols);
-    }
-
-    std::vector<decltype(rows)> TrueRowNumber(cols);
-
-    // 列主元消元法
-    for (decltype(rows) y = 0, x = 0; y < rows && x < cols; y++, x++) {
-        // if (A[i].size() != rows)
-
-        // 从当前行(y)到最后一行(rows-1)中，找出x列最大的一行与y行交换
-        int maxAbsRowIndex = GetMaxAbsRowIndex(A, y, rows - 1, x);
-        A.SwapRow(y, maxAbsRowIndex);
-        b.SwapRow(y, maxAbsRowIndex);
-
-        while (std::abs(A[y][x]) < GetConfig().epsilon) // 如果当前值为0  x一直递增到非0
-        {
-            x++;
-            if (x == cols)
-                break;
-
-            // 交换本行与最大行
-            maxAbsRowIndex = GetMaxAbsRowIndex(A, y, rows - 1, x);
-            A.SwapRow(y, maxAbsRowIndex);
-            b.SwapRow(y, maxAbsRowIndex);
-        }
-
-        if (x != cols && x > y) {
-            TrueRowNumber[y] = x; // 补齐方程时 当前行应换到x行
-        }
-
-        if (x == cols) // 本行全为0
-        {
-            RankA = y;
-            if (std::abs(b[y]) < GetConfig().epsilon)
-                RankAb = y;
-
-            if (RankA != RankAb) // 奇异，且系数矩阵及增广矩阵秩不相等->无解
-                throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "");
-            else
-                break; // 跳出for，得到特解
-        }
-
-        // 主对角线化为1
-        double m_num = A[y][x];
-        for (decltype(rows) j = y; j < cols; j++) // y行第j个->第cols个
-            A[y][j] /= m_num;
-        b[y] /= m_num;
-
-        // 每行化为0
-        for (decltype(rows) row = y + 1; row < rows; row++) // 下1行->最后1行
-        {
-            if (std::abs(A[row][x]) < GetConfig().epsilon)
-                ;
-            else {
-                double mi = A[row][x];
-                for (auto col = x; col < cols; col++) // row行第x个->第cols个
-                {
-                    A[row][col] -= A[y][col] * mi;
-                }
-                b[row] -= b[y] * mi;
-            }
-        }
-    }
-
-    bool bIndeterminateEquation = false; // 设置此变量是因为后面rows将=cols，标记以判断是否为不定方程组
-
-    // 若为不定方程组，空缺行全填0继续运算
-    if (rows != cols) {
-        A.Resize(cols);                    // A改为cols行
-        for (auto i = rows; i < cols; i++) // A从rows行开始每行cols个数
-            A[i].resize(cols);
-        b.Resize(cols);
-        rows = cols;
-        bIndeterminateEquation = true;
-
-        // 调整顺序
-        for (int i = rows - 1; i >= 0; i--) {
-            if (TrueRowNumber[i] != 0) {
-                A.SwapRow(i, TrueRowNumber[i]);
-                b.SwapRow(i, TrueRowNumber[i]);
-            }
-        }
-    }
-
-    // 后置换得到x
-    double sum_others = 0.0;
-    for (int i = rows - 1; i >= 0; i--) // 最后1行->第1行
-    {
-        sum_others = 0.0;
-        for (decltype(rows) j = i + 1; j < rows; j++) // 本列 后的元素乘以已知x 加总
-        {
-            sum_others += A[i][j] * ret[j];
-        }
-        ret[i] = b[i] - sum_others;
-    }
-
-    if (RankA < cols && RankA == RankAb) {
-        if (bIndeterminateEquation)
-            throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION, "");
-        else
-            throw MathError(ErrorType::ERROR_INFINITY_SOLUTIONS, "");
-    }
-
-    return ret;
+template <typename T>
+Node cos(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_COS, std::forward<T>(n));
 }
 
-} // namespace tomsolver
+template <typename T>
+Node tan(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_TAN, std::forward<T>(n));
+}
 
-namespace tomsolver {
+template <typename T>
+Node asin(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_ARCSIN, std::forward<T>(n));
+}
 
-class SymVec;
-class SymMat {
-public:
-    /**
-     *
-     */
-    SymMat() noexcept {}
+template <typename T>
+Node acos(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_ARCCOS, std::forward<T>(n));
+}
 
-    /**
-     *
-     */
-    SymMat(int rows, int cols) noexcept;
+template <typename T>
+Node atan(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_ARCTAN, std::forward<T>(n));
+}
 
-    SymMat Clone() const noexcept;
+template <typename T>
+Node sqrt(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_SQRT, std::forward<T>(n));
+}
 
-    bool Empty() const noexcept;
+template <typename T>
+Node log(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_LOG, std::forward<T>(n));
+}
 
-    int Rows() const noexcept;
+template <typename T>
+Node log2(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_LOG2, std::forward<T>(n));
+}
 
-    int Cols() const noexcept;
+template <typename T>
+Node log10(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_LOG10, std::forward<T>(n));
+}
 
-    /**
-     * 输出Vec。如果列数不为1，抛出异常。
-     * @exception runtime_error 列数不为1
-     */
-    SymVec ToSymVec() const;
-
-    /**
-     * 得到数值矩阵。前提条件是矩阵内的元素均为数值节点，否则抛出异常。
-     * @exception runtime_error 存在非数值节点
-     */
-    Mat ToMat() const;
-
-    /**
-     * 把矩阵的内的元素均计算为数值节点。
-     * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
-     */
-    SymMat &Calc();
-
-    SymMat &Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
-
-    SymMat &Subs(const VarsTable &varsTable) noexcept;
-
-    /**
-     * 返回符号矩阵内出现的所有变量名。
-     */
-    std::unordered_set<std::string> GetAllVarNames() const noexcept;
-
-    /**
-     * 如果rhs和自己的维数不匹配会触发assert。
-     */
-    SymMat operator-(const SymMat &rhs) const noexcept;
-
-    std::string ToString() const noexcept;
-
-protected:
-    std::vector<std::vector<Node>> data;
-
-    friend SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
-};
-
-class SymVec : public SymMat {
-public:
-    /**
-     *
-     */
-    SymVec(int rows) noexcept;
-
-    /**
-     * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
-     */
-    SymVec(const std::initializer_list<Node> &lst) noexcept;
-
-    /**
-     * 如果rhs和自己的维数不匹配会触发assert。
-     */
-    SymVec operator-(const SymVec &rhs) const noexcept;
-
-    Node &operator[](std::size_t index) noexcept;
-
-    const Node &operator[](std::size_t index) const noexcept;
-};
-
-SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-/**
- * 用newNode节点替换oldVar指定的变量。
- */
-Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept;
-
-/**
- * 用newNode节点替换oldVar指定的变量。
- */
-Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept;
-
-/**
- * 用newNodes节点替换oldVars指定的变量。
- */
-Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
-
-/**
- * 用newNodes节点替换oldVars指定的变量。
- */
-Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
-
-/**
- * 用newNodes节点替换oldVars指定的变量。
- */
-Node Subs(const Node &node, const std::unordered_map<std::string, Node> &dict) noexcept;
-
-/**
- * 用newNodes节点替换oldVars指定的变量。
- */
-Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexcept;
-
-/**
- * 用newNodes节点替换oldVars指定的变量。
- */
-Node Subs(const Node &node, const std::unordered_map<std::string, double> &varValues) noexcept;
-
-/**
- * 用newNodes节点替换oldVars指定的变量。
- */
-Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues) noexcept;
-
-/**
- * 用newNodes节点替换oldVars指定的变量。
- */
-Node Subs(const Node &node, const VarsTable &varsTable) noexcept;
-
-/**
- * 用newNodes节点替换oldVars指定的变量。
- */
-Node Subs(Node &&node, const VarsTable &varsTable) noexcept;
+template <typename T>
+Node exp(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_EXP, std::forward<T>(n));
+}
 
 } // namespace tomsolver
 
@@ -3469,888 +3253,6 @@ namespace tomsolver {
 Node Diff(const Node &node, const std::string &varname, int i = 1) noexcept;
 
 Node Diff(Node &&node, const std::string &varname, int i = 1) noexcept;
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-namespace internal {
-
-class SubsFunctions {
-public:
-    static void SubsInner(Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
-        // 前序遍历。非递归实现。
-
-        std::stack<NodeImpl *> stk;
-
-        auto Replace = [&dict](Node &cur) -> bool {
-            if (cur->type != NodeType::VARIABLE) {
-                return false;
-            }
-            const auto &itor = dict.find(cur->varname);
-            if (itor == dict.end()) {
-                return false;
-            }
-
-            Node cloned = Clone(itor->second);
-            cloned->parent = cur->parent;
-            cur = std::move(cloned);
-            return true;
-        };
-
-        if (Replace(node)) {
-            return;
-        }
-
-        if (node->right) {
-            if (!Replace(node->right))
-                stk.push(node->right.get());
-        }
-        if (node->left) {
-            if (!Replace(node->left))
-                stk.push(node->left.get());
-        }
-        while (!stk.empty()) {
-            NodeImpl *f = stk.top();
-            stk.pop();
-
-            if (f->right) {
-                if (!Replace(f->right))
-                    stk.push(f->right.get());
-            }
-            if (f->left) {
-                if (!Replace(f->left))
-                    stk.push(f->left.get());
-            }
-        }
-    }
-};
-
-} // namespace internal
-
-Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), oldVar, newNode);
-}
-
-Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
-    Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
-    dict.insert({oldVar, Clone(newNode)});
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
-}
-
-Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), oldVars, newNodes);
-}
-
-Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
-    assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
-    Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
-    for (size_t i = 0; i < oldVars.size(); ++i) {
-        dict.insert({oldVars[i], Clone(newNodes[i])});
-    }
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
-}
-
-Node Subs(const Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), dict);
-}
-
-Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexcept {
-    Node ret = std::move(node);
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
-}
-
-Node Subs(const Node &node, const std::unordered_map<std::string, double> &varValues) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), varValues);
-}
-
-Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues) noexcept {
-    Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
-    for (auto &pr : varValues) {
-        dict.insert({pr.first, Num(pr.second)});
-    }
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
-}
-
-Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), varsTable);
-}
-
-Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
-    Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
-    for (const auto &pr : varsTable) {
-        dict.insert({pr.first, Num(pr.second)});
-    }
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
-}
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-namespace internal {
-
-NodeImpl &NodeImpl::Simplify() noexcept {
-    // 后序遍历。非递归实现。
-
-    std::stack<NodeImpl *> stk;
-    std::deque<NodeImpl *> revertedPostOrder;
-
-    // ==== Part I ====
-
-    // 借助一个栈，得到反向的后序遍历序列，结果保存在revertedPostOrder
-    if (type == NodeType::OPERATOR) {
-        stk.push(this);
-    }
-
-    while (1) {
-        if (stk.empty()) {
-            break;
-        }
-
-        auto f = stk.top();
-        stk.pop();
-
-        if (f->left && f->left->type == NodeType::OPERATOR) {
-            stk.push(f->left.get());
-        }
-
-        if (f->right && f->right->type == NodeType::OPERATOR) {
-            stk.push(f->right.get());
-        }
-
-        revertedPostOrder.push_back(f);
-    }
-
-    // ==== Part II ====
-    std::for_each(revertedPostOrder.rbegin(), revertedPostOrder.rend(), [this](NodeImpl *&n) {
-        // 对单节点n进行化简。
-
-        // 对于1元运算符，且儿子是数字的，直接计算出来
-        if (GetOperatorNum(n->op) == 1 && n->left->type == NodeType::NUMBER) {
-            n->type = NodeType::NUMBER;
-            n->value = tomsolver::Calc(n->op, n->left->value, 0);
-            n->op = MathOperator::MATH_NULL;
-            n->left = nullptr;
-            return;
-        }
-
-        // 对于2元运算符
-        if (GetOperatorNum(n->op) == 2) {
-            // 儿子是数字的，直接计算出来
-            if (n->left->type == NodeType::NUMBER && n->right->type == NodeType::NUMBER) {
-                n->type = NodeType::NUMBER;
-                n->value = tomsolver::Calc(n->op, n->left->value, n->right->value);
-                n->op = MathOperator::MATH_NULL;
-                n->left = nullptr;
-                n->right = nullptr;
-                return;
-            }
-
-            assert(n->left && n->right);
-            bool lChildIs0 = n->left->type == NodeType::NUMBER && n->left->value == 0.0;
-            bool rChildIs0 = n->right->type == NodeType::NUMBER && n->right->value == 0.0;
-            bool lChildIs1 = n->left->type == NodeType::NUMBER && n->left->value == 1.0;
-            bool rChildIs1 = n->right->type == NodeType::NUMBER && n->right->value == 1.0;
-
-            //任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
-            if ((n->op == MathOperator::MATH_MULTIPLY && (lChildIs0 || rChildIs0)) ||
-                (n->op == MathOperator::MATH_DIVIDE && lChildIs0) || (n->op == MathOperator::MATH_POWER && lChildIs0)) {
-                *n = NodeImpl(NodeType::NUMBER, MathOperator::MATH_NULL, 0, "");
-                return;
-            }
-
-            //任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
-            if ((n->op == MathOperator::MATH_ADD && (lChildIs0 || rChildIs0)) ||
-                (n->op == MathOperator::MATH_SUB && rChildIs0) ||
-                (n->op == MathOperator::MATH_MULTIPLY && (lChildIs1 || rChildIs1)) ||
-                (n->op == MathOperator::MATH_DIVIDE && rChildIs1) || (n->op == MathOperator::MATH_POWER && rChildIs1)) {
-
-                Node ret; // 要保留的节点
-                if (lChildIs1 || lChildIs0) {
-                    n->left = nullptr;
-                    ret = std::move(n->right);
-                } else if (rChildIs1 || rChildIs0) {
-                    n->right = nullptr;
-                    ret = std::move(n->left);
-                }
-                ret->parent = n->parent;
-
-                //连接父级和剩余项
-                NodeImpl *p = const_cast<NodeImpl *>(ret->parent);
-                if (p) {
-                    if (p->left.get() == n) {
-                        p->left = std::move(ret);
-                    } else {
-                        p->right = std::move(ret);
-                    }
-                } else {
-                    *this = std::move(*ret);
-                }
-                return;
-            }
-        }
-    });
-
-    return *this;
-
-    // if (GetOperateNum(now->eOperator) == 2) {
-
-    //    //任何节点的0次方均等于1，除了0的0次方已在前面报错
-    //    if (now->eOperator == MATH_POWER && RChildIs0) {
-    //        //替换掉当前运算符，这个1节点将在回溯时处理
-    //        //新建一个1节点
-    //        TNode *temp;
-    //        temp = new TNode;
-    //        temp->eType = NODE_NUMBER;
-    //        temp->value = 1;
-
-    //        // 0节点连接到上面
-    //        if (now != head) {
-    //            if (now->parent->left == now) {
-    //                now->parent->left = temp;
-    //                temp->parent = now->parent;
-    //            }
-    //            if (now->parent->right == now) {
-    //                now->parent->right = temp;
-    //                temp->parent = now->parent;
-    //            }
-    //        } else
-    //            head = temp;
-
-    //        DeleteNode(now);
-    //    }
-
-    //    // 0-x=-x
-    //    if (now->eOperator == MATH_SUB && LChildIs0) {
-    //        TNode *LChild = now->left;
-    //        TNode *RChild = now->right;
-    //        now->eOperator = MATH_NEGATIVE;
-    //        now->left = RChild;
-    //        now->right = NULL;
-
-    //        delete LChild;
-    //    }
-
-    //}
-}
-
-} // namespace internal
-
-Node Simplify(const Node &node) noexcept {
-    Node cloned = Clone(node);
-    return Simplify(std::move(cloned));
-}
-
-Node Simplify(Node &&node) noexcept {
-    Node n = std::move(node);
-    n->Simplify();
-    return n;
-}
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-namespace internal {} // namespace internal
-
-SymMat::SymMat(int rows, int cols) noexcept {
-    assert(rows > 0 && cols > 0);
-    data.resize(rows);
-    for (auto &row : data) {
-        row.resize(cols);
-    }
-}
-
-SymMat SymMat::Clone() const noexcept {
-    SymMat ret(Rows(), Cols());
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            ret.data[i][j] = tomsolver::Clone(data[i][j]);
-        }
-    }
-    return ret;
-}
-
-bool SymMat::Empty() const noexcept {
-    return data.empty();
-}
-
-int SymMat::Rows() const noexcept {
-    return static_cast<int>(data.size());
-}
-
-int SymMat::Cols() const noexcept {
-    if (Rows()) {
-        return static_cast<int>(data[0].size());
-    }
-    return 0;
-}
-
-SymVec SymMat::ToSymVec() const {
-    assert(Rows() > 0);
-    if (Cols() != 1) {
-        throw std::runtime_error("SymMat::ToSymVec fail. rows is not one");
-    }
-    SymVec v(Rows());
-    for (int j = 0; j < Rows(); ++j) {
-        v.data[j][0] = tomsolver::Clone(data[j][0]);
-    }
-    return v;
-}
-
-Mat SymMat::ToMat() const {
-    std::vector<std::vector<double>> arr(Rows(), std::vector<double>(Cols()));
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            if (data[i][j]->type != NodeType::NUMBER) {
-                throw std::runtime_error("ToMat error: node is not number");
-            }
-            arr[i][j] = data[i][j]->value;
-        }
-    }
-    return Mat(std::move(arr));
-}
-
-SymMat &SymMat::Calc() {
-    for (auto &row : data) {
-        for (auto &node : row) {
-            node->Calc();
-        }
-    }
-    return *this;
-}
-
-SymMat &SymMat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
-    for (auto &row : data) {
-        for (auto &node : row) {
-            node = tomsolver::Subs(std::move(node), varValues);
-        }
-    }
-    return *this;
-}
-
-SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
-    for (auto &row : data) {
-        for (auto &node : row) {
-            node = tomsolver::Subs(std::move(node), varsTable);
-        }
-    }
-    return *this;
-}
-
-std::unordered_set<std::string> SymMat::GetAllVarNames() const noexcept {
-    std::unordered_set<std::string> ret;
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            auto varNames = data[i][j]->GetAllVarNames();
-            ret.insert(varNames.begin(), varNames.end());
-        }
-    }
-    return ret;
-}
-
-SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
-    assert(rhs.Rows() == Rows() && rhs.Cols() == Cols());
-    SymMat ret(Rows(), Cols());
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            ret.data[i][j] = tomsolver::Clone(data[i][j]) - tomsolver::Clone(rhs.data[i][j]);
-        }
-    }
-    return ret;
-}
-
-std::string SymMat::ToString() const noexcept {
-    if (Empty())
-        return "[]";
-    std::string s;
-    s.reserve(256);
-
-    auto OutputRow = [&](int i) {
-        int j = 0;
-        for (; j < Cols() - 1; ++j) {
-            s += data[i][j]->ToString() + ", ";
-        }
-        s += data[i][j]->ToString();
-    };
-
-    s += "[";
-    OutputRow(0);
-    s += "\n";
-
-    int i = 1;
-    for (; i < Rows() - 1; ++i) {
-        s += " ";
-        OutputRow(i);
-        s += "\n";
-    }
-    s += " ";
-    OutputRow(i);
-    s += "]";
-    return s;
-}
-
-SymVec::SymVec(int rows) noexcept : SymMat(rows, 1) {}
-
-SymVec::SymVec(const std::initializer_list<Node> &lst) noexcept : SymMat(static_cast<int>(lst.size()), 1) {
-    for (auto it = lst.begin(); it != lst.end(); ++it) {
-        auto &node = const_cast<Node &>(*it);
-        data[it - lst.begin()][0] = std::move(node);
-    }
-}
-
-SymVec SymVec::operator-(const SymVec &rhs) const noexcept {
-    return SymMat::operator-(rhs).ToSymVec();
-}
-
-Node &SymVec::operator[](std::size_t index) noexcept {
-    return data[index][0];
-}
-
-const Node &SymVec::operator[](std::size_t index) const noexcept {
-    return data[index][0];
-}
-
-SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept {
-    int rows = equations.Rows();
-    int cols = static_cast<int>(vars.size());
-    SymMat ja(rows, cols);
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            ja.data[i][j] = Diff(equations.data[i][0], vars[j]);
-        }
-    }
-    return ja;
-}
-
-} // namespace tomsolver
-
-using std::string;
-using std::to_string;
-
-namespace tomsolver {
-
-inline ParseError::ParseError(int line, int pos, const std::string &content, const std::string &errInfo)
-    : std::runtime_error(""), line(line), pos(pos), content(content), errInfo(errInfo) {
-    whatStr = "[Parse Error] " + errInfo + " at(" + to_string(line) + ", " + to_string(pos) + "):\n";
-    whatStr += content + "\n";
-    whatStr += string(pos, ' ') + "^---- error position";
-}
-
-const char *ParseError::what() const noexcept {
-    return whatStr.c_str();
-}
-
-int ParseError::GetLine() const noexcept {
-    return line;
-}
-
-int ParseError::GetPos() const noexcept {
-    return pos;
-}
-
-/* 是基本运算符()+-* /^&|% */
-bool IsBaseOperator(char c) noexcept {
-    switch (c) {
-    case '(':
-    case ')':
-    case '+':
-    case '-':
-    case '*':
-    case '/':
-    case '^':
-    case '&':
-    case '|':
-    case '%':
-        return true;
-    }
-    return false;
-}
-
-/*  */
-MathOperator BaseOperatorCharToEnum(char c) noexcept {
-    switch (c) {
-    case '(':
-        return MathOperator::MATH_LEFT_PARENTHESIS;
-    case ')':
-        return MathOperator::MATH_RIGHT_PARENTHESIS;
-    case '+':
-        return MathOperator::MATH_ADD;
-    case '-':
-        return MathOperator::MATH_SUB;
-    case '*':
-        return MathOperator::MATH_MULTIPLY;
-    case '/':
-        return MathOperator::MATH_DIVIDE;
-    case '^':
-        return MathOperator::MATH_POWER;
-    case '&':
-        return MathOperator::MATH_AND;
-    case '|':
-        return MathOperator::MATH_OR;
-    case '%':
-        return MathOperator::MATH_MOD;
-    default:
-        assert(0);
-    }
-    assert(0);
-    return MathOperator::MATH_NULL;
-}
-
-MathOperator Str2Function(const std::string &s) noexcept {
-    if (s == "sin") {
-        return MathOperator::MATH_SIN;
-    }
-    if (s == "cos") {
-        return MathOperator::MATH_COS;
-    }
-    if (s == "tan") {
-        return MathOperator::MATH_TAN;
-    }
-    if (s == "arcsin") {
-        return MathOperator::MATH_ARCSIN;
-    }
-    if (s == "arccos") {
-        return MathOperator::MATH_ARCCOS;
-    }
-    if (s == "arctan") {
-        return MathOperator::MATH_ARCTAN;
-    }
-    if (s == "sqrt") {
-        return MathOperator::MATH_SQRT;
-    }
-    if (s == "log") {
-        return MathOperator::MATH_LOG;
-    }
-    if (s == "log2") {
-        return MathOperator::MATH_LOG2;
-    }
-    if (s == "log10") {
-        return MathOperator::MATH_LOG10;
-    }
-    if (s == "exp") {
-        return MathOperator::MATH_EXP;
-    }
-    return MathOperator::MATH_NULL;
-}
-
-namespace internal {
-
-// 粗切分：利用operator切分
-std::vector<Token> SplitRough(const std::string &expression) {
-    std::shared_ptr<std::string> content = std::make_shared<std::string>(expression);
-    std::vector<Token> ret;
-
-    int tempBeg = 0;
-    std::string temp;
-    for (int i = 0; i < static_cast<int>(expression.size()); ++i) {
-        char c = expression[i];
-
-        // 忽略tab (\t) whitespaces (\n, \v, \f, \r) space
-        if (isspace(c)) {
-            continue;
-        }
-
-        if (!IsBaseOperator(c)) {
-            temp.push_back(c);
-        } else {
-            if (!temp.empty()) {
-                ret.push_back(Token(0, tempBeg, false, temp, content));
-                tempBeg = i;
-
-                temp.clear();
-            }
-            ret.push_back(Token(0, tempBeg, true, std::string{c}, content));
-            tempBeg = i + 1;
-        }
-    }
-    if (!temp.empty()) {
-        ret.push_back(Token(0, tempBeg, false, temp, content));
-        temp.clear();
-    }
-
-    return ret;
-}
-
-std::deque<Token> ParseFunctions::ParseToTokens(const std::string &expression) {
-
-    if (expression.empty()) {
-        throw ParseError(0, 0, "empty input", expression);
-    }
-
-    std::vector<Token> tokens = SplitRough(expression);
-
-    std::deque<Token> ret;
-    // 二次切分：切分出3类元素
-    for (size_t i = 0; i < tokens.size(); i++) {
-        Token token = std::move(tokens[i]);
-        auto &s = token.s;
-        if (token.isBaseOperator) // 识别出基本运算符（括号也在其中）
-        {
-            token.node = std::make_unique<NodeImpl>(NodeType::OPERATOR, BaseOperatorCharToEnum(s[0]), 0, "");
-            ret.push_back(std::move(token));
-            continue;
-        }
-
-        // 检验是否为浮点数
-        try {
-            std::size_t sz;
-            double d = std::stod(s, &sz);
-            if (sz != s.size()) {
-                throw std::invalid_argument("");
-            }
-            token.node = Num(d);
-            ret.push_back(std::move(token));
-            continue;
-        } catch (const std::exception &) {}
-
-        // 识别出函数
-        MathOperator op = Str2Function(s);
-        if (op != MathOperator::MATH_NULL) {
-            token.node = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
-            ret.push_back(std::move(token));
-            continue;
-        }
-
-        // 变量
-        // 非运算符、数字、函数
-        if (!VarNameIsLegal(s)) // 变量名首字符需为下划线或字母
-        {
-            throw ParseError(token.line, token.pos, expression, "Invalid variable name: \"" + s + "\"");
-        }
-
-        token.node = Var(s);
-        ret.push_back(std::move(token));
-    }
-    // 此时3类元素均已切分
-
-    // 识别取正运算符与取负运算符
-    size_t i = 0;
-    if (ret[0].node->op == MathOperator::MATH_ADD) {
-        ret[0].node->op = MathOperator::MATH_POSITIVE;
-        i++;
-    }
-    if (ret[0].node->op == MathOperator::MATH_SUB) {
-        ret[0].node->op = MathOperator::MATH_NEGATIVE;
-        i++;
-    }
-    for (; i < ret.size();) {
-        if (ret[i].node->type == NodeType::OPERATOR && ret[i].node->op != MathOperator::MATH_RIGHT_PARENTHESIS) {
-            if (i + 1 < ret.size())
-                i++;
-            else
-                break;
-            if (ret[i].node->op == MathOperator::MATH_ADD) {
-                ret[i].node->op = MathOperator::MATH_POSITIVE;
-                i++;
-                continue;
-            }
-            if (ret[i].node->op == MathOperator::MATH_SUB) {
-                ret[i].node->op = MathOperator::MATH_NEGATIVE;
-                i++;
-                continue;
-            }
-        } else
-            i++;
-    }
-
-    return ret;
-}
-
-std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder) {
-    std::vector<Token> postOrder;
-    int parenthesisBalance = 0;
-    std::stack<Token> temp;
-    while (inOrder.size() > 0) {
-        Token &f = inOrder.front();
-
-        // 数字直接入栈
-        if (f.node->type == NodeType::NUMBER || f.node->type == NodeType::VARIABLE) {
-            postOrder.push_back(std::move(f));
-            inOrder.pop_front();
-            continue;
-        }
-
-        //(左括号直接入栈
-        if (f.node->op == MathOperator::MATH_LEFT_PARENTHESIS) {
-            temp.push(std::move(f));
-            inOrder.pop_front();
-            parenthesisBalance++;
-            continue;
-        }
-
-        if (f.node->op == MathOperator::MATH_RIGHT_PARENTHESIS) //)出现右括号
-        {
-            parenthesisBalance--;
-
-            // 括号balance<0，说明括号不匹配
-            if (parenthesisBalance < 0) {
-                throw ParseError(f.line, f.pos, *f.content, "Parenthesis not match: \"" + f.s + "\"");
-            }
-
-            // pop至左括号
-            while (temp.size() > 0) {
-                if (temp.top().node->op == MathOperator::MATH_LEFT_PARENTHESIS) //(
-                {
-                    temp.pop(); // 扔掉左括号
-                    break;
-                } else {
-                    postOrder.push_back(std::move(temp.top())); // 入队
-                    temp.pop();
-                }
-            }
-
-            // 取出函数
-            if (temp.size() > 0 && IsFunction(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top()));
-                temp.pop();
-            }
-
-            // pop所有取正取负
-            while (temp.size() > 0) {
-                if (temp.top().node->op == MathOperator::MATH_POSITIVE ||
-                    temp.top().node->op == MathOperator::MATH_NEGATIVE) {
-                    postOrder.push_back(std::move(temp.top()));
-                    temp.pop();
-                } else
-                    break;
-            }
-            inOrder.pop_front(); // 扔掉右括号
-            continue;
-        }
-
-        // f不是括号
-        if (f.node->op == MathOperator::MATH_POSITIVE || f.node->op == MathOperator::MATH_NEGATIVE) {
-            temp.push(std::move(f));
-            inOrder.pop_front();
-            continue;
-        }
-
-        // 不是括号也不是正负号
-        if (temp.size() > 0 && IsLeft2Right(temp.top().node->op) == true) // 左结合
-            // 临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
-            while (temp.size() > 0 && Rank(f.node->op) <= Rank(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
-                temp.pop();
-            }
-        else
-            // 右结合
-            // 临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
-            while (temp.size() > 0 && Rank(f.node->op) < Rank(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
-                temp.pop();
-            };
-
-        temp.push(std::move(f)); // 高优先级已全部挤出，当前符号入栈
-        inOrder.pop_front();
-    }
-
-    // 剩下的元素全部入栈
-    while (temp.size() > 0) {
-        Token token = std::move(temp.top());
-        temp.pop();
-
-        // 退栈时出现左括号，说明没有找到与之匹配的右括号
-        if (token.node->op == MathOperator::MATH_LEFT_PARENTHESIS) {
-            throw ParseError(token.line, token.pos, *token.content, "Parenthesis not match: \"" + token.s + "\"");
-        }
-
-        postOrder.push_back(std::move(token));
-    }
-
-    return postOrder;
-}
-
-// 将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
-Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
-    std::stack<Token> tempStack;
-    // 逐个识别PostOrder序列，构建表达式树
-    for (auto &token : postOrder) {
-        switch (token.node->type) {
-        case NodeType::NUMBER:
-        case NodeType::VARIABLE:
-            tempStack.push(std::move(token));
-            break;
-        case NodeType::OPERATOR:
-            if (GetOperatorNum(token.node->op) == 2) {
-                if (tempStack.empty()) {
-                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
-                }
-
-                tempStack.top().node->parent = token.node.get();
-                token.node->right = std::move(tempStack.top().node);
-                tempStack.pop();
-
-                if (tempStack.empty()) {
-                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
-                }
-
-                tempStack.top().node->parent = token.node.get();
-                token.node->left = std::move(tempStack.top().node);
-                tempStack.pop();
-
-                tempStack.push(std::move(token));
-                continue;
-            }
-
-            // 一元运算符
-            assert(GetOperatorNum(token.node->op) == 1);
-
-            if (tempStack.empty()) {
-                throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
-            }
-
-            tempStack.top().node->parent = token.node.get();
-            token.node->left = std::move(tempStack.top().node);
-            tempStack.pop();
-
-            tempStack.push(std::move(token));
-
-            break;
-        }
-    }
-
-    return std::move(tempStack.top().node);
-}
-
-} // namespace internal
-
-Node Parse(const std::string &expression) {
-    std::deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens(expression);
-    auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
-    auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
-    return node;
-}
 
 } // namespace tomsolver
 
@@ -4442,7 +3344,7 @@ public:
             u->parent = mul.get();
             mul->right = std::move(u);
 
-            //连接父级
+            // 连接父级
             NodeImpl *p = const_cast<NodeImpl *>(mul->parent);
             if (p) {
                 if (p->left.get() == node) {
@@ -4485,7 +3387,7 @@ public:
             mul->parent = negative.get();
             negative->left = std::move(mul);
 
-            //连接上一级和负号
+            // 连接上一级和负号
             if (p) {
                 if (p->left.get() == node) {
                     p->left.release(); // 放弃对node的持有，现在node只被sin持有
@@ -4528,7 +3430,7 @@ public:
         case MathOperator::MATH_MULTIPLY: {
             bool leftIsNumber = node->left->type == NodeType::NUMBER;
             bool rightIsNumber = node->right->type == NodeType::NUMBER;
-            //两个操作数中有一个是数字
+            // 两个操作数中有一个是数字
             if (leftIsNumber) {
                 q.push(node->right.get());
                 return;
@@ -4555,7 +3457,7 @@ public:
             q.push(addNode->left->left.get());
             q.push(addNode->right->right.get());
 
-            //连接父级
+            // 连接父级
             NodeImpl *p = const_cast<NodeImpl *>(addNode->parent);
             if (p) {
                 if (p->left.get() == node) {
@@ -4930,6 +3832,975 @@ Node Diff(Node &&node, const std::string &varname, int i) noexcept {
 
 namespace tomsolver {
 
+class SymVec;
+class SymMat {
+public:
+    /**
+     *
+     */
+    SymMat() noexcept {}
+
+    /**
+     *
+     */
+    SymMat(int rows, int cols) noexcept;
+
+    SymMat Clone() const noexcept;
+
+    bool Empty() const noexcept;
+
+    int Rows() const noexcept;
+
+    int Cols() const noexcept;
+
+    /**
+     * 输出Vec。如果列数不为1，抛出异常。
+     * @exception runtime_error 列数不为1
+     */
+    SymVec ToSymVec() const;
+
+    /**
+     * 得到数值矩阵。前提条件是矩阵内的元素均为数值节点，否则抛出异常。
+     * @exception runtime_error 存在非数值节点
+     */
+    Mat ToMat() const;
+
+    /**
+     * 把矩阵的内的元素均计算为数值节点。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
+     */
+    SymMat &Calc();
+
+    SymMat &Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
+
+    SymMat &Subs(const VarsTable &varsTable) noexcept;
+
+    /**
+     * 返回符号矩阵内出现的所有变量名。
+     */
+    std::unordered_set<std::string> GetAllVarNames() const noexcept;
+
+    /**
+     * 如果rhs和自己的维数不匹配会触发assert。
+     */
+    SymMat operator-(const SymMat &rhs) const noexcept;
+
+    std::string ToString() const noexcept;
+
+protected:
+    std::vector<std::vector<Node>> data;
+
+    friend SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
+};
+
+class SymVec : public SymMat {
+public:
+    /**
+     *
+     */
+    SymVec(int rows) noexcept;
+
+    /**
+     * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
+     */
+    SymVec(const std::initializer_list<Node> &lst) noexcept;
+
+    /**
+     * 如果rhs和自己的维数不匹配会触发assert。
+     */
+    SymVec operator-(const SymVec &rhs) const noexcept;
+
+    Node &operator[](std::size_t index) noexcept;
+
+    const Node &operator[](std::size_t index) const noexcept;
+};
+
+SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+/**
+ * 用newNode节点替换oldVar指定的变量。
+ */
+Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept;
+
+/**
+ * 用newNode节点替换oldVar指定的变量。
+ */
+Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept;
+
+/**
+ * 用newNodes节点替换oldVars指定的变量。
+ */
+Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
+
+/**
+ * 用newNodes节点替换oldVars指定的变量。
+ */
+Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
+
+/**
+ * 用newNodes节点替换oldVars指定的变量。
+ */
+Node Subs(const Node &node, const std::unordered_map<std::string, Node> &dict) noexcept;
+
+/**
+ * 用newNodes节点替换oldVars指定的变量。
+ */
+Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexcept;
+
+/**
+ * 用newNodes节点替换oldVars指定的变量。
+ */
+Node Subs(const Node &node, const std::unordered_map<std::string, double> &varValues) noexcept;
+
+/**
+ * 用newNodes节点替换oldVars指定的变量。
+ */
+Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues) noexcept;
+
+/**
+ * 用newNodes节点替换oldVars指定的变量。
+ */
+Node Subs(const Node &node, const VarsTable &varsTable) noexcept;
+
+/**
+ * 用newNodes节点替换oldVars指定的变量。
+ */
+Node Subs(Node &&node, const VarsTable &varsTable) noexcept;
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+namespace internal {
+
+class SubsFunctions {
+public:
+    static void SubsInner(Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
+        // 前序遍历。非递归实现。
+
+        std::stack<NodeImpl *> stk;
+
+        auto Replace = [&dict](Node &cur) -> bool {
+            if (cur->type != NodeType::VARIABLE) {
+                return false;
+            }
+            const auto &itor = dict.find(cur->varname);
+            if (itor == dict.end()) {
+                return false;
+            }
+
+            Node cloned = Clone(itor->second);
+            cloned->parent = cur->parent;
+            cur = std::move(cloned);
+            return true;
+        };
+
+        if (Replace(node)) {
+            return;
+        }
+
+        if (node->right) {
+            if (!Replace(node->right))
+                stk.push(node->right.get());
+        }
+        if (node->left) {
+            if (!Replace(node->left))
+                stk.push(node->left.get());
+        }
+        while (!stk.empty()) {
+            NodeImpl *f = stk.top();
+            stk.pop();
+
+            if (f->right) {
+                if (!Replace(f->right))
+                    stk.push(f->right.get());
+            }
+            if (f->left) {
+                if (!Replace(f->left))
+                    stk.push(f->left.get());
+            }
+        }
+    }
+};
+
+} // namespace internal
+
+Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept {
+    Node node2 = Clone(node);
+    return Subs(std::move(node2), oldVar, newNode);
+}
+
+Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
+    Node ret = std::move(node);
+    std::unordered_map<std::string, Node> dict;
+    dict.insert({oldVar, Clone(newNode)});
+    internal::SubsFunctions::SubsInner(ret, dict);
+#ifndef NDEBUG
+    ret->CheckParent();
+#endif
+    return ret;
+}
+
+Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
+    Node node2 = Clone(node);
+    return Subs(std::move(node2), oldVars, newNodes);
+}
+
+Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
+    assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
+    Node ret = std::move(node);
+    std::unordered_map<std::string, Node> dict;
+    for (size_t i = 0; i < oldVars.size(); ++i) {
+        dict.insert({oldVars[i], Clone(newNodes[i])});
+    }
+    internal::SubsFunctions::SubsInner(ret, dict);
+#ifndef NDEBUG
+    ret->CheckParent();
+#endif
+    return ret;
+}
+
+Node Subs(const Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
+    Node node2 = Clone(node);
+    return Subs(std::move(node2), dict);
+}
+
+Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexcept {
+    Node ret = std::move(node);
+    internal::SubsFunctions::SubsInner(ret, dict);
+#ifndef NDEBUG
+    ret->CheckParent();
+#endif
+    return ret;
+}
+
+Node Subs(const Node &node, const std::unordered_map<std::string, double> &varValues) noexcept {
+    Node node2 = Clone(node);
+    return Subs(std::move(node2), varValues);
+}
+
+Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues) noexcept {
+    Node ret = std::move(node);
+    std::unordered_map<std::string, Node> dict;
+    for (auto &pr : varValues) {
+        dict.insert({pr.first, Num(pr.second)});
+    }
+    internal::SubsFunctions::SubsInner(ret, dict);
+#ifndef NDEBUG
+    ret->CheckParent();
+#endif
+    return ret;
+}
+
+Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
+    Node node2 = Clone(node);
+    return Subs(std::move(node2), varsTable);
+}
+
+Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
+    Node ret = std::move(node);
+    std::unordered_map<std::string, Node> dict;
+    for (const auto &pr : varsTable) {
+        dict.insert({pr.first, Num(pr.second)});
+    }
+    internal::SubsFunctions::SubsInner(ret, dict);
+#ifndef NDEBUG
+    ret->CheckParent();
+#endif
+    return ret;
+}
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+Node Simplify(const Node &node) noexcept;
+
+Node Simplify(Node &&node) noexcept;
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+namespace internal {
+
+NodeImpl &NodeImpl::Simplify() noexcept {
+    // 后序遍历。非递归实现。
+
+    std::stack<NodeImpl *> stk;
+    std::deque<NodeImpl *> revertedPostOrder;
+
+    // ==== Part I ====
+
+    // 借助一个栈，得到反向的后序遍历序列，结果保存在revertedPostOrder
+    if (type == NodeType::OPERATOR) {
+        stk.push(this);
+    }
+
+    while (1) {
+        if (stk.empty()) {
+            break;
+        }
+
+        auto f = stk.top();
+        stk.pop();
+
+        if (f->left && f->left->type == NodeType::OPERATOR) {
+            stk.push(f->left.get());
+        }
+
+        if (f->right && f->right->type == NodeType::OPERATOR) {
+            stk.push(f->right.get());
+        }
+
+        revertedPostOrder.push_back(f);
+    }
+
+    // ==== Part II ====
+    std::for_each(revertedPostOrder.rbegin(), revertedPostOrder.rend(), [this](NodeImpl *&n) {
+        // 对单节点n进行化简。
+
+        // 对于1元运算符，且儿子是数字的，直接计算出来
+        if (GetOperatorNum(n->op) == 1 && n->left->type == NodeType::NUMBER) {
+            n->type = NodeType::NUMBER;
+            n->value = tomsolver::Calc(n->op, n->left->value, 0);
+            n->op = MathOperator::MATH_NULL;
+            n->left = nullptr;
+            return;
+        }
+
+        // 对于2元运算符
+        if (GetOperatorNum(n->op) == 2) {
+            // 儿子是数字的，直接计算出来
+            if (n->left->type == NodeType::NUMBER && n->right->type == NodeType::NUMBER) {
+                n->type = NodeType::NUMBER;
+                n->value = tomsolver::Calc(n->op, n->left->value, n->right->value);
+                n->op = MathOperator::MATH_NULL;
+                n->left = nullptr;
+                n->right = nullptr;
+                return;
+            }
+
+            assert(n->left && n->right);
+            bool lChildIs0 = n->left->type == NodeType::NUMBER && n->left->value == 0.0;
+            bool rChildIs0 = n->right->type == NodeType::NUMBER && n->right->value == 0.0;
+            bool lChildIs1 = n->left->type == NodeType::NUMBER && n->left->value == 1.0;
+            bool rChildIs1 = n->right->type == NodeType::NUMBER && n->right->value == 1.0;
+
+            // 任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
+            if ((n->op == MathOperator::MATH_MULTIPLY && (lChildIs0 || rChildIs0)) ||
+                (n->op == MathOperator::MATH_DIVIDE && lChildIs0) || (n->op == MathOperator::MATH_POWER && lChildIs0)) {
+                *n = NodeImpl(NodeType::NUMBER, MathOperator::MATH_NULL, 0, "");
+                return;
+            }
+
+            // 任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
+            if ((n->op == MathOperator::MATH_ADD && (lChildIs0 || rChildIs0)) ||
+                (n->op == MathOperator::MATH_SUB && rChildIs0) ||
+                (n->op == MathOperator::MATH_MULTIPLY && (lChildIs1 || rChildIs1)) ||
+                (n->op == MathOperator::MATH_DIVIDE && rChildIs1) || (n->op == MathOperator::MATH_POWER && rChildIs1)) {
+
+                Node ret; // 要保留的节点
+                if (lChildIs1 || lChildIs0) {
+                    n->left = nullptr;
+                    ret = std::move(n->right);
+                } else if (rChildIs1 || rChildIs0) {
+                    n->right = nullptr;
+                    ret = std::move(n->left);
+                }
+                ret->parent = n->parent;
+
+                // 连接父级和剩余项
+                NodeImpl *p = const_cast<NodeImpl *>(ret->parent);
+                if (p) {
+                    if (p->left.get() == n) {
+                        p->left = std::move(ret);
+                    } else {
+                        p->right = std::move(ret);
+                    }
+                } else {
+                    *this = std::move(*ret);
+                }
+                return;
+            }
+        }
+    });
+
+    return *this;
+
+    // if (GetOperateNum(now->eOperator) == 2) {
+
+    //    //任何节点的0次方均等于1，除了0的0次方已在前面报错
+    //    if (now->eOperator == MATH_POWER && RChildIs0) {
+    //        //替换掉当前运算符，这个1节点将在回溯时处理
+    //        //新建一个1节点
+    //        TNode *temp;
+    //        temp = new TNode;
+    //        temp->eType = NODE_NUMBER;
+    //        temp->value = 1;
+
+    //        // 0节点连接到上面
+    //        if (now != head) {
+    //            if (now->parent->left == now) {
+    //                now->parent->left = temp;
+    //                temp->parent = now->parent;
+    //            }
+    //            if (now->parent->right == now) {
+    //                now->parent->right = temp;
+    //                temp->parent = now->parent;
+    //            }
+    //        } else
+    //            head = temp;
+
+    //        DeleteNode(now);
+    //    }
+
+    //    // 0-x=-x
+    //    if (now->eOperator == MATH_SUB && LChildIs0) {
+    //        TNode *LChild = now->left;
+    //        TNode *RChild = now->right;
+    //        now->eOperator = MATH_NEGATIVE;
+    //        now->left = RChild;
+    //        now->right = NULL;
+
+    //        delete LChild;
+    //    }
+
+    //}
+}
+
+} // namespace internal
+
+Node Simplify(const Node &node) noexcept {
+    Node cloned = Clone(node);
+    return Simplify(std::move(cloned));
+}
+
+Node Simplify(Node &&node) noexcept {
+    Node n = std::move(node);
+    n->Simplify();
+    return n;
+}
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+namespace internal {
+struct Token;
+}
+
+class ParseError : public std::runtime_error {
+public:
+protected:
+    ParseError() : std::runtime_error("parse error") {}
+};
+
+class SingleParseError : public ParseError {
+public:
+    SingleParseError(int line, int pos, const std::string &content, const std::string &errInfo);
+
+    virtual const char *what() const noexcept override;
+
+    int GetLine() const noexcept;
+
+    int GetPos() const noexcept;
+
+private:
+    int line;            // 行号
+    int pos;             // 第几个字符
+    std::string content; // 整行文本
+    std::string errInfo; // 报错信息
+    std::string whatStr; // 完整的错误信息
+};
+
+class MultiParseError : public ParseError {
+public:
+    MultiParseError(const std::vector<SingleParseError> &parseErrors);
+
+    virtual const char *what() const noexcept override;
+
+private:
+    std::vector<SingleParseError> parseErrors;
+    std::string whatStr; // 完整的错误信息
+};
+
+namespace internal {
+
+struct Token {
+    std::string s;                        // token内容
+    int line;                             // 行号
+    int pos;                              // 第几个字符
+    bool isBaseOperator;                  // 是否为基本运算符（单个字符的运算符以及左右括号）
+    Node node;                            // 节点
+    std::shared_ptr<std::string> content; // 整行文本
+    Token(int line, int pos, bool isBaseOperator, const std::string &s, const std::shared_ptr<std::string> &content)
+        : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
+};
+
+class ParseFunctions {
+public:
+    /**
+     * 解析表达式字符串为in order记号流。其实就是做词法分析。
+     * @exception ParseError
+     */
+    static std::deque<Token> ParseToTokens(const std::string &expression);
+
+    /**
+     * 由in order序列得到post order序列。实质上是把记号流转化为逆波兰表达式。
+     * @exception ParseError
+     */
+    static std::vector<Token> InOrderToPostOrder(std::deque<Token> &inOrder);
+
+    /**
+     * 将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）。
+     * @exception ParseError
+     */
+    static Node BuildExpressionTree(std::vector<Token> &postOrder);
+};
+
+} // namespace internal
+
+/**
+ * 把字符串解析为表达式。
+ * @exception ParseError
+ */
+Node Parse(const std::string &expression);
+
+} // namespace tomsolver
+
+using std::string;
+using std::to_string;
+
+namespace tomsolver {
+
+inline SingleParseError::SingleParseError(int line, int pos, const std::string &content, const std::string &errInfo)
+    : line(line), pos(pos), content(content), errInfo(errInfo) {
+    whatStr = "[Parse Error] " + errInfo + " at(" + to_string(line) + ", " + to_string(pos) + "):\n";
+    whatStr += content + "\n";
+    whatStr += string(pos, ' ') + "^---- error position";
+}
+
+const char *SingleParseError::what() const noexcept {
+    return whatStr.c_str();
+}
+
+int SingleParseError::GetLine() const noexcept {
+    return line;
+}
+
+int SingleParseError::GetPos() const noexcept {
+    return pos;
+}
+
+MultiParseError::MultiParseError(const std::vector<SingleParseError> &parseErrors) : parseErrors(parseErrors) {
+    for (auto &err : parseErrors) {
+        whatStr += std::string(err.what()) + "\n";
+    }
+}
+
+const char *MultiParseError::what() const noexcept {
+    return whatStr.c_str();
+}
+
+/* 是基本运算符()+-* /^&|% */
+bool IsBaseOperator(char c) noexcept {
+    switch (c) {
+    case '(':
+    case ')':
+    case '+':
+    case '-':
+    case '*':
+    case '/':
+    case '^':
+    case '&':
+    case '|':
+    case '%':
+        return true;
+    }
+    return false;
+}
+
+/*  */
+MathOperator BaseOperatorCharToEnum(char c) noexcept {
+    switch (c) {
+    case '(':
+        return MathOperator::MATH_LEFT_PARENTHESIS;
+    case ')':
+        return MathOperator::MATH_RIGHT_PARENTHESIS;
+    case '+':
+        return MathOperator::MATH_ADD;
+    case '-':
+        return MathOperator::MATH_SUB;
+    case '*':
+        return MathOperator::MATH_MULTIPLY;
+    case '/':
+        return MathOperator::MATH_DIVIDE;
+    case '^':
+        return MathOperator::MATH_POWER;
+    case '&':
+        return MathOperator::MATH_AND;
+    case '|':
+        return MathOperator::MATH_OR;
+    case '%':
+        return MathOperator::MATH_MOD;
+    default:
+        assert(0);
+    }
+    assert(0);
+    return MathOperator::MATH_NULL;
+}
+
+MathOperator Str2Function(const std::string &s) noexcept {
+    if (s == "sin") {
+        return MathOperator::MATH_SIN;
+    }
+    if (s == "cos") {
+        return MathOperator::MATH_COS;
+    }
+    if (s == "tan") {
+        return MathOperator::MATH_TAN;
+    }
+    if (s == "arcsin") {
+        return MathOperator::MATH_ARCSIN;
+    }
+    if (s == "arccos") {
+        return MathOperator::MATH_ARCCOS;
+    }
+    if (s == "arctan") {
+        return MathOperator::MATH_ARCTAN;
+    }
+    if (s == "sqrt") {
+        return MathOperator::MATH_SQRT;
+    }
+    if (s == "log") {
+        return MathOperator::MATH_LOG;
+    }
+    if (s == "log2") {
+        return MathOperator::MATH_LOG2;
+    }
+    if (s == "log10") {
+        return MathOperator::MATH_LOG10;
+    }
+    if (s == "exp") {
+        return MathOperator::MATH_EXP;
+    }
+    return MathOperator::MATH_NULL;
+}
+
+namespace internal {
+
+// 粗切分：利用operator切分
+std::vector<Token> SplitRough(const std::string &expression) {
+    std::shared_ptr<std::string> content = std::make_shared<std::string>(expression);
+    std::vector<Token> ret;
+
+    int tempBeg = 0;
+    std::string temp;
+    for (int i = 0; i < static_cast<int>(expression.size()); ++i) {
+        char c = expression[i];
+
+        // 忽略tab (\t) whitespaces (\n, \v, \f, \r) space
+        if (isspace(c)) {
+            continue;
+        }
+
+        if (!IsBaseOperator(c)) {
+            temp.push_back(c);
+        } else {
+            if (!temp.empty()) {
+                ret.push_back(Token(0, tempBeg, false, temp, content));
+                tempBeg = i;
+
+                temp.clear();
+            }
+            ret.push_back(Token(0, tempBeg, true, std::string{c}, content));
+            tempBeg = i + 1;
+        }
+    }
+    if (!temp.empty()) {
+        ret.push_back(Token(0, tempBeg, false, temp, content));
+        temp.clear();
+    }
+
+    return ret;
+}
+
+std::deque<Token> ParseFunctions::ParseToTokens(const std::string &expression) {
+
+    if (expression.empty()) {
+        throw SingleParseError(0, 0, "empty input", expression);
+    }
+
+    std::vector<Token> tokens = SplitRough(expression);
+
+    std::deque<Token> ret;
+    // 二次切分：切分出3类元素
+    for (size_t i = 0; i < tokens.size(); i++) {
+        Token token = std::move(tokens[i]);
+        auto &s = token.s;
+        if (token.isBaseOperator) // 识别出基本运算符（括号也在其中）
+        {
+            token.node = std::make_unique<NodeImpl>(NodeType::OPERATOR, BaseOperatorCharToEnum(s[0]), 0, "");
+            ret.push_back(std::move(token));
+            continue;
+        }
+
+        // 检验是否为浮点数
+        try {
+            std::size_t sz;
+            double d = std::stod(s, &sz);
+            if (sz != s.size()) {
+                throw std::invalid_argument("");
+            }
+            token.node = Num(d);
+            ret.push_back(std::move(token));
+            continue;
+        } catch (const std::exception &) {}
+
+        // 识别出函数
+        MathOperator op = Str2Function(s);
+        if (op != MathOperator::MATH_NULL) {
+            token.node = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
+            ret.push_back(std::move(token));
+            continue;
+        }
+
+        // 变量
+        // 非运算符、数字、函数
+        if (!VarNameIsLegal(s)) // 变量名首字符需为下划线或字母
+        {
+            throw SingleParseError(token.line, token.pos, expression, "Invalid variable name: \"" + s + "\"");
+        }
+
+        token.node = Var(s);
+        ret.push_back(std::move(token));
+    }
+    // 此时3类元素均已切分
+
+    // 识别取正运算符与取负运算符
+    size_t i = 0;
+    if (ret[0].node->op == MathOperator::MATH_ADD) {
+        ret[0].node->op = MathOperator::MATH_POSITIVE;
+        i++;
+    }
+    if (ret[0].node->op == MathOperator::MATH_SUB) {
+        ret[0].node->op = MathOperator::MATH_NEGATIVE;
+        i++;
+    }
+    for (; i < ret.size();) {
+        if (ret[i].node->type == NodeType::OPERATOR && ret[i].node->op != MathOperator::MATH_RIGHT_PARENTHESIS) {
+            if (i + 1 < ret.size())
+                i++;
+            else
+                break;
+            if (ret[i].node->op == MathOperator::MATH_ADD) {
+                ret[i].node->op = MathOperator::MATH_POSITIVE;
+                i++;
+                continue;
+            }
+            if (ret[i].node->op == MathOperator::MATH_SUB) {
+                ret[i].node->op = MathOperator::MATH_NEGATIVE;
+                i++;
+                continue;
+            }
+        } else
+            i++;
+    }
+
+    return ret;
+}
+
+std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder) {
+    std::vector<Token> postOrder;
+    int parenthesisBalance = 0;
+    std::stack<Token> temp;
+    while (inOrder.size() > 0) {
+        Token &f = inOrder.front();
+
+        // 数字直接入栈
+        if (f.node->type == NodeType::NUMBER || f.node->type == NodeType::VARIABLE) {
+            postOrder.push_back(std::move(f));
+            inOrder.pop_front();
+            continue;
+        }
+
+        //(左括号直接入栈
+        if (f.node->op == MathOperator::MATH_LEFT_PARENTHESIS) {
+            temp.push(std::move(f));
+            inOrder.pop_front();
+            parenthesisBalance++;
+            continue;
+        }
+
+        if (f.node->op == MathOperator::MATH_RIGHT_PARENTHESIS) //)出现右括号
+        {
+            parenthesisBalance--;
+
+            // 括号balance<0，说明括号不匹配
+            if (parenthesisBalance < 0) {
+                throw SingleParseError(f.line, f.pos, *f.content, "Parenthesis not match: \"" + f.s + "\"");
+            }
+
+            // pop至左括号
+            while (temp.size() > 0) {
+                if (temp.top().node->op == MathOperator::MATH_LEFT_PARENTHESIS) //(
+                {
+                    temp.pop(); // 扔掉左括号
+                    break;
+                } else {
+                    postOrder.push_back(std::move(temp.top())); // 入队
+                    temp.pop();
+                }
+            }
+
+            // 取出函数
+            if (temp.size() > 0 && IsFunction(temp.top().node->op)) {
+                postOrder.push_back(std::move(temp.top()));
+                temp.pop();
+            }
+
+            // pop所有取正取负
+            while (temp.size() > 0) {
+                if (temp.top().node->op == MathOperator::MATH_POSITIVE ||
+                    temp.top().node->op == MathOperator::MATH_NEGATIVE) {
+                    postOrder.push_back(std::move(temp.top()));
+                    temp.pop();
+                } else
+                    break;
+            }
+            inOrder.pop_front(); // 扔掉右括号
+            continue;
+        }
+
+        // f不是括号
+        if (f.node->op == MathOperator::MATH_POSITIVE || f.node->op == MathOperator::MATH_NEGATIVE) {
+            temp.push(std::move(f));
+            inOrder.pop_front();
+            continue;
+        }
+
+        // 不是括号也不是正负号
+        if (temp.size() > 0 && IsLeft2Right(temp.top().node->op) == true) // 左结合
+            // 临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
+            while (temp.size() > 0 && Rank(f.node->op) <= Rank(temp.top().node->op)) {
+                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
+                temp.pop();
+            }
+        else
+            // 右结合
+            // 临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
+            while (temp.size() > 0 && Rank(f.node->op) < Rank(temp.top().node->op)) {
+                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
+                temp.pop();
+            };
+
+        temp.push(std::move(f)); // 高优先级已全部挤出，当前符号入栈
+        inOrder.pop_front();
+    }
+
+    // 剩下的元素全部入栈
+    while (temp.size() > 0) {
+        Token token = std::move(temp.top());
+        temp.pop();
+
+        // 退栈时出现左括号，说明没有找到与之匹配的右括号
+        if (token.node->op == MathOperator::MATH_LEFT_PARENTHESIS) {
+            throw SingleParseError(token.line, token.pos, *token.content, "Parenthesis not match: \"" + token.s + "\"");
+        }
+
+        postOrder.push_back(std::move(token));
+    }
+
+    return postOrder;
+}
+
+// 将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
+Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
+    std::stack<Token> tempStack;
+    // 逐个识别PostOrder序列，构建表达式树
+    for (auto &token : postOrder) {
+        switch (token.node->type) {
+        case NodeType::NUMBER:
+        case NodeType::VARIABLE:
+            tempStack.push(std::move(token));
+            break;
+        case NodeType::OPERATOR:
+            if (GetOperatorNum(token.node->op) == 2) {
+                if (tempStack.empty()) {
+                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+                }
+
+                tempStack.top().node->parent = token.node.get();
+                token.node->right = std::move(tempStack.top().node);
+                tempStack.pop();
+
+                if (tempStack.empty()) {
+                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+                }
+
+                tempStack.top().node->parent = token.node.get();
+                token.node->left = std::move(tempStack.top().node);
+                tempStack.pop();
+
+                tempStack.push(std::move(token));
+                continue;
+            }
+
+            // 一元运算符
+            assert(GetOperatorNum(token.node->op) == 1);
+
+            if (tempStack.empty()) {
+                throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+            }
+
+            tempStack.top().node->parent = token.node.get();
+            token.node->left = std::move(tempStack.top().node);
+            tempStack.pop();
+
+            tempStack.push(std::move(token));
+
+            break;
+        }
+    }
+
+    // 如果现在临时栈里面有超过1个元素，那么除了栈顶，其他的都代表出错
+    if (tempStack.size() > 1) {
+        // 扔掉最顶上的，构造到一半的表达式
+        tempStack.pop();
+
+        std::vector<SingleParseError> errors;
+        while (!tempStack.empty()) {
+            Token &token = tempStack.top();
+            errors.push_back(
+                SingleParseError(token.line, token.pos, *token.content, "Parse Error at: \"" + token.s + "\""));
+            tempStack.pop();
+        }
+        std::reverse(errors.begin(), errors.end());
+        throw MultiParseError(errors);
+    }
+
+    return std::move(tempStack.top().node);
+}
+
+} // namespace internal
+
+Node Parse(const std::string &expression) {
+    std::deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens(expression);
+    auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+    auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+    return node;
+}
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
 /**
  * Armijo方法一维搜索，寻找alpha
  */
@@ -5187,6 +5058,182 @@ VarsTable Solve(const SymVec &equations) {
     std::vector<std::string> vecVarNames(varNames.begin(), varNames.end());
     VarsTable varsTable(std::move(vecVarNames), GetConfig().initialValue);
     return Solve(varsTable, equations);
+}
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+namespace internal {} // namespace internal
+
+SymMat::SymMat(int rows, int cols) noexcept {
+    assert(rows > 0 && cols > 0);
+    data.resize(rows);
+    for (auto &row : data) {
+        row.resize(cols);
+    }
+}
+
+SymMat SymMat::Clone() const noexcept {
+    SymMat ret(Rows(), Cols());
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            ret.data[i][j] = tomsolver::Clone(data[i][j]);
+        }
+    }
+    return ret;
+}
+
+bool SymMat::Empty() const noexcept {
+    return data.empty();
+}
+
+int SymMat::Rows() const noexcept {
+    return static_cast<int>(data.size());
+}
+
+int SymMat::Cols() const noexcept {
+    if (Rows()) {
+        return static_cast<int>(data[0].size());
+    }
+    return 0;
+}
+
+SymVec SymMat::ToSymVec() const {
+    assert(Rows() > 0);
+    if (Cols() != 1) {
+        throw std::runtime_error("SymMat::ToSymVec fail. rows is not one");
+    }
+    SymVec v(Rows());
+    for (int j = 0; j < Rows(); ++j) {
+        v.data[j][0] = tomsolver::Clone(data[j][0]);
+    }
+    return v;
+}
+
+Mat SymMat::ToMat() const {
+    std::vector<std::vector<double>> arr(Rows(), std::vector<double>(Cols()));
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            if (data[i][j]->type != NodeType::NUMBER) {
+                throw std::runtime_error("ToMat error: node is not number");
+            }
+            arr[i][j] = data[i][j]->value;
+        }
+    }
+    return Mat(std::move(arr));
+}
+
+SymMat &SymMat::Calc() {
+    for (auto &row : data) {
+        for (auto &node : row) {
+            node->Calc();
+        }
+    }
+    return *this;
+}
+
+SymMat &SymMat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
+    for (auto &row : data) {
+        for (auto &node : row) {
+            node = tomsolver::Subs(std::move(node), varValues);
+        }
+    }
+    return *this;
+}
+
+SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
+    for (auto &row : data) {
+        for (auto &node : row) {
+            node = tomsolver::Subs(std::move(node), varsTable);
+        }
+    }
+    return *this;
+}
+
+std::unordered_set<std::string> SymMat::GetAllVarNames() const noexcept {
+    std::unordered_set<std::string> ret;
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            auto varNames = data[i][j]->GetAllVarNames();
+            ret.insert(varNames.begin(), varNames.end());
+        }
+    }
+    return ret;
+}
+
+SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
+    assert(rhs.Rows() == Rows() && rhs.Cols() == Cols());
+    SymMat ret(Rows(), Cols());
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            ret.data[i][j] = tomsolver::Clone(data[i][j]) - tomsolver::Clone(rhs.data[i][j]);
+        }
+    }
+    return ret;
+}
+
+std::string SymMat::ToString() const noexcept {
+    if (Empty())
+        return "[]";
+    std::string s;
+    s.reserve(256);
+
+    auto OutputRow = [&](int i) {
+        int j = 0;
+        for (; j < Cols() - 1; ++j) {
+            s += data[i][j]->ToString() + ", ";
+        }
+        s += data[i][j]->ToString();
+    };
+
+    s += "[";
+    OutputRow(0);
+    s += "\n";
+
+    int i = 1;
+    for (; i < Rows() - 1; ++i) {
+        s += " ";
+        OutputRow(i);
+        s += "\n";
+    }
+    s += " ";
+    OutputRow(i);
+    s += "]";
+    return s;
+}
+
+SymVec::SymVec(int rows) noexcept : SymMat(rows, 1) {}
+
+SymVec::SymVec(const std::initializer_list<Node> &lst) noexcept : SymMat(static_cast<int>(lst.size()), 1) {
+    for (auto it = lst.begin(); it != lst.end(); ++it) {
+        auto &node = const_cast<Node &>(*it);
+        data[it - lst.begin()][0] = std::move(node);
+    }
+}
+
+SymVec SymVec::operator-(const SymVec &rhs) const noexcept {
+    return SymMat::operator-(rhs).ToSymVec();
+}
+
+Node &SymVec::operator[](std::size_t index) noexcept {
+    return data[index][0];
+}
+
+const Node &SymVec::operator[](std::size_t index) const noexcept {
+    return data[index][0];
+}
+
+SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept {
+    int rows = equations.Rows();
+    int cols = static_cast<int>(vars.size());
+    SymMat ja(rows, cols);
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            ja.data[i][j] = Diff(equations.data[i][0], vars[j]);
+        }
+    }
+    return ja;
 }
 
 } // namespace tomsolver
