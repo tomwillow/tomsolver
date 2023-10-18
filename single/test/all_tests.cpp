@@ -1310,6 +1310,24 @@ TEST(Solve, Base) {
         ASSERT_EQ(got, expected);
     }
 }
+TEST(Solve, Case1) {
+    // the example of this test is from: https://zhuanlan.zhihu.com/p/136889381
+
+    MemoryLeakDetection mld;
+
+    std::setlocale(LC_ALL, ".UTF8");
+
+    /*
+     */
+
+    SymVec f{{Parse("exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"), Parse("x1 * cos(x2) + x2 * sin(x1) - 0.5")}};
+
+    cout << f.ToString() << endl;
+
+    VarsTable ans = Solve(f);
+
+    cout << ans << endl;
+}
 
 TEST(Subs, Base) {
     MemoryLeakDetection mld;
