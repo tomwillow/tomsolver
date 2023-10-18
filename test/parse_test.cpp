@@ -63,7 +63,7 @@ TEST(Parse, IllegalChar) {
     try {
         deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1#+2");
         FAIL();
-    } catch (const ParseError &err) {
+    } catch (const SingleParseError &err) {
         cout << err.what() << endl;
         ASSERT_EQ(err.GetPos(), 0);
     }
@@ -72,7 +72,7 @@ TEST(Parse, IllegalChar) {
         deque<internal::Token> tokens =
             internal::ParseFunctions::ParseToTokens("a*cos(x1) + b*cos(x1-x2) + c*cos(?x1-x2-x3)");
         FAIL();
-    } catch (const ParseError &err) {
+    } catch (const SingleParseError &err) {
         cout << err.what() << endl;
         ASSERT_EQ(err.GetPos(), 33);
     }
@@ -156,9 +156,7 @@ TEST(Parse, PostOrderError) {
         try {
             auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
             FAIL();
-        } catch (const ParseError &err) {
-            cout << err.what() << endl;
-        }
+        } catch (const ParseError &err) { cout << err.what() << endl; }
     }
 
     {
@@ -167,9 +165,7 @@ TEST(Parse, PostOrderError) {
         try {
             auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
             FAIL();
-        } catch (const ParseError &err) {
-            cout << err.what() << endl;
-        }
+        } catch (const ParseError &err) { cout << err.what() << endl; }
     }
 }
 
@@ -206,4 +202,19 @@ TEST(Parse, Mix) {
                         Var("c") * cos(Var("x1") - Var("x2") - Var("x3"));
         ASSERT_TRUE(node->Equal(expected));
     }
+
+    try {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("x(1)*cos(2)");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        FAIL();
+    } catch (const ParseError &err) { cout << err.what() << endl; }
+
+    try {
+        deque<internal::Token> tokens =
+            internal::ParseFunctions::ParseToTokens("x(1)*cos(x(2)) + x(2)*sin(x(1)) - 0.5");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        FAIL();
+    } catch (const ParseError &err) { cout << err.what() << endl; }
 }

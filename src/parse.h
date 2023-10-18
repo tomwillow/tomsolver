@@ -6,9 +6,19 @@
 
 namespace tomsolver {
 
+namespace internal {
+struct Token;
+}
+
 class ParseError : public std::runtime_error {
 public:
-    ParseError(int line, int pos, const std::string &content, const std::string &errInfo);
+protected:
+    ParseError() : std::runtime_error("parse error") {}
+};
+
+class SingleParseError : public ParseError {
+public:
+    SingleParseError(int line, int pos, const std::string &content, const std::string &errInfo);
 
     virtual const char *what() const noexcept override;
 
@@ -21,6 +31,17 @@ private:
     int pos;             // 第几个字符
     std::string content; // 整行文本
     std::string errInfo; // 报错信息
+    std::string whatStr; // 完整的错误信息
+};
+
+class MultiParseError : public ParseError {
+public:
+    MultiParseError(const std::vector<SingleParseError> &parseErrors);
+
+    virtual const char *what() const noexcept override;
+
+private:
+    std::vector<SingleParseError> parseErrors;
     std::string whatStr; // 完整的错误信息
 };
 

@@ -11,23 +11,33 @@ using std::to_string;
 
 namespace tomsolver {
 
-inline ParseError::ParseError(int line, int pos, const std::string &content, const std::string &errInfo)
-    : std::runtime_error(""), line(line), pos(pos), content(content), errInfo(errInfo) {
+inline SingleParseError::SingleParseError(int line, int pos, const std::string &content, const std::string &errInfo)
+    : line(line), pos(pos), content(content), errInfo(errInfo) {
     whatStr = "[Parse Error] " + errInfo + " at(" + to_string(line) + ", " + to_string(pos) + "):\n";
     whatStr += content + "\n";
     whatStr += string(pos, ' ') + "^---- error position";
 }
 
-const char *ParseError::what() const noexcept {
+const char *SingleParseError::what() const noexcept {
     return whatStr.c_str();
 }
 
-int ParseError::GetLine() const noexcept {
+int SingleParseError::GetLine() const noexcept {
     return line;
 }
 
-int ParseError::GetPos() const noexcept {
+int SingleParseError::GetPos() const noexcept {
     return pos;
+}
+
+MultiParseError::MultiParseError(const std::vector<SingleParseError> &parseErrors) : parseErrors(parseErrors) {
+    for (auto &err : parseErrors) {
+        whatStr += std::string(err.what()) + "\n";
+    }
+}
+
+const char *MultiParseError::what() const noexcept {
+    return whatStr.c_str();
 }
 
 /* 是基本运算符()+-* /^&|% */
@@ -156,7 +166,7 @@ std::vector<Token> SplitRough(const std::string &expression) {
 std::deque<Token> ParseFunctions::ParseToTokens(const std::string &expression) {
 
     if (expression.empty()) {
-        throw ParseError(0, 0, "empty input", expression);
+        throw SingleParseError(0, 0, "empty input", expression);
     }
 
     std::vector<Token> tokens = SplitRough(expression);
@@ -197,7 +207,7 @@ std::deque<Token> ParseFunctions::ParseToTokens(const std::string &expression) {
         // 非运算符、数字、函数
         if (!VarNameIsLegal(s)) // 变量名首字符需为下划线或字母
         {
-            throw ParseError(token.line, token.pos, expression, "Invalid variable name: \"" + s + "\"");
+            throw SingleParseError(token.line, token.pos, expression, "Invalid variable name: \"" + s + "\"");
         }
 
         token.node = Var(s);
@@ -266,7 +276,7 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
 
             // 括号balance<0，说明括号不匹配
             if (parenthesisBalance < 0) {
-                throw ParseError(f.line, f.pos, *f.content, "Parenthesis not match: \"" + f.s + "\"");
+                throw SingleParseError(f.line, f.pos, *f.content, "Parenthesis not match: \"" + f.s + "\"");
             }
 
             // pop至左括号
@@ -333,7 +343,7 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
 
         // 退栈时出现左括号，说明没有找到与之匹配的右括号
         if (token.node->op == MathOperator::MATH_LEFT_PARENTHESIS) {
-            throw ParseError(token.line, token.pos, *token.content, "Parenthesis not match: \"" + token.s + "\"");
+            throw SingleParseError(token.line, token.pos, *token.content, "Parenthesis not match: \"" + token.s + "\"");
         }
 
         postOrder.push_back(std::move(token));
@@ -389,6 +399,22 @@ Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
 
             break;
         }
+    }
+
+    // 如果现在临时栈里面有超过1个元素，那么除了栈顶，其他的都代表出错
+    if (tempStack.size() > 1) {
+        // 扔掉最顶上的，构造到一半的表达式
+        tempStack.pop();
+
+        std::vector<SingleParseError> errors;
+        while (!tempStack.empty()) {
+            Token &token = tempStack.top();
+            errors.push_back(
+                SingleParseError(token.line, token.pos, *token.content, "Parse Error at: \"" + token.s + "\""));
+            tempStack.pop();
+        }
+        std::reverse(errors.begin(), errors.end());
+        throw MultiParseError(errors);
     }
 
     return std::move(tempStack.top().node);
