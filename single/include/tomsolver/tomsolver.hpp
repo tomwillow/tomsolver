@@ -3428,30 +3428,11 @@ public:
             if (node->left->type == NodeType::VARIABLE)
                 return;
 
-            // TNode *multiply = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-            // TNode *u2 = CopyNodeTree(function->left);
+            // (e^u)' = e^u * u'
 
-            // if (function == head) {
-            //    head = multiply;
-            //} else {
-            //    if (function->parent->left == function) {
-            //        function->parent->left = multiply;
-            //        multiply->parent = function->parent;
-            //    }
-            //    if (function->parent->right == function) {
-            //        function->parent->right = multiply;
-            //        multiply->parent = function->parent;
-            //    }
-            //}
+            NodeImpl *u2 = ChainLaw(node, node->left);
 
-            // multiply->left = function;
-            // function->parent = multiply;
-
-            // multiply->right = u2;
-            // u2->parent = multiply;
-
-            // Diff(u2, var);
-            assert(0);
+            q.push(DiffNode(u2, false));
             break;
         }
 

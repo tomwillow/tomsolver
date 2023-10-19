@@ -87,14 +87,14 @@ TEST(Diff, Exp) {
         ASSERT_TRUE(dn->Equal(exp(Var("x"))));
     }
 
-    //{
-    //    // (e^sin(x))' = e^sin(x)*cos(x)
-    //    Node n = exp(sin(Var("x")));
-    //    Node dn = Diff(n, "x");
-    //    dn->CheckParent();
-    //    cout << dn->ToString() << endl;
-    //    ASSERT_TRUE(dn->Equal(exp(sin(Var("x")))*cos(Var("x"))));
-    //}
+    {
+        // (e^sin(x))' = e^sin(x)*cos(x)
+        Node n = exp(sin(Var("x")));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(exp(sin(Var("x"))) * cos(Var("x"))));
+    }
 }
 
 TEST(Diff, Multiply) {
