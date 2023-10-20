@@ -3342,7 +3342,14 @@ public:
             return false;
         };
 
-        auto ChainLaw = [&](std::unique_ptr<NodeImpl> &node, const std::unique_ptr<NodeImpl> &u) -> NodeImpl * {
+        /**
+         * 应用链式法则：function(u)' = function(u) * u'
+         *      函数内会生成*节点，拷贝u节点并加入求导队列，自动转移node的所有权，并连接父节点。
+         * param[in/out] node为function节点
+         * param[in] u为function的操作数节点
+         * return 拷贝出来的u2节点的裸指针
+         */
+        auto ChainLaw = [&](std::unique_ptr<NodeImpl> &node, const std::unique_ptr<NodeImpl> &u) {
             Node mul = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_MULTIPLY, 0, "");
             mul->parent = parent;
 
@@ -3350,7 +3357,7 @@ public:
             mul->left = std::move(node);
 
             Node u2 = Clone(u);
-            NodeImpl *ret = u2.get();
+            q.push(DiffNode(u2.get(), false));
             u2->parent = mul.get();
             mul->right = std::move(u2);
 
@@ -3364,7 +3371,6 @@ public:
             } else {
                 root = std::move(mul);
             }
-            return ret;
         };
 
         switch (node->op) {
@@ -3388,10 +3394,7 @@ public:
 
             node->op = MathOperator::MATH_COS;
 
-            NodeImpl *u2 = ChainLaw(node, node->left);
-
-            q.push(DiffNode(u2, false));
-
+            ChainLaw(node, node->left);
             break;
         }
         case MathOperator::MATH_COS: {
@@ -3406,9 +3409,7 @@ public:
             node->parent = negative.get();
             negative->left = std::move(node);
 
-            NodeImpl *u2 = ChainLaw(negative, negative->left->left);
-
-            q.push(DiffNode(u2, false));
+            ChainLaw(negative, negative->left->left);
             break;
         }
         case MathOperator::MATH_TAN:
@@ -3430,9 +3431,7 @@ public:
 
             // (e^u)' = e^u * u'
 
-            NodeImpl *u2 = ChainLaw(node, node->left);
-
-            q.push(DiffNode(u2, false));
+            ChainLaw(node, node->left);
             break;
         }
 
