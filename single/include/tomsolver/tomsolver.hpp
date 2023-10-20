@@ -3342,6 +3342,23 @@ public:
             return false;
         };
 
+        // 调用前提：node是2元操作符
+        // 如果node的成员是数字，那么整个node变为数字节点，value=0，且返回true
+        // 例如： (2*3)' = 0
+        auto CullNumberMemberBinary = [&]() -> bool {
+            assert(GetOperatorNum(node->op) == 2);
+            assert(node->left && node->right);
+            if (node->left->type == NodeType::NUMBER && node->right->type == NodeType::NUMBER) {
+                node->left = nullptr;
+                node->right = nullptr;
+                node->type = NodeType::NUMBER;
+                node->op = MathOperator::MATH_NULL;
+                node->value = 0.0;
+                return true;
+            }
+            return false;
+        };
+
         /**
          * 应用链式法则：function(u)' = function(u) * u'
          *      函数内会生成*节点，拷贝u节点并加入求导队列，自动转移node的所有权，并连接父节点。
@@ -3412,14 +3429,47 @@ public:
             ChainLaw(negative, negative->left->left);
             break;
         }
-        case MathOperator::MATH_TAN:
-        case MathOperator::MATH_ARCSIN:
-        case MathOperator::MATH_ARCCOS:
-        case MathOperator::MATH_ARCTAN:
-        case MathOperator::MATH_SQRT:
-        case MathOperator::MATH_LOG:
-        case MathOperator::MATH_LOG2:
-        case MathOperator::MATH_LOG10:
+        case MathOperator::MATH_TAN: {
+            assert(0);
+            return;
+        }
+        case MathOperator::MATH_ARCSIN: {
+            assert(0);
+            return;
+        }
+        case MathOperator::MATH_ARCCOS: {
+            assert(0);
+            return;
+        }
+        case MathOperator::MATH_ARCTAN: {
+            assert(0);
+            return;
+        }
+        case MathOperator::MATH_SQRT: {
+            assert(0);
+            return;
+        }
+        case MathOperator::MATH_LOG: {
+            if (CullNumberMember()) {
+                return;
+            }
+
+            // ln(u)' = 1/u * u'
+            Node &u = node->left;
+            Node u2 = Clone(u);
+            q.push(DiffNode(u2.get(), false));
+            node = (Num(1) / Move(u)) * Move(u2);
+            node->parent = parent;
+            return;
+        }
+        case MathOperator::MATH_LOG2: {
+            assert(0);
+            return;
+        }
+        case MathOperator::MATH_LOG10: {
+            assert(0);
+            return;
+        }
         case MathOperator::MATH_EXP: {
             if (CullNumberMember()) {
                 return;
@@ -3438,6 +3488,9 @@ public:
         // 二元
         case MathOperator::MATH_ADD:
         case MathOperator::MATH_SUB:
+            if (CullNumberMemberBinary()) {
+                return;
+            }
             // (u + v)' = u' + v'
             if (node->left) {
                 q.push(DiffNode(node->left.get(), true));
@@ -3456,6 +3509,10 @@ public:
             }
             if (rightIsNumber) {
                 q.push(DiffNode(node->left.get(), true));
+                return;
+            }
+
+            if (CullNumberMemberBinary()) {
                 return;
             }
 
@@ -3488,14 +3545,67 @@ public:
             }
             return;
         }
-        case MathOperator::MATH_DIVIDE:
-        case MathOperator::MATH_POWER:
+        case MathOperator::MATH_DIVIDE: {
             assert(0);
             return;
+        }
+        case MathOperator::MATH_POWER: {
+            // 如果两个操作数都是数字
+            if (CullNumberMemberBinary()) {
+                return;
+            }
 
-        case MathOperator::MATH_AND:
-        case MathOperator::MATH_OR:
-        case MathOperator::MATH_MOD:
+            bool lChildIsNumber = node->left->type == NodeType::NUMBER;
+            bool rChildIsNumber = node->right->type == NodeType::NUMBER;
+
+            // (u^a)' = a*u^(a-1) * u'
+            if (rChildIsNumber) {
+                Node &a = node->right;
+                double aValue = a->value;
+                Node &u = node->left;
+                Node u2 = Clone(u);
+                q.push(DiffNode(u2.get(), false));
+                node = std::move(a) * (std::move(u) ^ Num(aValue - 1)) * std::move(u2);
+                node->parent = parent;
+                return;
+            }
+
+            // (a^x)' = a^x * ln(a)  when a>0 and a!=1
+            if (lChildIsNumber) {
+                Node &a = node->left;
+                double aValue = a->value;
+                Node &u = node->right;
+                Node u2 = Clone(u);
+                q.push(DiffNode(u2.get(), false));
+                node = (std::move(a) ^ std::move(u)) * log(Num(aValue)) * std::move(u2);
+                node->parent = parent;
+                return;
+            }
+
+            // (u^v)' = ( e^(v*ln(u)) )' = e^(v*ln(u)) * (v*ln(u))' = u^v * (v*ln(u))'
+            // 左右都不是数字
+            Node &u = node->left;
+            Node &v = node->right;
+            Node vln_u = Clone(v) * log(Clone(u));
+            q.push(DiffNode(vln_u.get(), false));
+            node = Move(node) * std::move(vln_u);
+            node->parent = parent;
+
+            return;
+        }
+
+        case MathOperator::MATH_AND: {
+            assert(0);
+            return;
+        }
+        case MathOperator::MATH_OR: {
+            assert(0);
+            return;
+        }
+        case MathOperator::MATH_MOD: {
+            assert(0);
+            return;
+        }
         case MathOperator::MATH_LEFT_PARENTHESIS:
         case MathOperator::MATH_RIGHT_PARENTHESIS:
             assert(0);
@@ -3585,79 +3695,6 @@ public:
 //
 //			}
 //			return;
-//		case MATH_POWER:
-//		{
-//			bool LChildIsNumber = now->left->eType == NODE_NUMBER;
-//			bool RChildIsNumber = now->right->eType == NODE_NUMBER;
-//			if (LChildIsNumber && RChildIsNumber)
-//			{
-//				delete now->left;
-//				delete now->right;
-//				now->left = NULL;
-//				now->right = NULL;
-//				now->eType = NODE_NUMBER;
-//				now->eOperator = MATH_NULL;
-//				now->value = 0.0;
-//				return;
-//			}
-//
-//			TNode *multiply1 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//			TNode *multiply2 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//			TNode *power = now;
-//			TNode *u = now->left;
-//			TNode *v = now->right;
-//			TNode *u2 = CopyNodeTree(u);
-//			TNode *v2 = CopyNodeTree(v);
-//
-//			if (power == head)
-//			{
-//				head = multiply1;
-//			}
-//			else
-//			{
-//				if (power->parent->left == power)
-//					power->parent->left = multiply1;
-//				if (power->parent->right == power)
-//					power->parent->right = multiply1;
-//				multiply1->parent = power->parent;
-//			}
-//
-//			if (RChildIsNumber)
-//				v->value -= 1.0;
-//
-//			multiply1->left = power;
-//			power->parent = multiply1;
-//
-//			multiply1->right = multiply2;
-//			multiply2->parent = multiply1;
-//
-//			multiply2->left = v2;
-//			v2->parent = multiply2;
-//
-//			if (RChildIsNumber)
-//			{
-//				multiply2->right = u2;
-//				u2->parent = multiply2;
-//				Diff(u2, var);
-//				return;
-//			}
-//			else
-//			{
-//				TNode *ln = NewNode(NODE_FUNCTION, MATH_LOG);
-//
-//				multiply2->right = ln;
-//				ln->parent = multiply2;
-//
-//				ln->left = u2;
-//				u2->parent = ln;
-//
-//				Diff(multiply2, var);
-//				return;
-//			}
-//			return;
-//		}
-//		}
-//		break;
 //	case NODE_FUNCTION:
 //	{
 //
@@ -3799,6 +3836,7 @@ Node Diff(Node &&node, const std::string &varname, int i) noexcept {
         internal::DiffFunctions::DiffOnce(n, varname);
     }
 #ifndef NDEBUG
+    std::string s = n->ToString();
     n->CheckParent();
 #endif
     n->Simplify();

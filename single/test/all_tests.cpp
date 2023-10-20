@@ -297,6 +297,80 @@ TEST(Diff, Multiply) {
         cout << dn->ToString() << endl;
     }
 }
+TEST(Diff, Log) {
+    MemoryLeakDetection mld;
+
+    {
+        // log(x)' = 1/x
+        Node n = log(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Num(1) / Var("x")));
+    }
+
+    {
+        // log(sin(x))' = 1/x * cos(x)
+        Node n = log(sin(Var("x")));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Num(1) / sin(Var("x")) * cos(Var("x"))));
+    }
+}
+TEST(Diff, LogChain) {
+    MemoryLeakDetection mld;
+    {
+        // (x*ln(x))' = ln(x)+1
+        Node n = Var("x") * log(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_EQ(dn->ToString(), "log(x)+x*1/x"); // FIXME: 化简
+    }
+}
+TEST(Diff, Power) {
+    MemoryLeakDetection mld;
+
+    {
+        // (x^a)' = a*x^(a-1)
+        Node n = Var("x") ^ Num(5);
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Num(5) * (Var("x") ^ Num(4))));
+    }
+
+    {
+        // (a^x)' = a^x * ln(a)  when a>0 and a!=1
+        Node n = Num(3) ^ Var("x");
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        Node expect = (Num(3) ^ Var("x")) * Num(std::log(3));
+        ASSERT_TRUE(dn->Equal(expect));
+    }
+
+    {
+        // (u^v)' = ( e^(v*ln(u)) )' = e^(v*ln(u)) * (v*ln(u))'
+
+        Node n = Var("x") ^ Var("x");
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_EQ(dn->ToString(), "x^x*(log(x)+x*1/x)"); // FIXME: 化简
+    }
+
+    {
+        // (u^v)' = ( e^(v*ln(u)) )' = e^(v*ln(u)) * (v*ln(u))'
+
+        Node n = sin(Var("x")) ^ cos(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_EQ(dn->ToString(), "sin(x)^cos(x)*(-(sin(x))*log(sin(x))+cos(x)*1/sin(x)*cos(x))"); // FIXME: 化简
+    }
+}
 TEST(Diff, Combine) {
     MemoryLeakDetection mld;
 
