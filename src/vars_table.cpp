@@ -76,8 +76,18 @@ bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
         return false;
     }
 
-    // 这里会自动使用浮点数比较
-    return values == rhs.values;
+    for (auto &pr : table) {
+        const std::string &varname = pr.first;
+        auto it = rhs.table.find(varname);
+        if (it == rhs.table.end()) {
+            return false;
+        }
+        double value = pr.second;
+        if (std::abs(it->second - value) > GetConfig().epsilon) {
+            return false;
+        }
+    }
+    return true;
 }
 
 double VarsTable::operator[](const std::string &varname) const {

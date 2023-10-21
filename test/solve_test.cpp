@@ -64,8 +64,6 @@ TEST(Solve, Base) {
 }
 
 TEST(Solve, Case1) {
-    // the example of this test is from: https://ww2.mathworks.cn/help/optim/ug/fsolve.html
-
     MemoryLeakDetection mld;
 
     std::setlocale(LC_ALL, ".UTF8");
@@ -73,6 +71,7 @@ TEST(Solve, Case1) {
     /*
 
     Matlab code:
+    from: https://ww2.mathworks.cn/help/optim/ug/fsolve.html
 
     root2d.m:
         function F = root2d(x)
