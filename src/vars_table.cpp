@@ -80,6 +80,14 @@ bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
     return values == rhs.values;
 }
 
+double VarsTable::operator[](const std::string &varname) const {
+    auto it = table.find(varname);
+    if (it == table.end()) {
+        throw std::out_of_range("no such variable: " + varname);
+    }
+    return it->second;
+}
+
 std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
     for (auto &pr : table) {
         out << pr.first << " = " << tomsolver::ToString(pr.second) << std::endl;

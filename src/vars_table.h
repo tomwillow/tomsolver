@@ -66,6 +66,12 @@ public:
 
     bool operator==(const VarsTable &rhs) const noexcept;
 
+    /**
+     * 根据变量名获取数值。
+     * @exception out_of_range 如果没有这个变量，抛出异常
+     */
+    double operator[](const std::string &varname) const;
+
 private:
     std::vector<std::string> vars;
     Vec values;

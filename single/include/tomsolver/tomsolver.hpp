@@ -2140,6 +2140,12 @@ public:
 
     bool operator==(const VarsTable &rhs) const noexcept;
 
+    /**
+     * 根据变量名获取数值。
+     * @exception out_of_range 如果没有这个变量，抛出异常
+     */
+    double operator[](const std::string &varname) const;
+
 private:
     std::vector<std::string> vars;
     Vec values;
@@ -2224,6 +2230,14 @@ bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
 
     // 这里会自动使用浮点数比较
     return values == rhs.values;
+}
+
+double VarsTable::operator[](const std::string &varname) const {
+    auto it = table.find(varname);
+    if (it == table.end()) {
+        throw std::out_of_range("no such variable: " + varname);
+    }
+    return it->second;
 }
 
 std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {

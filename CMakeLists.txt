@@ -18,6 +18,9 @@ endif()
 option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
 message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
 
+option(ENABLE_EXAMPLES "Enable unit tests" ON)
+message(STATUS "Enable examples: ${ENABLE_EXAMPLES}")
+
 if (ENABLE_UNIT_TESTS)
 	# 添加参数：是否从镜像站下载googletest
 	option(USE_MIRROR_GTEST_REPO "Use mirror google test repository at gitcode.net" OFF)
@@ -71,3 +74,7 @@ gtest_discover_tests(TomSolverTest)
 
 # =====================================
 add_subdirectory(single)
+
+if (ENABLE_EXAMPLES)
+	add_subdirectory(example/solve)
+endif()
