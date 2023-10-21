@@ -34,11 +34,11 @@ int main() {
     VarsTable ans = Solve(f);
 
     // 打印出ans
-    cout << ans << endl;
+    std::cout << ans << std::endl;
 
     // 单独获取变量的值
-    cout << "x1 = " << ans["x1"] << endl;
-    cout << "x2 = " << ans["x2"] << endl;
+    std::cout << "x1 = " << ans["x1"] << std::endl;
+    std::cout << "x2 = " << ans["x2"] << std::endl;
 
     return 0;
 }

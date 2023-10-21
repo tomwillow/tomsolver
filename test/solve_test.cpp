@@ -99,6 +99,14 @@ TEST(Solve, Case1) {
     // 设置初值为0.0
     GetConfig().initialValue = 0.0;
 
+    // 设置容差为1.0e-6，因为Matlab的默认容差是1.0e-6
+    GetConfig().epsilon = 1.0e-6;
+
+    // 结束时恢复设置
+    std::shared_ptr<void> defer(nullptr, [&](...) {
+        GetConfig().Reset();
+    });
+
     // 求解，结果保存到ans
     VarsTable ans = Solve(f);
 

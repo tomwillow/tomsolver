@@ -17,8 +17,6 @@ using std::endl;
 TEST(SolveBase, FindAlphaByArmijo) {
     MemoryLeakDetection mld;
 
-    GetConfig().epsilon = 1e-6;
-
     auto g = [](const Vec &x) -> Vec {
         return {pow(x[0] - 4, 4) + pow(x[1] - 3, 2) + 4 * pow(x[2] + 5, 4)};
     };
