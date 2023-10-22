@@ -28,3 +28,18 @@ TEST(SymMat, Base) {
 
     cout << f.ToString() << endl;
 }
+
+TEST(SymMat, Multiply) {
+    MemoryLeakDetection mld;
+
+    SymMat X = {{Var("a"), Var("b")}, {Var("c"), Var("d")}};
+
+    SymMat ret = X * X;
+
+    SymMat expected = {{Var("a") * Var("a") + Var("b") * Var("c"), Var("a") * Var("b") + Var("b") * Var("d")},
+                       {Var("c") * Var("a") + Var("d") * Var("c"), Var("c") * Var("b") + Var("d") * Var("d")}};
+
+    cout << ret << endl;
+
+    ASSERT_EQ(ret, expected);
+}

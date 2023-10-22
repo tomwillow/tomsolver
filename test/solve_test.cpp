@@ -119,3 +119,43 @@ TEST(Solve, Case1) {
 
     ASSERT_EQ(ans, VarsTable({{"x1", 0.353246561920553}, {"x2", 0.606082026502285}}));
 }
+
+TEST(Solve, Case2) {
+    MemoryLeakDetection mld;
+
+    std::setlocale(LC_ALL, ".UTF8");
+
+    /*
+
+    Translate from Matlab code:
+
+        fun = @(x)x*x*x - [1,2;3,4];
+        x0 = ones(2);
+        format long;
+        fsolve(fun,x0)
+
+     */
+
+    // 构造符号矩阵: [a b; c d]
+    SymMat X({{Var("a"), Var("b")}, {Var("c"), Var("d")}});
+
+    Mat B{{1, 2}, {3, 4}};
+
+    // 计算出矩阵X*X*X-B
+    auto FMat = X * X * X - B;
+
+    // 提取矩阵的每一个元素，构成4个方程组成的符号向量
+    auto F = FMat.ToSymVecOneByOne();
+
+    cout << F << endl;
+
+    // 把符号向量F作为方程组进行求解
+    VarsTable ans = Solve(F);
+
+    cout << ans << endl;
+
+    VarsTable expected{
+        {"a", -0.129148906397607}, {"b", 0.8602157139938529}, {"c", 1.2903235709907794}, {"d", 1.1611746645931726}};
+
+    ASSERT_EQ(ans, expected);
+}

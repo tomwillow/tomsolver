@@ -36,7 +36,8 @@ enum class ErrorType {
     ERROR_INDETERMINATE_EQUATION,        // 不定方程
     ERROR_SINGULAR_MATRIX,               // 矩阵奇异
     ERROR_INFINITY_SOLUTIONS,            // 无穷多解
-    ERROR_OVER_DETERMINED_EQUATIONS      // 方程组过定义
+    ERROR_OVER_DETERMINED_EQUATIONS,     // 方程组过定义
+    SIZE_NOT_MATCH                       // 维数不匹配
 };
 
 std::string GetErrorInfo(ErrorType err);
@@ -106,6 +107,8 @@ std::string GetErrorInfo(ErrorType err) {
     case ErrorType::ERROR_OVER_DETERMINED_EQUATIONS:
         return u8"方程组过定义";
         break;
+    case ErrorType::SIZE_NOT_MATCH:
+        return u8"size not match";
     default:
         assert(0);
         break;
@@ -3880,12 +3883,17 @@ public:
     /**
      *
      */
-    SymMat() noexcept {}
+    SymMat(int rows, int cols) noexcept;
 
     /**
-     *
+     * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
      */
-    SymMat(int rows, int cols) noexcept;
+    SymMat(const std::initializer_list<std::initializer_list<Node>> &lst) noexcept;
+
+    /**
+     * 从数值矩阵构造符号矩阵
+     */
+    SymMat(const Mat &rhs) noexcept;
 
     SymMat Clone() const noexcept;
 
@@ -3900,6 +3908,11 @@ public:
      * @exception runtime_error 列数不为1
      */
     SymVec ToSymVec() const;
+
+    /**
+     * 逐个元素转换为符号向量（列向量）。
+     */
+    SymVec ToSymVecOneByOne() const noexcept;
 
     /**
      * 得到数值矩阵。前提条件是矩阵内的元素均为数值节点，否则抛出异常。
@@ -3927,6 +3940,23 @@ public:
      * 如果rhs和自己的维数不匹配会触发assert。
      */
     SymMat operator-(const SymMat &rhs) const noexcept;
+
+    /**
+     *
+     * @exception MathError 维数不匹配
+     */
+    SymMat operator*(const SymMat &rhs) const;
+
+    /**
+     * 返回是否相等。
+     * 目前只能判断表达式树完全一致的情况。
+     * TODO 改为可以判断等价表达式
+     */
+    bool operator==(const SymMat &rhs) const noexcept;
+
+    const std::vector<Node> &operator[](int row) const noexcept;
+
+    std::vector<Node> &operator[](int row) noexcept;
 
     std::string ToString() const noexcept;
 
@@ -3959,6 +3989,8 @@ public:
 };
 
 SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
+
+std::ostream &operator<<(std::ostream &out, const SymMat &symMat) noexcept;
 
 } // namespace tomsolver
 
@@ -5116,6 +5148,26 @@ SymMat::SymMat(int rows, int cols) noexcept {
     }
 }
 
+SymMat::SymMat(const std::initializer_list<std::initializer_list<Node>> &lst) noexcept
+    : SymMat(static_cast<int>(lst.size()), static_cast<int>(lst.begin()->size())) {
+    for (auto it1 = lst.begin(); it1 != lst.end(); ++it1) {
+        std::size_t i = it1 - lst.begin();
+        for (auto it2 = it1->begin(); it2 != it1->end(); ++it2) {
+            std::size_t j = it2 - it1->begin();
+            auto &node = const_cast<Node &>(*it2);
+            data[i][j] = std::move(node);
+        }
+    }
+}
+
+SymMat::SymMat(const Mat &rhs) noexcept : SymMat(rhs.Rows(), rhs.Cols()) {
+    for (int i = 0; i < rhs.Rows(); ++i) {
+        for (int j = 0; j < rhs.Cols(); ++j) {
+            data[i][j] = Num(rhs[i][j]);
+        }
+    }
+}
+
 SymMat SymMat::Clone() const noexcept {
     SymMat ret(Rows(), Cols());
     for (int i = 0; i < Rows(); ++i) {
@@ -5151,6 +5203,17 @@ SymVec SymMat::ToSymVec() const {
         v.data[j][0] = tomsolver::Clone(data[j][0]);
     }
     return v;
+}
+
+SymVec SymMat::ToSymVecOneByOne() const noexcept {
+    SymVec ans(Rows() * Cols());
+    int index = 0;
+    for (auto &row : data) {
+        for (auto &node : row) {
+            ans[index++] = tomsolver::Clone(node);
+        }
+    }
+    return ans;
 }
 
 Mat SymMat::ToMat() const {
@@ -5215,6 +5278,47 @@ SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
     return ret;
 }
 
+SymMat SymMat::operator*(const SymMat &rhs) const {
+    if (Cols() != rhs.Rows()) {
+        throw MathError(ErrorType::SIZE_NOT_MATCH, "");
+    }
+    SymMat ans(Rows(), rhs.Cols());
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < rhs.Cols(); ++j) {
+            Node sum = data[i][0] * rhs[0][j];
+            for (int k = 1; k < Cols(); ++k) {
+                sum += data[i][k] * rhs[k][j];
+            }
+            ans[i][j] = Move(sum);
+        }
+    }
+    return ans;
+}
+
+bool SymMat::operator==(const SymMat &rhs) const noexcept {
+    if (rhs.Rows() != Rows() || rhs.Cols() != Cols()) {
+        return false;
+    }
+    for (int i = 0; i < Rows(); ++i) {
+        for (int j = 0; j < Cols(); ++j) {
+            if (!data[i][j]->Equal(rhs.data[i][j])) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+const std::vector<Node> &SymMat::operator[](int row) const noexcept {
+    assert(row < Rows());
+    return data[row];
+}
+
+std::vector<Node> &SymMat::operator[](int row) noexcept {
+    assert(row < Rows());
+    return data[row];
+}
+
 std::string SymMat::ToString() const noexcept {
     if (Empty())
         return "[]";
@@ -5276,6 +5380,10 @@ SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) n
         }
     }
     return ja;
+}
+
+std::ostream &operator<<(std::ostream &out, const SymMat &symMat) noexcept {
+    return out << symMat.ToString();
 }
 
 } // namespace tomsolver

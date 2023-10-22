@@ -51,6 +51,8 @@ std::string GetErrorInfo(ErrorType err) {
     case ErrorType::ERROR_OVER_DETERMINED_EQUATIONS:
         return u8"方程组过定义";
         break;
+    case ErrorType::SIZE_NOT_MATCH:
+        return u8"size not match";
     default:
         assert(0);
         break;

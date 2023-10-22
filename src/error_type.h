@@ -19,7 +19,8 @@ enum class ErrorType {
     ERROR_INDETERMINATE_EQUATION,        // 不定方程
     ERROR_SINGULAR_MATRIX,               // 矩阵奇异
     ERROR_INFINITY_SOLUTIONS,            // 无穷多解
-    ERROR_OVER_DETERMINED_EQUATIONS      // 方程组过定义
+    ERROR_OVER_DETERMINED_EQUATIONS,     // 方程组过定义
+    SIZE_NOT_MATCH                       // 维数不匹配
 };
 
 std::string GetErrorInfo(ErrorType err);

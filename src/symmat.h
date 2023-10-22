@@ -14,12 +14,17 @@ public:
     /**
      *
      */
-    SymMat() noexcept {}
+    SymMat(int rows, int cols) noexcept;
 
     /**
-     *
+     * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
      */
-    SymMat(int rows, int cols) noexcept;
+    SymMat(const std::initializer_list<std::initializer_list<Node>> &lst) noexcept;
+
+    /**
+     * 从数值矩阵构造符号矩阵
+     */
+    SymMat(const Mat &rhs) noexcept;
 
     SymMat Clone() const noexcept;
 
@@ -34,6 +39,11 @@ public:
      * @exception runtime_error 列数不为1
      */
     SymVec ToSymVec() const;
+
+    /**
+     * 逐个元素转换为符号向量（列向量）。
+     */
+    SymVec ToSymVecOneByOne() const noexcept;
 
     /**
      * 得到数值矩阵。前提条件是矩阵内的元素均为数值节点，否则抛出异常。
@@ -61,6 +71,23 @@ public:
      * 如果rhs和自己的维数不匹配会触发assert。
      */
     SymMat operator-(const SymMat &rhs) const noexcept;
+
+    /**
+     *
+     * @exception MathError 维数不匹配
+     */
+    SymMat operator*(const SymMat &rhs) const;
+
+    /**
+     * 返回是否相等。
+     * 目前只能判断表达式树完全一致的情况。
+     * TODO 改为可以判断等价表达式
+     */
+    bool operator==(const SymMat &rhs) const noexcept;
+
+    const std::vector<Node> &operator[](int row) const noexcept;
+
+    std::vector<Node> &operator[](int row) noexcept;
 
     std::string ToString() const noexcept;
 
@@ -93,5 +120,7 @@ public:
 };
 
 SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
+
+std::ostream &operator<<(std::ostream &out, const SymMat &symMat) noexcept;
 
 } // namespace tomsolver
