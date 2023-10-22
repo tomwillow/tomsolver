@@ -127,8 +127,8 @@ Mat Mat::operator*(const Mat &b) const noexcept {
     assert(cols == b.rows);
     Mat ans(rows, b.cols);
     for (int i = 0; i < rows; ++i) {
-        double sum = 0;
         for (int j = 0; j < b.cols; ++j) {
+            double sum = 0;
             for (int k = 0; k < cols; ++k) {
                 sum += data[i][k] * b[k][j];
             }

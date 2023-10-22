@@ -499,6 +499,16 @@ TEST(Linear, Base) {
     ASSERT_EQ(x, expected);
 }
 
+TEST(Mat, Multiply) {
+    MemoryLeakDetection mld;
+
+    Mat A = {{1, 2}, {3, 4}};
+    Mat B = {{6, 7}, {8, 9}};
+
+    Mat ret = A * B;
+    Mat expected = {{22, 25}, {50, 57}};
+    ASSERT_EQ(ret, expected);
+}
 TEST(Mat, Inverse) {
     MemoryLeakDetection mld;
 
