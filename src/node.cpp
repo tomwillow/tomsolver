@@ -605,9 +605,9 @@ std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node 
     return ret;
 }
 
-std::unordered_set<std::string> NodeImpl::GetAllVarNames() const noexcept {
+std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
     // 前序遍历。非递归实现。
-    std::unordered_set<std::string> ret;
+    std::set<std::string> ret;
 
     std::stack<const NodeImpl *> stk;
 

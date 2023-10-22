@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 #include <stack>
-#include <unordered_set>
+#include <set>
 #include <cassert>
 
 namespace tomsolver {
@@ -78,7 +78,7 @@ struct NodeImpl {
     /**
      * 返回表达式内出现的所有变量名。
      */
-    std::unordered_set<std::string> GetAllVarNames() const noexcept;
+    std::set<std::string> GetAllVarNames() const noexcept;
 
     /**
      * 检查整个节点数的parent指针是否正确。

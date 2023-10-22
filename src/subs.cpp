@@ -1,6 +1,6 @@
 #include "subs.h"
 
-#include <unordered_map>
+#include <map>
 
 namespace tomsolver {
 
@@ -8,7 +8,7 @@ namespace internal {
 
 class SubsFunctions {
 public:
-    static void SubsInner(Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
+    static void SubsInner(Node &node, const std::map<std::string, Node> &dict) noexcept {
         // 前序遍历。非递归实现。
 
         std::stack<NodeImpl *> stk;
@@ -65,7 +65,7 @@ Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noex
 
 Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
     Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
+    std::map<std::string, Node> dict;
     dict.insert({oldVar, Clone(newNode)});
     internal::SubsFunctions::SubsInner(ret, dict);
 #ifndef NDEBUG
@@ -82,7 +82,7 @@ Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVe
 Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
     assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
     Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
+    std::map<std::string, Node> dict;
     for (size_t i = 0; i < oldVars.size(); ++i) {
         dict.insert({oldVars[i], Clone(newNodes[i])});
     }
@@ -93,12 +93,12 @@ Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &ne
     return ret;
 }
 
-Node Subs(const Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
+Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept {
     Node node2 = Clone(node);
     return Subs(std::move(node2), dict);
 }
 
-Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexcept {
+Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept {
     Node ret = std::move(node);
     internal::SubsFunctions::SubsInner(ret, dict);
 #ifndef NDEBUG
@@ -107,14 +107,14 @@ Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexce
     return ret;
 }
 
-Node Subs(const Node &node, const std::unordered_map<std::string, double> &varValues) noexcept {
+Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept {
     Node node2 = Clone(node);
     return Subs(std::move(node2), varValues);
 }
 
-Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues) noexcept {
+Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
     Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
+    std::map<std::string, Node> dict;
     for (auto &pr : varValues) {
         dict.insert({pr.first, Num(pr.second)});
     }
@@ -132,7 +132,7 @@ Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
 
 Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
     Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
+    std::map<std::string, Node> dict;
     for (const auto &pr : varsTable) {
         dict.insert({pr.first, Num(pr.second)});
     }

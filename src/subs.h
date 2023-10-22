@@ -29,22 +29,22 @@ Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &ne
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(const Node &node, const std::unordered_map<std::string, Node> &dict) noexcept;
+Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexcept;
+Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(const Node &node, const std::unordered_map<std::string, double> &varValues) noexcept;
+Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues) noexcept;
+Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。

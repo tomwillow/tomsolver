@@ -4,7 +4,8 @@
 #include "mat.h"
 #include "vars_table.h"
 
-#include <unordered_map>
+#include <set>
+#include <map>
 
 namespace tomsolver {
 
@@ -58,14 +59,14 @@ public:
      */
     SymMat &Calc();
 
-    SymMat &Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
+    SymMat &Subs(const std::map<std::string, double> &varValues) noexcept;
 
     SymMat &Subs(const VarsTable &varsTable) noexcept;
 
     /**
      * 返回符号矩阵内出现的所有变量名。
      */
-    std::unordered_set<std::string> GetAllVarNames() const noexcept;
+    std::set<std::string> GetAllVarNames() const noexcept;
 
     /**
      * 如果rhs和自己的维数不匹配会触发assert。

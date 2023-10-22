@@ -25,7 +25,7 @@ VarsTable::VarsTable(const std::initializer_list<std::pair<std::string, double>>
     assert(vars.size() == table.size() && "vars is not unique");
 }
 
-VarsTable::VarsTable(const std::unordered_map<std::string, double> &table) noexcept
+VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
     : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
     int i = 0;
     for (auto &pr : table) {
@@ -55,19 +55,19 @@ void VarsTable::SetValues(const Vec &v) noexcept {
     }
 }
 
-std::unordered_map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
+std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
     return table.begin();
 }
 
-std::unordered_map<std::string, double>::const_iterator VarsTable::end() const noexcept {
+std::map<std::string, double>::const_iterator VarsTable::end() const noexcept {
     return table.end();
 }
 
-std::unordered_map<std::string, double>::const_iterator VarsTable::cbegin() const noexcept {
+std::map<std::string, double>::const_iterator VarsTable::cbegin() const noexcept {
     return table.cbegin();
 }
 
-std::unordered_map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
+std::map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
     return table.cend();
 }
 

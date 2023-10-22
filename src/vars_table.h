@@ -4,7 +4,7 @@
 #include "mat.h"
 
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include <iostream>
 
 namespace tomsolver {
@@ -34,7 +34,7 @@ public:
      * @param vars 变量数组
      * @param initValue 初值
      */
-    explicit VarsTable(const std::unordered_map<std::string, double> &table) noexcept;
+    explicit VarsTable(const std::map<std::string, double> &table) noexcept;
 
     /**
      * 变量数量。
@@ -56,13 +56,13 @@ public:
      */
     void SetValues(const Vec &v) noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator begin() const noexcept;
+    std::map<std::string, double>::const_iterator begin() const noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator end() const noexcept;
+    std::map<std::string, double>::const_iterator end() const noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator cbegin() const noexcept;
+    std::map<std::string, double>::const_iterator cbegin() const noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator cend() const noexcept;
+    std::map<std::string, double>::const_iterator cend() const noexcept;
 
     bool operator==(const VarsTable &rhs) const noexcept;
 
@@ -75,7 +75,7 @@ public:
 private:
     std::vector<std::string> vars;
     Vec values;
-    std::unordered_map<std::string, double> table;
+    std::map<std::string, double> table;
 };
 
 std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept;

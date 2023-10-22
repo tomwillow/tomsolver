@@ -105,7 +105,7 @@ SymMat &SymMat::Calc() {
     return *this;
 }
 
-SymMat &SymMat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
+SymMat &SymMat::Subs(const std::map<std::string, double> &varValues) noexcept {
     for (auto &row : data) {
         for (auto &node : row) {
             node = tomsolver::Subs(std::move(node), varValues);
@@ -123,8 +123,8 @@ SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
     return *this;
 }
 
-std::unordered_set<std::string> SymMat::GetAllVarNames() const noexcept {
-    std::unordered_set<std::string> ret;
+std::set<std::string> SymMat::GetAllVarNames() const noexcept {
+    std::set<std::string> ret;
     for (int i = 0; i < Rows(); ++i) {
         for (int j = 0; j < Cols(); ++j) {
             auto varNames = data[i][j]->GetAllVarNames();

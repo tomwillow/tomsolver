@@ -1399,7 +1399,6 @@ TEST(Solve, Case2) {
         fsolve(fun,x0)
 
      */
-
     GetConfig().nonlinearMethod = NonlinearMethod::LM;
 
     // 结束时恢复设置

@@ -116,11 +116,23 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
     Vec q = table.Values();  // x向量
 
     SymMat JaEqs = Jacobian(equations, table.Vars());
+
+    if (GetConfig().logLevel >= LogLevel::TRACE) {
+        cout << "Jacobi = " << JaEqs << endl;
+    }
+
     while (1) {
+        if (GetConfig().logLevel >= LogLevel::TRACE) {
+            cout << "iteration = " << it << endl;
+        }
 
         double mu = 1e-5; // LM方法的λ值
 
         Vec F = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算F
+
+        if (GetConfig().logLevel >= LogLevel::TRACE) {
+            cout << "F = " << F << endl;
+        }
 
         if (F == 0) // F值为0，满足方程组求根条件
             goto success;
@@ -131,6 +143,10 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
             Mat J = JaEqs.Clone().Subs(table).Calc().ToMat(); // 计算雅可比矩阵
 
+            if (GetConfig().logLevel >= LogLevel::TRACE) {
+                cout << "J = " << J << endl;
+            }
+
             // 说明：
             // 标准的LM方法中，d=-(J'*J+λI)^(-1)*J'F，其中J'*J是为了确保矩阵对称正定。但实践发现此时的d过大，很难收敛。
             // 所以只用了牛顿法的 d=-(J+λI)^(-1)*F
@@ -139,6 +155,10 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
             // 方向向量
             Vec d = SolveLinear(J + mu * Mat(J.Rows(), J.Cols()).Ones(), -F); // 得到d
+
+            if (GetConfig().logLevel >= LogLevel::TRACE) {
+                cout << "d = " << d << endl;
+            }
 
             double alpha = Armijo(
                 q, d,
@@ -195,6 +215,10 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
         if (it++ == GetConfig().maxIterations)
             goto overIterate;
+
+        if (GetConfig().logLevel >= LogLevel::TRACE) {
+            cout << std::string(20, '=') << endl;
+        }
     }
 
 success:

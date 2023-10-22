@@ -7,16 +7,16 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <math.h>
 #include <memory>
 #include <queue>
 #include <regex>
+#include <set>
 #include <stack>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 namespace tomsolver {
@@ -273,106 +273,106 @@ const char *Config::GetDoubleFormatStr() const noexcept {
 }
 
 } // namespace tomsolver
-// #pragma once
+//#pragma once
 //
-// #include "TVariableTable.h"
-// #include "error_type.h"
+//#include "TVariableTable.h"
+//#include "error_type.h"
 //
-// #include <queue>
-// #include <stack>
+//#include <queue>
+//#include <stack>
 //
-//  namespace tomsolver {
+// namespace tomsolver {
 //
-//  class TExpressionTree {
-//  private:
-// #define MAX_VAR_NAME 32 //同时也是浮点数转字符串的最大长度
-// #define MIN_DOUBLE 1e-6
+// class TExpressionTree {
+// private:
+//#define MAX_VAR_NAME 32 //同时也是浮点数转字符串的最大长度
+//#define MIN_DOUBLE 1e-6
 //
-//     void Release();
+//    void Release();
 //
-//     static std::string EnumOperatorToTChar(enumMathOperator eOperator);
+//    static std::string EnumOperatorToTChar(enumMathOperator eOperator);
 //
-//     bool isBaseOperator(char c);
-//     bool isDoubleChar(char c);
+//    bool isBaseOperator(char c);
+//    bool isDoubleChar(char c);
 //
-//     static enumMathOperator BaseOperatorCharToEnum(char c);
-//     static enumMathOperator Str2Function(std::string s);
+//    static enumMathOperator BaseOperatorCharToEnum(char c);
+//    static enumMathOperator Str2Function(std::string s);
 //
-//     TVariableTable *pVariableTable;
-//     int iVarAppearedCount;
-//     TNode *LastVarNode;
-//     // TVariableTable SelfVariableTable;
-//     void InQueue2PostQueue(std::queue<TNode *> &InOrder, std::vector<TNode *> &PostOrder);
-//     void ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder);
-//     static std::string Node2Str(const TNode &node);
-//     void BuildExpressionTree(std::vector<TNode *> &PostOrder);
-//     void Simplify(TNode *now);
-//     void GetNodeNum(TNode *now, int &n);
-//     int GetNodeNum(TNode *head);
-//     void DeleteNode(TNode *node);
-//     void DeleteNodeTraversal(TNode *node);
-//     TNode *CopyNodeTree(TNode *oldNode);
-//     // std::string  FindVariableTableFrom(const std::string varstr, std::vector<std::string >
-//     // newVariableTable);//查找变量是否在变量表中，没有则返回NULL
-//     void GetVariablePos(TNode *now, const std::string var, std::vector<TNode *> &VarsPos);
-//     void GetVariablePos(const std::string var, std::vector<TNode *> &VarsPos);
-//     void CopyVariableTable(std::vector<std::string> &Dest, const std::vector<std::string> source);
-//     // void ReplaceNodeVariable(TNode *now, std::vector<std::string > &newVariableTable);
-//     bool CanCalc(TNode *now);
-//     void LinkParent(TNode *child, TNode *ignore);
-//     TNode *NewNode(enumNodeType eType, enumMathOperator eOperator = MATH_NULL);
-//     void ReleaseVectorTNode(std::vector<TNode *> vec);
-//     void Vpa_inner(TNode *now);
-//     void Solve(TNode *now, TNode *&write_pos);
-//     void CheckOnlyOneVar(TNode *now);
-//     void Subs_inner(TNode *node, std::string ptVar, double value);
+//    TVariableTable *pVariableTable;
+//    int iVarAppearedCount;
+//    TNode *LastVarNode;
+//    // TVariableTable SelfVariableTable;
+//    void InQueue2PostQueue(std::queue<TNode *> &InOrder, std::vector<TNode *> &PostOrder);
+//    void ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder);
+//    static std::string Node2Str(const TNode &node);
+//    void BuildExpressionTree(std::vector<TNode *> &PostOrder);
+//    void Simplify(TNode *now);
+//    void GetNodeNum(TNode *now, int &n);
+//    int GetNodeNum(TNode *head);
+//    void DeleteNode(TNode *node);
+//    void DeleteNodeTraversal(TNode *node);
+//    TNode *CopyNodeTree(TNode *oldNode);
+//    // std::string  FindVariableTableFrom(const std::string varstr, std::vector<std::string >
+//    // newVariableTable);//查找变量是否在变量表中，没有则返回NULL
+//    void GetVariablePos(TNode *now, const std::string var, std::vector<TNode *> &VarsPos);
+//    void GetVariablePos(const std::string var, std::vector<TNode *> &VarsPos);
+//    void CopyVariableTable(std::vector<std::string> &Dest, const std::vector<std::string> source);
+//    // void ReplaceNodeVariable(TNode *now, std::vector<std::string > &newVariableTable);
+//    bool CanCalc(TNode *now);
+//    void LinkParent(TNode *child, TNode *ignore);
+//    TNode *NewNode(enumNodeType eType, enumMathOperator eOperator = MATH_NULL);
+//    void ReleaseVectorTNode(std::vector<TNode *> vec);
+//    void Vpa_inner(TNode *now);
+//    void Solve(TNode *now, TNode *&write_pos);
+//    void CheckOnlyOneVar(TNode *now);
+//    void Subs_inner(TNode *node, std::string ptVar, double value);
 //
-//  public:
-//     TNode *head;
-//     void Reset();
-//     void Vpa(bool bOutput);
-//     void LinkVariableTable(TVariableTable *p); //链接变量表
-//     void Read(const std::string expression, bool bOutput);
-//     void Read(double num, bool bOutput); //读入只有1个数字的表达式
+// public:
+//    TNode *head;
+//    void Reset();
+//    void Vpa(bool bOutput);
+//    void LinkVariableTable(TVariableTable *p); //链接变量表
+//    void Read(const std::string expression, bool bOutput);
+//    void Read(double num, bool bOutput); //读入只有1个数字的表达式
 //
-//     //所有操作符未完成
-//     std::string Solve(std::string &var,
-//                       double &value); //求解单变量方程 不验证可求解性，需提前调用HasOnlyOneVar确认 不改动表达式内容
-//     std::string OutputStr();
-//     void Simplify(bool bOutput);                            //化简
-//     std::string Diff(std::string var, int n, bool bOutput); //对变量求导
-//     void Subs(std::string ptVar, double value, bool output);
-//     void Subs(const std::string vars, const std::string nums,
-//               bool output); // vars为被替换变量，nums为替换表达式，以空格分隔
-//     void Subs(std::vector<std::string> VarsVector, std::vector<double> NumsVector, bool output);
-//     bool CanCalc();                     //检查是否还有变量存在，可以计算则返回true
-//     bool IsSingleVar();                 //检查是否为一元(not used)
-//     bool HasOnlyOneVar();               //只有一个变量（只有刚read才有效）
-//     bool CheckOnlyOneVar();             //只有一个变量（实时验证）
-//     double Value(bool operateHeadNode); //不验证可计算性，必须与CanCalc合用
-//     std::string
-//     Calc(double *result = NULL); //计算表达式的值，若传入了result则把结果存入。返回值为结果字符串或表达式串。
+//    //所有操作符未完成
+//    std::string Solve(std::string &var,
+//                      double &value); //求解单变量方程 不验证可求解性，需提前调用HasOnlyOneVar确认 不改动表达式内容
+//    std::string OutputStr();
+//    void Simplify(bool bOutput);                            //化简
+//    std::string Diff(std::string var, int n, bool bOutput); //对变量求导
+//    void Subs(std::string ptVar, double value, bool output);
+//    void Subs(const std::string vars, const std::string nums,
+//              bool output); // vars为被替换变量，nums为替换表达式，以空格分隔
+//    void Subs(std::vector<std::string> VarsVector, std::vector<double> NumsVector, bool output);
+//    bool CanCalc();                     //检查是否还有变量存在，可以计算则返回true
+//    bool IsSingleVar();                 //检查是否为一元(not used)
+//    bool HasOnlyOneVar();               //只有一个变量（只有刚read才有效）
+//    bool CheckOnlyOneVar();             //只有一个变量（实时验证）
+//    double Value(bool operateHeadNode); //不验证可计算性，必须与CanCalc合用
+//    std::string
+//    Calc(double *result = NULL); //计算表达式的值，若传入了result则把结果存入。返回值为结果字符串或表达式串。
 //
-//     TExpressionTree &operator=(const TExpressionTree &expr);
-//     TExpressionTree &operator+(const TExpressionTree &expr);
-//     TExpressionTree &operator*(double value);
-//     TExpressionTree &operator+(double value);
-//     TExpressionTree &operator-(double value);
+//    TExpressionTree &operator=(const TExpressionTree &expr);
+//    TExpressionTree &operator+(const TExpressionTree &expr);
+//    TExpressionTree &operator*(double value);
+//    TExpressionTree &operator+(double value);
+//    TExpressionTree &operator-(double value);
 //
-//     TExpressionTree();
-//     ~TExpressionTree();
-// };
+//    TExpressionTree();
+//    ~TExpressionTree();
+//};
 //
-// } // namespace tomsolver
-// #include "TExpressionTree.h"
+//} // namespace tomsolver
+//#include "TExpressionTree.h"
 //
-// #include "error_type.h"
+//#include "error_type.h"
 //
-// #include <string>
-// #define _USE_MATH_DEFINES
-// #include <math.h>
+//#include <string>
+//#define _USE_MATH_DEFINES
+//#include <math.h>
 //
-// #include <cassert>
+//#include <cassert>
 //
 //
 //
@@ -2115,7 +2115,7 @@ public:
      * @param vars 变量数组
      * @param initValue 初值
      */
-    explicit VarsTable(const std::unordered_map<std::string, double> &table) noexcept;
+    explicit VarsTable(const std::map<std::string, double> &table) noexcept;
 
     /**
      * 变量数量。
@@ -2137,13 +2137,13 @@ public:
      */
     void SetValues(const Vec &v) noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator begin() const noexcept;
+    std::map<std::string, double>::const_iterator begin() const noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator end() const noexcept;
+    std::map<std::string, double>::const_iterator end() const noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator cbegin() const noexcept;
+    std::map<std::string, double>::const_iterator cbegin() const noexcept;
 
-    std::unordered_map<std::string, double>::const_iterator cend() const noexcept;
+    std::map<std::string, double>::const_iterator cend() const noexcept;
 
     bool operator==(const VarsTable &rhs) const noexcept;
 
@@ -2156,7 +2156,7 @@ public:
 private:
     std::vector<std::string> vars;
     Vec values;
-    std::unordered_map<std::string, double> table;
+    std::map<std::string, double> table;
 };
 
 std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept;
@@ -2184,7 +2184,7 @@ VarsTable::VarsTable(const std::initializer_list<std::pair<std::string, double>>
     assert(vars.size() == table.size() && "vars is not unique");
 }
 
-VarsTable::VarsTable(const std::unordered_map<std::string, double> &table) noexcept
+VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
     : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
     int i = 0;
     for (auto &pr : table) {
@@ -2214,19 +2214,19 @@ void VarsTable::SetValues(const Vec &v) noexcept {
     }
 }
 
-std::unordered_map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
+std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
     return table.begin();
 }
 
-std::unordered_map<std::string, double>::const_iterator VarsTable::end() const noexcept {
+std::map<std::string, double>::const_iterator VarsTable::end() const noexcept {
     return table.end();
 }
 
-std::unordered_map<std::string, double>::const_iterator VarsTable::cbegin() const noexcept {
+std::map<std::string, double>::const_iterator VarsTable::cbegin() const noexcept {
     return table.cbegin();
 }
 
-std::unordered_map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
+std::map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
     return table.cend();
 }
 
@@ -2332,7 +2332,7 @@ struct NodeImpl {
     /**
      * 返回表达式内出现的所有变量名。
      */
-    std::unordered_set<std::string> GetAllVarNames() const noexcept;
+    std::set<std::string> GetAllVarNames() const noexcept;
 
     /**
      * 检查整个节点数的parent指针是否正确。
@@ -3144,9 +3144,9 @@ std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node 
     return ret;
 }
 
-std::unordered_set<std::string> NodeImpl::GetAllVarNames() const noexcept {
+std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
     // 前序遍历。非递归实现。
-    std::unordered_set<std::string> ret;
+    std::set<std::string> ret;
 
     std::stack<const NodeImpl *> stk;
 
@@ -3409,7 +3409,7 @@ public:
             u2->parent = mul.get();
             mul->right = std::move(u2);
 
-            // 连接父级
+            //连接父级
             if (parent) {
                 if (diffNode.isLeftChild) {
                     parent->left = std::move(mul);
@@ -3533,7 +3533,7 @@ public:
         case MathOperator::MATH_MULTIPLY: {
             bool leftIsNumber = node->left->type == NodeType::NUMBER;
             bool rightIsNumber = node->right->type == NodeType::NUMBER;
-            // 两个操作数中有一个是数字
+            //两个操作数中有一个是数字
             if (leftIsNumber) {
                 q.push(DiffNode(node->right.get(), false));
                 return;
@@ -3564,7 +3564,7 @@ public:
             q.push(DiffNode(addNode->left->left.get(), true));
             q.push(DiffNode(addNode->right->right.get(), false));
 
-            // 连接父级
+            //连接父级
             if (parent) {
                 if (diffNode.isLeftChild) {
                     parent->left = std::move(addNode);
@@ -3931,14 +3931,14 @@ public:
      */
     SymMat &Calc();
 
-    SymMat &Subs(const std::unordered_map<std::string, double> &varValues) noexcept;
+    SymMat &Subs(const std::map<std::string, double> &varValues) noexcept;
 
     SymMat &Subs(const VarsTable &varsTable) noexcept;
 
     /**
      * 返回符号矩阵内出现的所有变量名。
      */
-    std::unordered_set<std::string> GetAllVarNames() const noexcept;
+    std::set<std::string> GetAllVarNames() const noexcept;
 
     /**
      * 如果rhs和自己的维数不匹配会触发assert。
@@ -4023,22 +4023,22 @@ Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &ne
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(const Node &node, const std::unordered_map<std::string, Node> &dict) noexcept;
+Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexcept;
+Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(const Node &node, const std::unordered_map<std::string, double> &varValues) noexcept;
+Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues) noexcept;
+Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
@@ -4058,7 +4058,7 @@ namespace internal {
 
 class SubsFunctions {
 public:
-    static void SubsInner(Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
+    static void SubsInner(Node &node, const std::map<std::string, Node> &dict) noexcept {
         // 前序遍历。非递归实现。
 
         std::stack<NodeImpl *> stk;
@@ -4115,7 +4115,7 @@ Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noex
 
 Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
     Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
+    std::map<std::string, Node> dict;
     dict.insert({oldVar, Clone(newNode)});
     internal::SubsFunctions::SubsInner(ret, dict);
 #ifndef NDEBUG
@@ -4132,7 +4132,7 @@ Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVe
 Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
     assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
     Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
+    std::map<std::string, Node> dict;
     for (size_t i = 0; i < oldVars.size(); ++i) {
         dict.insert({oldVars[i], Clone(newNodes[i])});
     }
@@ -4143,12 +4143,12 @@ Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &ne
     return ret;
 }
 
-Node Subs(const Node &node, const std::unordered_map<std::string, Node> &dict) noexcept {
+Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept {
     Node node2 = Clone(node);
     return Subs(std::move(node2), dict);
 }
 
-Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexcept {
+Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept {
     Node ret = std::move(node);
     internal::SubsFunctions::SubsInner(ret, dict);
 #ifndef NDEBUG
@@ -4157,14 +4157,14 @@ Node Subs(Node &&node, const std::unordered_map<std::string, Node> &dict) noexce
     return ret;
 }
 
-Node Subs(const Node &node, const std::unordered_map<std::string, double> &varValues) noexcept {
+Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept {
     Node node2 = Clone(node);
     return Subs(std::move(node2), varValues);
 }
 
-Node Subs(Node &&node, const std::unordered_map<std::string, double> &varValues) noexcept {
+Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
     Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
+    std::map<std::string, Node> dict;
     for (auto &pr : varValues) {
         dict.insert({pr.first, Num(pr.second)});
     }
@@ -4182,7 +4182,7 @@ Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
 
 Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
     Node ret = std::move(node);
-    std::unordered_map<std::string, Node> dict;
+    std::map<std::string, Node> dict;
     for (const auto &pr : varsTable) {
         dict.insert({pr.first, Num(pr.second)});
     }
@@ -4270,14 +4270,14 @@ NodeImpl &NodeImpl::Simplify() noexcept {
             bool lChildIs1 = n->left->type == NodeType::NUMBER && n->left->value == 1.0;
             bool rChildIs1 = n->right->type == NodeType::NUMBER && n->right->value == 1.0;
 
-            // 任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
+            //任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
             if ((n->op == MathOperator::MATH_MULTIPLY && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_DIVIDE && lChildIs0) || (n->op == MathOperator::MATH_POWER && lChildIs0)) {
                 *n = NodeImpl(NodeType::NUMBER, MathOperator::MATH_NULL, 0, "");
                 return;
             }
 
-            // 任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
+            //任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
             if ((n->op == MathOperator::MATH_ADD && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_SUB && rChildIs0) ||
                 (n->op == MathOperator::MATH_MULTIPLY && (lChildIs1 || rChildIs1)) ||
@@ -4293,7 +4293,7 @@ NodeImpl &NodeImpl::Simplify() noexcept {
                 }
                 ret->parent = n->parent;
 
-                // 连接父级和剩余项
+                //连接父级和剩余项
                 NodeImpl *p = const_cast<NodeImpl *>(ret->parent);
                 if (p) {
                     if (p->left.get() == n) {
@@ -5029,11 +5029,23 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
     Vec q = table.Values();  // x向量
 
     SymMat JaEqs = Jacobian(equations, table.Vars());
+
+    if (GetConfig().logLevel >= LogLevel::TRACE) {
+        cout << "Jacobi = " << JaEqs << endl;
+    }
+
     while (1) {
+        if (GetConfig().logLevel >= LogLevel::TRACE) {
+            cout << "iteration = " << it << endl;
+        }
 
         double mu = 1e-5; // LM方法的λ值
 
         Vec F = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算F
+
+        if (GetConfig().logLevel >= LogLevel::TRACE) {
+            cout << "F = " << F << endl;
+        }
 
         if (F == 0) // F值为0，满足方程组求根条件
             goto success;
@@ -5044,6 +5056,10 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
             Mat J = JaEqs.Clone().Subs(table).Calc().ToMat(); // 计算雅可比矩阵
 
+            if (GetConfig().logLevel >= LogLevel::TRACE) {
+                cout << "J = " << J << endl;
+            }
+
             // 说明：
             // 标准的LM方法中，d=-(J'*J+λI)^(-1)*J'F，其中J'*J是为了确保矩阵对称正定。但实践发现此时的d过大，很难收敛。
             // 所以只用了牛顿法的 d=-(J+λI)^(-1)*F
@@ -5052,6 +5068,10 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
             // 方向向量
             Vec d = SolveLinear(J + mu * Mat(J.Rows(), J.Cols()).Ones(), -F); // 得到d
+
+            if (GetConfig().logLevel >= LogLevel::TRACE) {
+                cout << "d = " << d << endl;
+            }
 
             double alpha = Armijo(
                 q, d,
@@ -5108,6 +5128,10 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
         if (it++ == GetConfig().maxIterations)
             goto overIterate;
+
+        if (GetConfig().logLevel >= LogLevel::TRACE) {
+            cout << std::string(20, '=') << endl;
+        }
     }
 
 success:
@@ -5242,7 +5266,7 @@ SymMat &SymMat::Calc() {
     return *this;
 }
 
-SymMat &SymMat::Subs(const std::unordered_map<std::string, double> &varValues) noexcept {
+SymMat &SymMat::Subs(const std::map<std::string, double> &varValues) noexcept {
     for (auto &row : data) {
         for (auto &node : row) {
             node = tomsolver::Subs(std::move(node), varValues);
@@ -5260,8 +5284,8 @@ SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
     return *this;
 }
 
-std::unordered_set<std::string> SymMat::GetAllVarNames() const noexcept {
-    std::unordered_set<std::string> ret;
+std::set<std::string> SymMat::GetAllVarNames() const noexcept {
+    std::set<std::string> ret;
     for (int i = 0; i < Rows(); ++i) {
         for (int j = 0; j < Cols(); ++j) {
             auto varNames = data[i][j]->GetAllVarNames();
