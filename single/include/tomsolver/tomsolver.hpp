@@ -157,6 +157,8 @@ struct Config {
      */
     double initialValue = 1.0;
 
+    // 添加新的选项务必同步到Reset方法！
+
     Config();
 
     void Reset() noexcept;
@@ -262,6 +264,8 @@ void Config::Reset() noexcept {
     epsilon = 1.0e-9;
     logLevel = LogLevel::WARN;
     maxIterations = 100;
+    nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
+    initialValue = 1.0;
 }
 
 const char *Config::GetDoubleFormatStr() const noexcept {

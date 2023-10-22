@@ -91,6 +91,8 @@ void Config::Reset() noexcept {
     epsilon = 1.0e-9;
     logLevel = LogLevel::WARN;
     maxIterations = 100;
+    nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
+    initialValue = 1.0;
 }
 
 const char *Config::GetDoubleFormatStr() const noexcept {

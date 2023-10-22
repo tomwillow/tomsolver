@@ -32,6 +32,8 @@ struct Config {
      */
     double initialValue = 1.0;
 
+    // 添加新的选项务必同步到Reset方法！
+
     Config();
 
     void Reset() noexcept;

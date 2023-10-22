@@ -46,6 +46,11 @@ TEST(Solve, Base) {
     {
         GetConfig().nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
 
+        // 结束时恢复设置
+        std::shared_ptr<void> defer(nullptr, [&](...) {
+            GetConfig().Reset();
+        });
+
         VarsTable got = Solve(equations);
         cout << got << endl;
 
@@ -55,6 +60,11 @@ TEST(Solve, Base) {
     // LM方法
     {
         GetConfig().nonlinearMethod = NonlinearMethod::LM;
+
+        // 结束时恢复设置
+        std::shared_ptr<void> defer(nullptr, [&](...) {
+            GetConfig().Reset();
+        });
 
         VarsTable got = Solve(equations);
         cout << got << endl;
@@ -93,9 +103,6 @@ TEST(Solve, Case1) {
 
      */
 
-    // 构造方程组
-    SymVec f{{Parse("exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"), Parse("x1 * cos(x2) + x2 * sin(x1) - 0.5")}};
-
     // 设置初值为0.0
     GetConfig().initialValue = 0.0;
 
@@ -106,6 +113,9 @@ TEST(Solve, Case1) {
     std::shared_ptr<void> defer(nullptr, [&](...) {
         GetConfig().Reset();
     });
+
+    // 构造方程组
+    SymVec f{{Parse("exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"), Parse("x1 * cos(x2) + x2 * sin(x1) - 0.5")}};
 
     // 求解，结果保存到ans
     VarsTable ans = Solve(f);
@@ -135,6 +145,13 @@ TEST(Solve, Case2) {
         fsolve(fun,x0)
 
      */
+
+    GetConfig().nonlinearMethod = NonlinearMethod::LM;
+
+    // 结束时恢复设置
+    std::shared_ptr<void> defer(nullptr, [&](...) {
+        GetConfig().Reset();
+    });
 
     // 构造符号矩阵: [a b; c d]
     SymMat X({{Var("a"), Var("b")}, {Var("c"), Var("d")}});
