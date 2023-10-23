@@ -3298,9 +3298,17 @@ Node exp(T &&n) noexcept {
 
 namespace tomsolver {
 
-Node Diff(const Node &node, const std::string &varname, int i = 1) noexcept;
+/**
+ * node对varname求导。在node包含多个变量时，是对varname求偏导。
+ * @exception runtime_error 如果表达式内包含AND(&) OR(|) MOD(%)这类不能求导的运算符，则抛出异常
+ */
+Node Diff(const Node &node, const std::string &varname, int i = 1);
 
-Node Diff(Node &&node, const std::string &varname, int i = 1) noexcept;
+/**
+ * node对varname求导。在node包含多个变量时，是对varname求偏导。
+ * @exception runtime_error 如果表达式内包含AND(&) OR(|) MOD(%)这类不能求导的运算符，则抛出异常
+ */
+Node Diff(Node &&node, const std::string &varname, int i = 1);
 
 } // namespace tomsolver
 
@@ -3329,9 +3337,14 @@ public:
         }
     };
 
-    static void DiffOnce(std::unique_ptr<NodeImpl> &root, const std::string &varname) noexcept {
+    static void DiffOnce(std::unique_ptr<NodeImpl> &root, const std::string &varname) {
         std::queue<DiffNode> q;
-        q.push(DiffNode(root.get(), true));
+
+        if (root->type == NodeType::OPERATOR) {
+            DiffOnceOperator(root, q);
+        } else {
+            q.push(DiffNode(root.get(), true));
+        }
 
         while (!q.empty()) {
             DiffNode f = q.front();
@@ -3350,29 +3363,22 @@ public:
             case NodeType::NUMBER:
                 f.node->value = 0;
                 break;
-            case NodeType::OPERATOR:
-                DiffOnceOperator(root, f, q);
+            case NodeType::OPERATOR: {
+                if (f.isLeftChild) {
+                    DiffOnceOperator(const_cast<NodeImpl *>(f.node->parent)->left, q);
+                } else {
+                    DiffOnceOperator(const_cast<NodeImpl *>(f.node->parent)->right, q);
+                }
                 break;
+            }
             default:
                 assert(0 && "inner bug");
             }
         }
     }
 
-    static void DiffOnceOperator(std::unique_ptr<NodeImpl> &root, DiffNode diffNode, std::queue<DiffNode> &q) noexcept {
-        NodeImpl *parent = const_cast<NodeImpl *>(diffNode.node->parent);
-        auto GetUniquePtrNode = [&]() -> std::unique_ptr<NodeImpl> & {
-            if (parent) {
-                if (diffNode.isLeftChild) {
-                    return const_cast<NodeImpl *>(diffNode.node->parent)->left;
-                } else {
-                    return const_cast<NodeImpl *>(diffNode.node->parent)->right;
-                }
-            } else {
-                return root;
-            }
-        };
-        std::unique_ptr<NodeImpl> &node = GetUniquePtrNode();
+    static void DiffOnceOperator(std::unique_ptr<NodeImpl> &node, std::queue<DiffNode> &q) {
+        auto parent = node->parent;
 
         // 调用前提：node是1元操作符
         // 如果node的成员是数字，那么整个node变为数字节点，value=0，且返回true
@@ -3407,37 +3413,6 @@ public:
             return false;
         };
 
-        /**
-         * 应用链式法则：function(u)' = function(u) * u'
-         *      函数内会生成*节点，拷贝u节点并加入求导队列，自动转移node的所有权，并连接父节点。
-         * param[in/out] node为function节点
-         * param[in] u为function的操作数节点
-         * return 拷贝出来的u2节点的裸指针
-         */
-        auto ChainLaw = [&](std::unique_ptr<NodeImpl> &node, const std::unique_ptr<NodeImpl> &u) {
-            Node mul = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_MULTIPLY, 0, "");
-            mul->parent = parent;
-
-            node->parent = mul.get();
-            mul->left = std::move(node);
-
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
-            u2->parent = mul.get();
-            mul->right = std::move(u2);
-
-            // 连接父级
-            if (parent) {
-                if (diffNode.isLeftChild) {
-                    parent->left = std::move(mul);
-                } else {
-                    parent->right = std::move(mul);
-                }
-            } else {
-                root = std::move(mul);
-            }
-        };
-
         switch (node->op) {
         case MathOperator::MATH_NULL: {
             assert(0 && "inner bug");
@@ -3456,10 +3431,11 @@ public:
             }
 
             // sin(u)' = cos(u) * u'
-
             node->op = MathOperator::MATH_COS;
-
-            ChainLaw(node, node->left);
+            Node u2 = Clone(node->left);
+            q.push(DiffNode(u2.get(), false));
+            node = Move(node) * Move(u2);
+            node->parent = parent;
             break;
         }
         case MathOperator::MATH_COS: {
@@ -3468,13 +3444,11 @@ public:
             }
 
             // cos(u)' = -sin(u) * u'
-
-            Node negative = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_NEGATIVE, 0, "");
             node->op = MathOperator::MATH_SIN;
-            node->parent = negative.get();
-            negative->left = std::move(node);
-
-            ChainLaw(negative, negative->left->left);
+            Node u2 = Clone(node->left);
+            q.push(DiffNode(u2.get(), false));
+            node = -Move(node) * Move(u2);
+            node->parent = parent;
             break;
         }
         case MathOperator::MATH_TAN: {
@@ -3528,8 +3502,10 @@ public:
                 return;
 
             // (e^u)' = e^u * u'
-
-            ChainLaw(node, node->left);
+            Node u2 = Clone(node->left);
+            q.push(DiffNode(u2.get(), false));
+            node = Move(node) * Move(u2);
+            node->parent = parent;
             break;
         }
 
@@ -3565,32 +3541,14 @@ public:
             }
 
             // (u*v)' = u' * v + u * v'
-
-            Node addNode = std::make_unique<NodeImpl>(NodeType::OPERATOR, MathOperator::MATH_ADD, 0, "");
-            addNode->parent = parent;
-
-            Node &mulLeft = node;
-            Node mulRight = Clone(mulLeft);
-
-            mulLeft->parent = addNode.get();
-            addNode->left = std::move(mulLeft);
-
-            mulRight->parent = addNode.get();
-            addNode->right = std::move(mulRight);
-
-            q.push(DiffNode(addNode->left->left.get(), true));
-            q.push(DiffNode(addNode->right->right.get(), false));
-
-            // 连接父级
-            if (parent) {
-                if (diffNode.isLeftChild) {
-                    parent->left = std::move(addNode);
-                } else {
-                    parent->right = std::move(addNode);
-                }
-            } else {
-                root = std::move(addNode);
-            }
+            Node &u = node->left;
+            Node &v = node->right;
+            q.push(DiffNode(u.get(), true));
+            Node u2 = Clone(u);
+            Node v2 = Clone(v);
+            q.push(DiffNode(v2.get(), false));
+            node = Move(node) + Move(u2) * Move(v2);
+            node->parent = parent;
             return;
         }
         case MathOperator::MATH_DIVIDE: {
@@ -3617,7 +3575,6 @@ public:
             q.push(DiffNode(v2.get(), false));
             node = (Move(u) * Move(v) - Move(u2) * Move(v2)) / (Move(v3) ^ Num(2));
             node->parent = parent;
-
             return;
         }
         case MathOperator::MATH_POWER: {
@@ -3661,7 +3618,6 @@ public:
             q.push(DiffNode(vln_u.get(), false));
             node = Move(node) * std::move(vln_u);
             node->parent = parent;
-
             return;
         }
 
@@ -3825,12 +3781,12 @@ public:
 //	}
 //}
 
-Node Diff(const Node &node, const std::string &varname, int i) noexcept {
+Node Diff(const Node &node, const std::string &varname, int i) {
     Node node2 = Clone(node);
     return Diff(std::move(node2), varname, i);
 }
 
-Node Diff(Node &&node, const std::string &varname, int i) noexcept {
+Node Diff(Node &&node, const std::string &varname, int i) {
     assert(i > 0);
     Node n = std::move(node);
     while (i--) {
