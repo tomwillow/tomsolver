@@ -3318,11 +3318,11 @@ public:
             if (node->parent) {
                 if (node->parent->left.get() == node) {
                     if (!isLeftChild) {
-                        assert(0);
+                        assert(0 && "inner bug");
                     }
                 } else {
                     if (isLeftChild) {
-                        assert(0);
+                        assert(0 && "inner bug");
                     }
                 }
             }
@@ -3354,7 +3354,7 @@ public:
                 DiffOnceOperator(root, f, q);
                 break;
             default:
-                assert(0);
+                assert(0 && "inner bug");
             }
         }
     }
@@ -3440,7 +3440,7 @@ public:
 
         switch (node->op) {
         case MathOperator::MATH_NULL: {
-            assert(0);
+            assert(0 && "inner bug");
             break;
         }
         case MathOperator::MATH_POSITIVE:
@@ -3666,23 +3666,23 @@ public:
         }
 
         case MathOperator::MATH_AND: {
-            assert(0);
+            throw std::runtime_error("can not apply diff for AND(&) operator");
             return;
         }
         case MathOperator::MATH_OR: {
-            assert(0);
+            throw std::runtime_error("can not apply diff for OR(|) operator");
             return;
         }
         case MathOperator::MATH_MOD: {
-            assert(0);
+            throw std::runtime_error("can not apply diff for MOD(%) operator");
             return;
         }
         case MathOperator::MATH_LEFT_PARENTHESIS:
         case MathOperator::MATH_RIGHT_PARENTHESIS:
-            assert(0);
+            assert(0 && "inner bug");
             return;
         default:
-            assert(0);
+            assert(0 && "inner bug");
             return;
         }
     }
