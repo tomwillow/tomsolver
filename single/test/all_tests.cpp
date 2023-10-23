@@ -297,6 +297,31 @@ TEST(Diff, Multiply) {
         cout << dn->ToString() << endl;
     }
 }
+TEST(Diff, Divide) {
+    MemoryLeakDetection mld;
+
+    {
+        // diff(b/5, b) == 1/5
+        Node d = Diff(Var("b") / Num(5), "b");
+        d->CheckParent();
+        ASSERT_TRUE(d->Equal(Num(1.0 / 5.0)));
+    }
+
+    {
+        // diff(5/a, a) == -5/a^2
+        Node d = Diff(Num(5) / Var("a"), "a");
+        d->CheckParent();
+        ASSERT_TRUE(d->Equal(Num(-5) / (Var("a") ^ Num(2))));
+    }
+
+    {
+        // diff(x^2/sin(x), x) = (2*x*sin(x)-x^2*cos(x))/sin(x)^2
+        Node n = (Var("x") ^ Num(2)) / sin(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        ASSERT_EQ(dn->ToString(), "(2*x*sin(x)-x^2*cos(x))/sin(x)^2");
+    }
+}
 TEST(Diff, Log) {
     MemoryLeakDetection mld;
 

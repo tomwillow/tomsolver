@@ -294,7 +294,30 @@ public:
             return;
         }
         case MathOperator::MATH_DIVIDE: {
-            assert(0);
+            // bool leftIsNumber = node->left->type == NodeType::NUMBER;
+            bool rightIsNumber = node->right->type == NodeType::NUMBER;
+
+            // f(x)/number = f'(x)/number
+            if (rightIsNumber) {
+                q.push(DiffNode(node->left.get(), true));
+                return;
+            }
+
+            if (CullNumberMemberBinary()) {
+                return;
+            }
+
+            // (u/v)' = (u'v - uv')/(v^2)
+            Node &u = node->left;
+            Node &v = node->right;
+            Node u2 = Clone(u);
+            Node v2 = Clone(v);
+            Node v3 = Clone(v);
+            q.push(DiffNode(u.get(), true));
+            q.push(DiffNode(v2.get(), false));
+            node = (Move(u) * Move(v) - Move(u2) * Move(v2)) / (Move(v3) ^ Num(2));
+            node->parent = parent;
+
             return;
         }
         case MathOperator::MATH_POWER: {
@@ -373,76 +396,6 @@ public:
 //	case NODE_OPERATOR://当前为运算符节点
 //		switch (now->eOperator)
 //		{
-//		case MATH_DIVIDE:
-//			if (now->right->eType == NODE_NUMBER)// f(x)/number = f'(x)/number
-//			{
-//				Diff(now->left, var);
-//			}
-//			else
-//			{
-//				TNode *divide = now;
-//				TNode *u1 = now->left;
-//				TNode *v1 = now->right;
-//
-//				//创建减号
-//				TNode *substract;
-//				substract = NewNode(NODE_OPERATOR, MATH_SUB);
-//
-//				//创建2个乘号
-//				TNode *multiply1, *multiply2;
-//				multiply1 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//				multiply2 = NewNode(NODE_OPERATOR, MATH_MULTIPLY);
-//
-//				//创建乘方
-//				TNode *power;
-//				power = NewNode(NODE_OPERATOR, MATH_POWER);
-//
-//				//连接除号下面2个节点：-, ^
-//				divide->left = substract;
-//				substract->parent = divide;
-//				divide->right = power;
-//				power->parent = divide;
-//
-//				//连接减号下面2个节点
-//				substract->left = multiply1;
-//				multiply1->parent = substract;
-//				substract->right = multiply2;
-//				multiply2->parent = substract;
-//
-//				//连接乘号1下面2个节点：u1, v1
-//				multiply1->left = u1;
-//				u1->parent = multiply1;
-//				multiply1->right = v1;
-//				v1->parent = multiply1;
-//
-//				//创建u2, v2
-//				TNode *u2, *v2;
-//				u2 = CopyNodeTree(u1);
-//				v2 = CopyNodeTree(v1);
-//
-//				//连接乘号2下面的u2, v2
-//				multiply2->left = u2;
-//				u2->parent = multiply2;
-//				multiply2->right = v2;
-//				v2->parent = multiply2;
-//
-//				//创建v3, 2
-//				TNode *v3, *num2;
-//				v3 = CopyNodeTree(v1);
-//				num2 = NewNode(NODE_NUMBER);
-//				num2->value = 2;
-//
-//				//连接^下面的v3和2
-//				power->left = v3;
-//				v3->parent = power;
-//				power->right = num2;
-//				num2->parent = power;
-//
-//				Diff(u1, var);
-//				Diff(v2, var);
-//
-//			}
-//			return;
 //	case NODE_FUNCTION:
 //	{
 //
