@@ -45,7 +45,7 @@ std::string GetErrorInfo(ErrorType err);
 class MathError : public std::exception {
 public:
     MathError(ErrorType errorType, const std::string &extInfo)
-        : errorType(errorType), errInfo(GetErrorInfo(errorType) + " : " + extInfo) {}
+        : errorType(errorType), errInfo(GetErrorInfo(errorType) + ": \"" + extInfo + "\"") {}
 
     virtual const char *what() const noexcept override;
 
@@ -157,6 +157,13 @@ struct Config {
      */
     double initialValue = 1.0;
 
+    /**
+     * 是否允许不定方程存在。
+     * 例如，当等式数量大于未知数数量时，方程组成为不定方程；
+     * 如果允许，此时将返回一组特解；如果不允许，将抛出异常。
+     */
+    bool allowIndeterminateEquation = false;
+
     // 添加新的选项务必同步到Reset方法！
 
     Config();
@@ -266,6 +273,7 @@ void Config::Reset() noexcept {
     maxIterations = 100;
     nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
     initialValue = 1.0;
+    allowIndeterminateEquation = false;
 }
 
 const char *Config::GetDoubleFormatStr() const noexcept {
@@ -273,106 +281,106 @@ const char *Config::GetDoubleFormatStr() const noexcept {
 }
 
 } // namespace tomsolver
-//#pragma once
+// #pragma once
 //
-//#include "TVariableTable.h"
-//#include "error_type.h"
+// #include "TVariableTable.h"
+// #include "error_type.h"
 //
-//#include <queue>
-//#include <stack>
+// #include <queue>
+// #include <stack>
 //
-// namespace tomsolver {
+//  namespace tomsolver {
 //
-// class TExpressionTree {
-// private:
-//#define MAX_VAR_NAME 32 //同时也是浮点数转字符串的最大长度
-//#define MIN_DOUBLE 1e-6
+//  class TExpressionTree {
+//  private:
+// #define MAX_VAR_NAME 32 //同时也是浮点数转字符串的最大长度
+// #define MIN_DOUBLE 1e-6
 //
-//    void Release();
+//     void Release();
 //
-//    static std::string EnumOperatorToTChar(enumMathOperator eOperator);
+//     static std::string EnumOperatorToTChar(enumMathOperator eOperator);
 //
-//    bool isBaseOperator(char c);
-//    bool isDoubleChar(char c);
+//     bool isBaseOperator(char c);
+//     bool isDoubleChar(char c);
 //
-//    static enumMathOperator BaseOperatorCharToEnum(char c);
-//    static enumMathOperator Str2Function(std::string s);
+//     static enumMathOperator BaseOperatorCharToEnum(char c);
+//     static enumMathOperator Str2Function(std::string s);
 //
-//    TVariableTable *pVariableTable;
-//    int iVarAppearedCount;
-//    TNode *LastVarNode;
-//    // TVariableTable SelfVariableTable;
-//    void InQueue2PostQueue(std::queue<TNode *> &InOrder, std::vector<TNode *> &PostOrder);
-//    void ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder);
-//    static std::string Node2Str(const TNode &node);
-//    void BuildExpressionTree(std::vector<TNode *> &PostOrder);
-//    void Simplify(TNode *now);
-//    void GetNodeNum(TNode *now, int &n);
-//    int GetNodeNum(TNode *head);
-//    void DeleteNode(TNode *node);
-//    void DeleteNodeTraversal(TNode *node);
-//    TNode *CopyNodeTree(TNode *oldNode);
-//    // std::string  FindVariableTableFrom(const std::string varstr, std::vector<std::string >
-//    // newVariableTable);//查找变量是否在变量表中，没有则返回NULL
-//    void GetVariablePos(TNode *now, const std::string var, std::vector<TNode *> &VarsPos);
-//    void GetVariablePos(const std::string var, std::vector<TNode *> &VarsPos);
-//    void CopyVariableTable(std::vector<std::string> &Dest, const std::vector<std::string> source);
-//    // void ReplaceNodeVariable(TNode *now, std::vector<std::string > &newVariableTable);
-//    bool CanCalc(TNode *now);
-//    void LinkParent(TNode *child, TNode *ignore);
-//    TNode *NewNode(enumNodeType eType, enumMathOperator eOperator = MATH_NULL);
-//    void ReleaseVectorTNode(std::vector<TNode *> vec);
-//    void Vpa_inner(TNode *now);
-//    void Solve(TNode *now, TNode *&write_pos);
-//    void CheckOnlyOneVar(TNode *now);
-//    void Subs_inner(TNode *node, std::string ptVar, double value);
+//     TVariableTable *pVariableTable;
+//     int iVarAppearedCount;
+//     TNode *LastVarNode;
+//     // TVariableTable SelfVariableTable;
+//     void InQueue2PostQueue(std::queue<TNode *> &InOrder, std::vector<TNode *> &PostOrder);
+//     void ReadToInOrder(std::string expression, std::queue<TNode *> &InOrder);
+//     static std::string Node2Str(const TNode &node);
+//     void BuildExpressionTree(std::vector<TNode *> &PostOrder);
+//     void Simplify(TNode *now);
+//     void GetNodeNum(TNode *now, int &n);
+//     int GetNodeNum(TNode *head);
+//     void DeleteNode(TNode *node);
+//     void DeleteNodeTraversal(TNode *node);
+//     TNode *CopyNodeTree(TNode *oldNode);
+//     // std::string  FindVariableTableFrom(const std::string varstr, std::vector<std::string >
+//     // newVariableTable);//查找变量是否在变量表中，没有则返回NULL
+//     void GetVariablePos(TNode *now, const std::string var, std::vector<TNode *> &VarsPos);
+//     void GetVariablePos(const std::string var, std::vector<TNode *> &VarsPos);
+//     void CopyVariableTable(std::vector<std::string> &Dest, const std::vector<std::string> source);
+//     // void ReplaceNodeVariable(TNode *now, std::vector<std::string > &newVariableTable);
+//     bool CanCalc(TNode *now);
+//     void LinkParent(TNode *child, TNode *ignore);
+//     TNode *NewNode(enumNodeType eType, enumMathOperator eOperator = MATH_NULL);
+//     void ReleaseVectorTNode(std::vector<TNode *> vec);
+//     void Vpa_inner(TNode *now);
+//     void Solve(TNode *now, TNode *&write_pos);
+//     void CheckOnlyOneVar(TNode *now);
+//     void Subs_inner(TNode *node, std::string ptVar, double value);
 //
-// public:
-//    TNode *head;
-//    void Reset();
-//    void Vpa(bool bOutput);
-//    void LinkVariableTable(TVariableTable *p); //链接变量表
-//    void Read(const std::string expression, bool bOutput);
-//    void Read(double num, bool bOutput); //读入只有1个数字的表达式
+//  public:
+//     TNode *head;
+//     void Reset();
+//     void Vpa(bool bOutput);
+//     void LinkVariableTable(TVariableTable *p); //链接变量表
+//     void Read(const std::string expression, bool bOutput);
+//     void Read(double num, bool bOutput); //读入只有1个数字的表达式
 //
-//    //所有操作符未完成
-//    std::string Solve(std::string &var,
-//                      double &value); //求解单变量方程 不验证可求解性，需提前调用HasOnlyOneVar确认 不改动表达式内容
-//    std::string OutputStr();
-//    void Simplify(bool bOutput);                            //化简
-//    std::string Diff(std::string var, int n, bool bOutput); //对变量求导
-//    void Subs(std::string ptVar, double value, bool output);
-//    void Subs(const std::string vars, const std::string nums,
-//              bool output); // vars为被替换变量，nums为替换表达式，以空格分隔
-//    void Subs(std::vector<std::string> VarsVector, std::vector<double> NumsVector, bool output);
-//    bool CanCalc();                     //检查是否还有变量存在，可以计算则返回true
-//    bool IsSingleVar();                 //检查是否为一元(not used)
-//    bool HasOnlyOneVar();               //只有一个变量（只有刚read才有效）
-//    bool CheckOnlyOneVar();             //只有一个变量（实时验证）
-//    double Value(bool operateHeadNode); //不验证可计算性，必须与CanCalc合用
-//    std::string
-//    Calc(double *result = NULL); //计算表达式的值，若传入了result则把结果存入。返回值为结果字符串或表达式串。
+//     //所有操作符未完成
+//     std::string Solve(std::string &var,
+//                       double &value); //求解单变量方程 不验证可求解性，需提前调用HasOnlyOneVar确认 不改动表达式内容
+//     std::string OutputStr();
+//     void Simplify(bool bOutput);                            //化简
+//     std::string Diff(std::string var, int n, bool bOutput); //对变量求导
+//     void Subs(std::string ptVar, double value, bool output);
+//     void Subs(const std::string vars, const std::string nums,
+//               bool output); // vars为被替换变量，nums为替换表达式，以空格分隔
+//     void Subs(std::vector<std::string> VarsVector, std::vector<double> NumsVector, bool output);
+//     bool CanCalc();                     //检查是否还有变量存在，可以计算则返回true
+//     bool IsSingleVar();                 //检查是否为一元(not used)
+//     bool HasOnlyOneVar();               //只有一个变量（只有刚read才有效）
+//     bool CheckOnlyOneVar();             //只有一个变量（实时验证）
+//     double Value(bool operateHeadNode); //不验证可计算性，必须与CanCalc合用
+//     std::string
+//     Calc(double *result = NULL); //计算表达式的值，若传入了result则把结果存入。返回值为结果字符串或表达式串。
 //
-//    TExpressionTree &operator=(const TExpressionTree &expr);
-//    TExpressionTree &operator+(const TExpressionTree &expr);
-//    TExpressionTree &operator*(double value);
-//    TExpressionTree &operator+(double value);
-//    TExpressionTree &operator-(double value);
+//     TExpressionTree &operator=(const TExpressionTree &expr);
+//     TExpressionTree &operator+(const TExpressionTree &expr);
+//     TExpressionTree &operator*(double value);
+//     TExpressionTree &operator+(double value);
+//     TExpressionTree &operator-(double value);
 //
-//    TExpressionTree();
-//    ~TExpressionTree();
-//};
+//     TExpressionTree();
+//     ~TExpressionTree();
+// };
 //
-//} // namespace tomsolver
-//#include "TExpressionTree.h"
+// } // namespace tomsolver
+// #include "TExpressionTree.h"
 //
-//#include "error_type.h"
+// #include "error_type.h"
 //
-//#include <string>
-//#define _USE_MATH_DEFINES
-//#include <math.h>
+// #include <string>
+// #define _USE_MATH_DEFINES
+// #include <math.h>
 //
-//#include <cassert>
+// #include <cassert>
 //
 //
 //
@@ -1947,6 +1955,13 @@ std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept {
 
 namespace tomsolver {
 
+/**
+ * 求解线性方程组Ax = b。传入矩阵A，向量b，返回向量x。
+ * @exception MathError 奇异矩阵
+ * @exception MathError 矛盾方程组
+ * @exception MathError 不定方程（设置GetConfig().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
+ *
+ */
 Vec SolveLinear(const Mat &A, const Vec &b);
 
 } // namespace tomsolver
@@ -2077,9 +2092,11 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
     }
 
     if (RankA < cols && RankA == RankAb) {
-        if (bIndeterminateEquation)
-            throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION, "");
-        else
+        if (bIndeterminateEquation) {
+            if (!GetConfig().allowIndeterminateEquation)
+                throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION,
+                                std::string("A = ") + AA.ToString() + "\nb = " + bb.ToString());
+        } else
             throw MathError(ErrorType::ERROR_INFINITY_SOLUTIONS, "");
     }
 
@@ -3409,7 +3426,7 @@ public:
             u2->parent = mul.get();
             mul->right = std::move(u2);
 
-            //连接父级
+            // 连接父级
             if (parent) {
                 if (diffNode.isLeftChild) {
                     parent->left = std::move(mul);
@@ -3533,7 +3550,7 @@ public:
         case MathOperator::MATH_MULTIPLY: {
             bool leftIsNumber = node->left->type == NodeType::NUMBER;
             bool rightIsNumber = node->right->type == NodeType::NUMBER;
-            //两个操作数中有一个是数字
+            // 两个操作数中有一个是数字
             if (leftIsNumber) {
                 q.push(DiffNode(node->right.get(), false));
                 return;
@@ -3564,7 +3581,7 @@ public:
             q.push(DiffNode(addNode->left->left.get(), true));
             q.push(DiffNode(addNode->right->right.get(), false));
 
-            //连接父级
+            // 连接父级
             if (parent) {
                 if (diffNode.isLeftChild) {
                     parent->left = std::move(addNode);
@@ -4270,14 +4287,14 @@ NodeImpl &NodeImpl::Simplify() noexcept {
             bool lChildIs1 = n->left->type == NodeType::NUMBER && n->left->value == 1.0;
             bool rChildIs1 = n->right->type == NodeType::NUMBER && n->right->value == 1.0;
 
-            //任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
+            // 任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
             if ((n->op == MathOperator::MATH_MULTIPLY && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_DIVIDE && lChildIs0) || (n->op == MathOperator::MATH_POWER && lChildIs0)) {
                 *n = NodeImpl(NodeType::NUMBER, MathOperator::MATH_NULL, 0, "");
                 return;
             }
 
-            //任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
+            // 任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
             if ((n->op == MathOperator::MATH_ADD && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_SUB && rChildIs0) ||
                 (n->op == MathOperator::MATH_MULTIPLY && (lChildIs1 || rChildIs1)) ||
@@ -4293,7 +4310,7 @@ NodeImpl &NodeImpl::Simplify() noexcept {
                 }
                 ret->parent = n->parent;
 
-                //连接父级和剩余项
+                // 连接父级和剩余项
                 NodeImpl *p = const_cast<NodeImpl *>(ret->parent);
                 if (p) {
                     if (p->left.get() == n) {

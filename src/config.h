@@ -32,6 +32,13 @@ struct Config {
      */
     double initialValue = 1.0;
 
+    /**
+     * 是否允许不定方程存在。
+     * 例如，当等式数量大于未知数数量时，方程组成为不定方程；
+     * 如果允许，此时将返回一组特解；如果不允许，将抛出异常。
+     */
+    bool allowIndeterminateEquation = false;
+
     // 添加新的选项务必同步到Reset方法！
 
     Config();

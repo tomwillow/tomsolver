@@ -2,6 +2,7 @@
 #include "config.h"
 #include "functions.h"
 #include "linear.h"
+#include "parse.h"
 
 #include "memory_leak_detection.h"
 
@@ -97,4 +98,32 @@ TEST(SolveBase, Base) {
 
         ASSERT_EQ(got, expected);
     }
+}
+
+TEST(SolveBase, IndeterminateEquation) {
+    MemoryLeakDetection mld;
+
+    std::setlocale(LC_ALL, ".UTF8");
+
+    Node f1 = Parse("cos(x1) + cos(x1-x2) + cos(x1-x2-x3) - 1");
+    Node f2 = Parse("sin(x1) + sin(x1-x2) + sin(x1-x2-x3) + 2");
+
+    SymVec f{Move(f1), Move(f2)};
+
+    // 不定方程，应该抛出异常
+    try {
+        VarsTable got = Solve(f);
+        FAIL();
+    } catch (const MathError &e) { cout << e.what() << endl; }
+
+    // 设置为允许不定方程
+    GetConfig().allowIndeterminateEquation = true;
+
+    // 结束时恢复设置
+    std::shared_ptr<void> defer(nullptr, [&](...) {
+        GetConfig().Reset();
+    });
+
+    VarsTable got = Solve(f);
+    cout << got << endl;
 }

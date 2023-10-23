@@ -93,6 +93,7 @@ void Config::Reset() noexcept {
     maxIterations = 100;
     nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
     initialValue = 1.0;
+    allowIndeterminateEquation = false;
 }
 
 const char *Config::GetDoubleFormatStr() const noexcept {

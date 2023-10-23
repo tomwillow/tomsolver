@@ -131,9 +131,11 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
     }
 
     if (RankA < cols && RankA == RankAb) {
-        if (bIndeterminateEquation)
-            throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION, "");
-        else
+        if (bIndeterminateEquation) {
+            if (!GetConfig().allowIndeterminateEquation)
+                throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION,
+                                std::string("A = ") + AA.ToString() + "\nb = " + bb.ToString());
+        } else
             throw MathError(ErrorType::ERROR_INFINITY_SOLUTIONS, "");
     }
 
