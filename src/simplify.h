@@ -3,8 +3,6 @@
 
 namespace tomsolver {
 
-Node Simplify(const Node &node) noexcept;
-
-Node Simplify(Node &&node) noexcept;
+void Simplify(Node &node) noexcept;
 
 } // namespace tomsolver

@@ -1,5 +1,6 @@
 #include "diff.h"
 #include "functions.h"
+#include "parse.h"
 
 #include "memory_leak_detection.h"
 
@@ -337,5 +338,18 @@ TEST(Diff, Combine) {
         dn->CheckParent();
         cout << dn->ToString() << endl;
         ASSERT_EQ(dn->ToString(), "cos(cos(x)+sin(x))*(-(sin(x))+cos(x))");
+    }
+}
+
+TEST(Diff, Combine2) {
+    MemoryLeakDetection mld;
+
+    {
+        Node n = Parse("sin(x)/log(x*y)");
+        Node dn = Diff(n, "y");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+
+        // TODO 进一步化简
     }
 }

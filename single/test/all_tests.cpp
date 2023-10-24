@@ -501,6 +501,18 @@ TEST(Diff, Combine) {
         ASSERT_EQ(dn->ToString(), "cos(cos(x)+sin(x))*(-(sin(x))+cos(x))");
     }
 }
+TEST(Diff, Combine2) {
+    MemoryLeakDetection mld;
+
+    {
+        Node n = Parse("sin(x)/log(x*y)");
+        Node dn = Diff(n, "y");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+
+        // TODO 进一步化简
+    }
+}
 
 TEST(Function, Trigonometric) {
     MemoryLeakDetection mld;
@@ -1234,12 +1246,12 @@ TEST(Simplify, Base) {
     MemoryLeakDetection mld;
 
     Node n = sin(Num(0));
-    n->Simplify();
+    Simplify(n);
 
     ASSERT_EQ(n->ToString(), "0");
 
     Node n2 = Num(1) + Num(2) * Num(3);
-    n2->Simplify();
+    Simplify(n2);
 
     ASSERT_EQ(n2->ToString(), "7");
 
@@ -1250,14 +1262,14 @@ TEST(Simplify, Add) {
 
     {
         Node n = Var("x") + Num(0);
-        n->Simplify();
+        Simplify(n);
         ASSERT_EQ(n->ToString(), "x");
         n->CheckParent();
     }
 
     {
         Node n = Num(0) + Var("x");
-        n->Simplify();
+        Simplify(n);
         ASSERT_EQ(n->ToString(), "x");
         n->CheckParent();
     }
@@ -1267,21 +1279,21 @@ TEST(Simplify, Multiply) {
 
     {
         Node n = Var("x") * Num(1) * Var("y") * Var("z");
-        n->Simplify();
+        Simplify(n);
         ASSERT_EQ(n->ToString(), "x*y*z");
         n->CheckParent();
     }
 
     {
         Node n = cos(Var("x")) * Num(1);
-        n->Simplify();
+        Simplify(n);
         ASSERT_EQ(n->ToString(), "cos(x)");
         n->CheckParent();
     }
 
     {
         Node n = Num(1) * Var("x") * Num(0) + Num(0) * Var("y");
-        n->Simplify();
+        Simplify(n);
         ASSERT_EQ(n->ToString(), "0");
         n->CheckParent();
     }
@@ -1293,7 +1305,7 @@ TEST(Simplify, DoNotStackOverFlow) {
     auto pr = CreateRandomExpresionTree(100000);
     Node &node = pr.first;
 
-    node->Simplify();
+    Simplify(node);
 }
 
 TEST(SolveBase, FindAlphaByArmijo) {

@@ -71,11 +71,6 @@ struct NodeImpl {
     NodeImpl &Calc();
 
     /**
-     * 化简。
-     */
-    NodeImpl &Simplify() noexcept;
-
-    /**
      * 返回表达式内出现的所有变量名。
      */
     std::set<std::string> GetAllVarNames() const noexcept;
@@ -149,6 +144,7 @@ private:
     friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 
     friend class tomsolver::SymMat;
+    friend class SimplifyFunctions;
     friend class DiffFunctions;
     friend class SubsFunctions;
     friend class ParseFunctions;

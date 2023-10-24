@@ -1,6 +1,7 @@
 #include "diff.h"
 
 #include "functions.h"
+#include "simplify.h"
 
 #include <queue>
 
@@ -419,7 +420,7 @@ Node Diff(Node &&node, const std::string &varname, int i) {
     std::string s = n->ToString();
     n->CheckParent();
 #endif
-    n->Simplify();
+    Simplify(n);
 #ifndef NDEBUG
     n->CheckParent();
 #endif
