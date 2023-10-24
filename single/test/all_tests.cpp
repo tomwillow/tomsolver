@@ -250,6 +250,18 @@ TEST(Diff, Cos) {
         ASSERT_TRUE(dn->Equal(-sin(Var("x"))));
     }
 }
+TEST(Diff, Tan) {
+    MemoryLeakDetection mld;
+
+    {
+        // tan'x = 1/(cos(x)^2)
+        Node n = tan(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Num(1) / (cos(Var("x")) ^ Num(2))));
+    }
+}
 TEST(Diff, Sqrt) {
     MemoryLeakDetection mld;
 

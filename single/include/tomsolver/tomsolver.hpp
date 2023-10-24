@@ -3452,7 +3452,17 @@ public:
             break;
         }
         case MathOperator::MATH_TAN: {
-            assert(0);
+            if (CullNumberMember()) {
+                return;
+            }
+
+            // tan'u = 1/(cos(u)^2) * u'
+            node->op = MathOperator::MATH_COS;
+            Node &u = node->left;
+            Node u2 = Clone(u);
+            q.push(DiffNode(u2.get(), false));
+            node = Num(1) / (Move(node) ^ Num(2)) * Move(u2);
+            node->parent = parent;
             return;
         }
         case MathOperator::MATH_ARCSIN: {
