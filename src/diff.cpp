@@ -186,11 +186,31 @@ public:
             return;
         }
         case MathOperator::MATH_LOG2: {
-            assert(0);
+            if (CullNumberMember()) {
+                return;
+            }
+
+            // loga(u)' = 1/(u * ln(a)) * u'
+            double a = 2.0;
+            Node &u = node->left;
+            Node u2 = Clone(u);
+            q.push(DiffNode(u2.get(), false));
+            node = (Num(1) / (Move(u) * Num(std::log(a)))) * Move(u2);
+            node->parent = parent;
             return;
         }
         case MathOperator::MATH_LOG10: {
-            assert(0);
+            if (CullNumberMember()) {
+                return;
+            }
+
+            // loga(u)' = 1/(u * ln(a)) * u'
+            double a = 10.0;
+            Node &u = node->left;
+            Node u2 = Clone(u);
+            q.push(DiffNode(u2.get(), false));
+            node = (Num(1) / (Move(u) * Num(std::log(a)))) * Move(u2);
+            node->parent = parent;
             return;
         }
         case MathOperator::MATH_EXP: {

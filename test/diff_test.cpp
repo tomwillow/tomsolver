@@ -197,6 +197,32 @@ TEST(Diff, LogChain) {
     }
 }
 
+TEST(Diff, Log2) {
+    MemoryLeakDetection mld;
+
+    {
+        // loga(x)' = 1/(x * ln(a))
+        Node n = log2(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Num(1) / (Var("x") * Num(std::log(2)))));
+    }
+}
+
+TEST(Diff, Log10) {
+    MemoryLeakDetection mld;
+
+    {
+        // loga(x)' = 1/(x * ln(a))
+        Node n = log10(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Num(1) / (Var("x") * Num(std::log(10.0)))));
+    }
+}
+
 TEST(Diff, Power) {
     MemoryLeakDetection mld;
 
