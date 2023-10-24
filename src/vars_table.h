@@ -56,6 +56,11 @@ public:
      */
     void SetValues(const Vec &v) noexcept;
 
+    /**
+     * 返回是否有指定的变量。
+     */
+    bool Has(const std::string &varname) const noexcept;
+
     std::map<std::string, double>::const_iterator begin() const noexcept;
 
     std::map<std::string, double>::const_iterator end() const noexcept;

@@ -1627,6 +1627,11 @@ public:
      */
     void SetValues(const Vec &v) noexcept;
 
+    /**
+     * 返回是否有指定的变量。
+     */
+    bool Has(const std::string &varname) const noexcept;
+
     std::map<std::string, double>::const_iterator begin() const noexcept;
 
     std::map<std::string, double>::const_iterator end() const noexcept;
@@ -1702,6 +1707,10 @@ void VarsTable::SetValues(const Vec &v) noexcept {
     for (int i = 0; i < values.Rows(); ++i) {
         table[vars[i]] = v[i];
     }
+}
+
+bool VarsTable::Has(const std::string &varname) const noexcept {
+    return table.find(varname) != table.end();
 }
 
 std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {

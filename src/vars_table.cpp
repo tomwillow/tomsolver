@@ -55,6 +55,10 @@ void VarsTable::SetValues(const Vec &v) noexcept {
     }
 }
 
+bool VarsTable::Has(const std::string &varname) const noexcept {
+    return table.find(varname) != table.end();
+}
+
 std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
     return table.begin();
 }

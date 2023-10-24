@@ -77,4 +77,5 @@ add_subdirectory(single)
 
 if (ENABLE_EXAMPLES)
 	add_subdirectory(example/solve)
+	add_subdirectory(example/diff_machine)
 endif()
