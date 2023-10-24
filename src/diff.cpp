@@ -184,7 +184,16 @@ public:
             return;
         }
         case MathOperator::MATH_ARCTAN: {
-            assert(0);
+            if (CullNumberMember()) {
+                return;
+            }
+
+            // atan'u = 1/(1+u^2) * u'
+            Node &u = node->left;
+            Node u2 = Clone(u);
+            q.push(DiffNode(u2.get(), false));
+            node = (Num(1) / (Num(1) + Move(u) ^ Num(2))) * Move(u2);
+            node->parent = parent;
             return;
         }
         case MathOperator::MATH_SQRT: {

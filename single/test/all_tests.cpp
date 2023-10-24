@@ -286,6 +286,18 @@ TEST(Diff, ArcCos) {
         ASSERT_TRUE(dn->Equal(Num(-1) / sqrt(Num(1) - Var("x") ^ Num(2))));
     }
 }
+TEST(Diff, ArcTan) {
+    MemoryLeakDetection mld;
+
+    {
+        // atan'x = 1/(1+x^2)
+        Node n = atan(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Num(1) / (Num(1) + Var("x") ^ Num(2))));
+    }
+}
 TEST(Diff, Sqrt) {
     MemoryLeakDetection mld;
 
