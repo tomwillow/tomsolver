@@ -262,6 +262,18 @@ TEST(Diff, Tan) {
         ASSERT_TRUE(dn->Equal(Num(1) / (cos(Var("x")) ^ Num(2))));
     }
 }
+TEST(Diff, ArcSin) {
+    MemoryLeakDetection mld;
+
+    {
+        // asin'x = 1/sqrt(1-x^2)
+        Node n = asin(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Num(1) / sqrt(Num(1) - Var("x") ^ Num(2))));
+    }
+}
 TEST(Diff, Sqrt) {
     MemoryLeakDetection mld;
 
