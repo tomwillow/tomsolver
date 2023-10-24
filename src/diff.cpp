@@ -171,7 +171,16 @@ public:
             return;
         }
         case MathOperator::MATH_ARCCOS: {
-            assert(0);
+            if (CullNumberMember()) {
+                return;
+            }
+
+            // acos'u = -1/sqrt(1-u^2) * u'
+            Node &u = node->left;
+            Node u2 = Clone(u);
+            q.push(DiffNode(u2.get(), false));
+            node = (Num(-1) / sqrt(Num(1) - Move(u) ^ Num(2))) * Move(u2);
+            node->parent = parent;
             return;
         }
         case MathOperator::MATH_ARCTAN: {
