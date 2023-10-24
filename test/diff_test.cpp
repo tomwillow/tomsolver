@@ -75,6 +75,19 @@ TEST(Diff, Cos) {
     }
 }
 
+TEST(Diff, Sqrt) {
+    MemoryLeakDetection mld;
+
+    {
+        // sqrt(x)' = 1/(2*sqrt(x))
+        Node n = sqrt(Var("x"));
+        Node dn = Diff(n, "x");
+        dn->CheckParent();
+        cout << dn->ToString() << endl;
+        ASSERT_TRUE(dn->Equal(Num(1) / (Num(2) * sqrt(Var("x")))));
+    }
+}
+
 TEST(Diff, Exp) {
     MemoryLeakDetection mld;
 

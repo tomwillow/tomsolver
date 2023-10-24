@@ -3468,7 +3468,16 @@ public:
             return;
         }
         case MathOperator::MATH_SQRT: {
-            assert(0);
+            if (CullNumberMember()) {
+                return;
+            }
+
+            // sqrt(u)' = 1/(2*sqrt(u)) * u'
+            Node &u = node->left;
+            Node u2 = Clone(u);
+            q.push(DiffNode(u2.get(), false));
+            node = Num(1) / (Num(2) * Move(node)) * Move(u2);
+            node->parent = parent;
             return;
         }
         case MathOperator::MATH_LOG: {
