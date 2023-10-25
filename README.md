@@ -12,6 +12,11 @@ C++14 极简非线性方程组求解器
 
 # 特点
 
+* 简单！简单！会用fsolve就会用这个！
+* 单头文件，直接include完事儿！
+
+# 功能
+
 * 非线性方程组求解（牛顿-拉夫森法、LM方法）
 * 线性方程组求解（高斯-列主元迭代法、逆矩阵）
 * 矩阵、向量运算（矩阵求逆、向量叉乘等）
@@ -19,10 +24,14 @@ C++14 极简非线性方程组求解器
 
 # 跨平台支持
 
-支持的操作系统: Linux, Windows
-支持的编译器: g++, clang, msvc
+测试环境：
+* Linux: ubuntu 22.04 x86_64 gcc 11.3.0
+* Windows: windows10 x64 Visual Studio 2019
 
-代码已经在以上环境通过Github Actions测试。
+Github Actions自动测试：
+* Linux-latest gcc Debug&Release
+* Linux-latest clang Debug&Release
+* Windows-latest msvc Debug&Release
 
 # 例子
 
@@ -77,7 +86,7 @@ int main() {
 
 ## 1. header-only用法
 
-仅需要一个单头文件即可：
+仅需要包含一个单头文件即可：
 `single/include/tomsolver/tomsolver.hpp`
 
 ## 2. 二进制库+头文件用法
@@ -92,6 +101,28 @@ $ cmake --build . --target INSTALL
 
 然后添加include目录，并链接到库文件。
 
+# 目录结构
+
+* src: 源文件
+* test: 单元测试
+* single/include: header-only的tomsolver.hpp所在的文件夹
+* single/test: 所有单元测试整合为一个.cpp文件，用于测试tomsolver.hpp是否正确
+* scripts: 用于生成single下面的单文件头文件和单文件测试
+
+### 例子
+* example/solve: 解非线性方程的例子
+* example/diff_machine: 求导器，输入一行表达式，输出这个表达式的求导结果
+
+# E-mail
+
+tomwillow@qq.com
+
 # Thanks
 
 https://github.com/taehwan642
+
+# 微信交流群
+
+如果有问题想要交流或者想参与开发，或者想与作者联系，欢迎加作者微信tomwillow。备注tomsolver按照指引进群。
+
+如果您觉得此项目不错，请赏颗星吧！
