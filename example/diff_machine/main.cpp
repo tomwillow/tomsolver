@@ -8,9 +8,13 @@ using namespace tomsolver;
 
 const char usage[] = "=========== diff machine ===========\n"
                      "example: \n"
-                     ">>sin(x)\n"
+                     ">>x^5\n"
                      "ans = \n"
-                     "  cos(x)\n"
+                     "  5*x^4\n"
+                     "\n"
+                     "optional functions:\n"
+                     "sin(x) cos(x) tan(x) asin(x) acos(x) atan(x)\n"
+                     "sqrt(x) log(x) log2(x) log10(x) exp(x)\n"
                      "====================================\n";
 
 int main() {
