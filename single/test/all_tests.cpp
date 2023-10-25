@@ -271,7 +271,7 @@ TEST(Diff, ArcSin) {
         Node dn = Diff(n, "x");
         dn->CheckParent();
         cout << dn->ToString() << endl;
-        ASSERT_TRUE(dn->Equal(Num(1) / sqrt(Num(1) - Var("x") ^ Num(2))));
+        ASSERT_TRUE(dn->Equal(Num(1) / sqrt(Num(1) - (Var("x") ^ Num(2)))));
     }
 }
 TEST(Diff, ArcCos) {
@@ -283,7 +283,7 @@ TEST(Diff, ArcCos) {
         Node dn = Diff(n, "x");
         dn->CheckParent();
         cout << dn->ToString() << endl;
-        ASSERT_TRUE(dn->Equal(Num(-1) / sqrt(Num(1) - Var("x") ^ Num(2))));
+        ASSERT_TRUE(dn->Equal(Num(-1) / sqrt(Num(1) - (Var("x") ^ Num(2)))));
     }
 }
 TEST(Diff, ArcTan) {
@@ -295,7 +295,7 @@ TEST(Diff, ArcTan) {
         Node dn = Diff(n, "x");
         dn->CheckParent();
         cout << dn->ToString() << endl;
-        ASSERT_TRUE(dn->Equal(Num(1) / (Num(1) + Var("x") ^ Num(2))));
+        ASSERT_TRUE(dn->Equal(Num(1) / (Num(1) + (Var("x") ^ Num(2)))));
     }
 }
 TEST(Diff, Sqrt) {

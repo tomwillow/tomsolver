@@ -167,7 +167,7 @@ public:
             Node &u = node->left;
             Node u2 = Clone(u);
             q.push(DiffNode(u2.get(), false));
-            node = (Num(1) / sqrt(Num(1) - Move(u) ^ Num(2))) * Move(u2);
+            node = (Num(1) / sqrt(Num(1) - (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
         }
@@ -180,7 +180,7 @@ public:
             Node &u = node->left;
             Node u2 = Clone(u);
             q.push(DiffNode(u2.get(), false));
-            node = (Num(-1) / sqrt(Num(1) - Move(u) ^ Num(2))) * Move(u2);
+            node = (Num(-1) / sqrt(Num(1) - (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
         }
@@ -193,7 +193,7 @@ public:
             Node &u = node->left;
             Node u2 = Clone(u);
             q.push(DiffNode(u2.get(), false));
-            node = (Num(1) / (Num(1) + Move(u) ^ Num(2))) * Move(u2);
+            node = (Num(1) / (Num(1) + (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
         }
@@ -285,7 +285,7 @@ public:
         case MathOperator::MATH_MULTIPLY: {
             bool leftIsNumber = node->left->type == NodeType::NUMBER;
             bool rightIsNumber = node->right->type == NodeType::NUMBER;
-            //两个操作数中有一个是数字
+            // 两个操作数中有一个是数字
             if (leftIsNumber) {
                 q.push(DiffNode(node->right.get(), false));
                 return;

@@ -3168,7 +3168,7 @@ public:
             bool lChildIs1 = n->left->type == NodeType::NUMBER && n->left->value == 1.0;
             bool rChildIs1 = n->right->type == NodeType::NUMBER && n->right->value == 1.0;
 
-            // 任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
+            //任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
             if ((n->op == MathOperator::MATH_MULTIPLY && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_DIVIDE && lChildIs0) || (n->op == MathOperator::MATH_POWER && lChildIs0)) {
                 n = Num(0);
@@ -3176,7 +3176,7 @@ public:
                 return;
             }
 
-            // 任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
+            //任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
             if ((n->op == MathOperator::MATH_ADD && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_SUB && rChildIs0) ||
                 (n->op == MathOperator::MATH_MULTIPLY && (lChildIs1 || rChildIs1)) ||
@@ -4260,7 +4260,7 @@ public:
             Node &u = node->left;
             Node u2 = Clone(u);
             q.push(DiffNode(u2.get(), false));
-            node = (Num(1) / sqrt(Num(1) - Move(u) ^ Num(2))) * Move(u2);
+            node = (Num(1) / sqrt(Num(1) - (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
         }
@@ -4273,7 +4273,7 @@ public:
             Node &u = node->left;
             Node u2 = Clone(u);
             q.push(DiffNode(u2.get(), false));
-            node = (Num(-1) / sqrt(Num(1) - Move(u) ^ Num(2))) * Move(u2);
+            node = (Num(-1) / sqrt(Num(1) - (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
         }
@@ -4286,7 +4286,7 @@ public:
             Node &u = node->left;
             Node u2 = Clone(u);
             q.push(DiffNode(u2.get(), false));
-            node = (Num(1) / (Num(1) + Move(u) ^ Num(2))) * Move(u2);
+            node = (Num(1) / (Num(1) + (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
         }
