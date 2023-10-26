@@ -148,13 +148,11 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
             }
 
             // 说明：
-            // 标准的LM方法中，d=-(J'*J+λI)^(-1)*J'F，其中J'*J是为了确保矩阵对称正定。但实践发现此时的d过大，很难收敛。
-            // 所以只用了牛顿法的 d=-(J+λI)^(-1)*F
-
-            // enumError err = SolveLinear(J.Transpose()*J + mu * Matrix(J.rows, J.cols).Ones(), d, -J.Transpose()*F);
+            // 标准的LM方法中，d=-(J'*J+λI)^(-1)*J'F，其中J'*J是为了确保矩阵对称正定。有时d会过大，很难收敛。
+            // 牛顿法的 d=-(J+λI)^(-1)*F
 
             // 方向向量
-            Vec d = SolveLinear(J + mu * Mat(J.Rows(), J.Cols()).Ones(), -F); // 得到d
+            Vec d = SolveLinear(J.Transpose()*J + mu * Mat(J.Rows(), J.Cols()).Ones(), -(J.Transpose()*F).ToVec()); // 得到d
 
             if (GetConfig().logLevel >= LogLevel::TRACE) {
                 cout << "d = " << d << endl;

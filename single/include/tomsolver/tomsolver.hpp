@@ -3168,7 +3168,7 @@ public:
             bool lChildIs1 = n->left->type == NodeType::NUMBER && n->left->value == 1.0;
             bool rChildIs1 = n->right->type == NodeType::NUMBER && n->right->value == 1.0;
 
-            //任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
+            // 任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
             if ((n->op == MathOperator::MATH_MULTIPLY && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_DIVIDE && lChildIs0) || (n->op == MathOperator::MATH_POWER && lChildIs0)) {
                 n = Num(0);
@@ -3176,7 +3176,7 @@ public:
                 return;
             }
 
-            //任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
+            // 任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
             if ((n->op == MathOperator::MATH_ADD && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_SUB && rChildIs0) ||
                 (n->op == MathOperator::MATH_MULTIPLY && (lChildIs1 || rChildIs1)) ||
@@ -3995,13 +3995,12 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
             }
 
             // 说明：
-            // 标准的LM方法中，d=-(J'*J+λI)^(-1)*J'F，其中J'*J是为了确保矩阵对称正定。但实践发现此时的d过大，很难收敛。
-            // 所以只用了牛顿法的 d=-(J+λI)^(-1)*F
-
-            // enumError err = SolveLinear(J.Transpose()*J + mu * Matrix(J.rows, J.cols).Ones(), d, -J.Transpose()*F);
+            // 标准的LM方法中，d=-(J'*J+λI)^(-1)*J'F，其中J'*J是为了确保矩阵对称正定。有时d会过大，很难收敛。
+            // 牛顿法的 d=-(J+λI)^(-1)*F
 
             // 方向向量
-            Vec d = SolveLinear(J + mu * Mat(J.Rows(), J.Cols()).Ones(), -F); // 得到d
+            Vec d = SolveLinear(J.Transpose() * J + mu * Mat(J.Rows(), J.Cols()).Ones(),
+                                -(J.Transpose() * F).ToVec()); // 得到d
 
             if (GetConfig().logLevel >= LogLevel::TRACE) {
                 cout << "d = " << d << endl;
