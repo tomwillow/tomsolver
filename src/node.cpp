@@ -6,6 +6,9 @@
 
 #include <iostream>
 
+#include <regex>
+#include <utility>
+#include <forward_list>
 #include <vector>
 #include <limits>
 #include <type_traits>
@@ -19,7 +22,7 @@ namespace tomsolver {
 namespace internal {
 
 NodeImpl::NodeImpl(const NodeImpl &rhs) noexcept {
-    operator=(rhs);
+    *this = rhs;
 }
 
 NodeImpl &NodeImpl::operator=(const NodeImpl &rhs) noexcept {
@@ -44,23 +47,24 @@ NodeImpl &NodeImpl::operator=(const NodeImpl &rhs) noexcept {
 }
 
 NodeImpl::NodeImpl(NodeImpl &&rhs) noexcept {
-    operator=(std::move(rhs));
+    *this = std::move(rhs);
 }
 
 NodeImpl &NodeImpl::operator=(NodeImpl &&rhs) noexcept {
-    type = rhs.type;
-    op = rhs.op;
-    value = rhs.value;
-    varname = rhs.varname;
-    parent = rhs.parent;
-    left = std::move(rhs.left);
-    if (left)
+    type = std::exchange(rhs.type, {});
+    op = std::exchange(rhs.op, {});
+    value = std::exchange(rhs.value, {});
+    varname = std::exchange(rhs.varname, {});
+    parent = std::exchange(rhs.parent, {});
+    left = std::exchange(rhs.left, {});
+    if (left) {
         left->parent = this;
-    right = std::move(rhs.right);
-    if (right)
+    }
+    right = std::exchange(rhs.right, {});
+    if (right) {
         right->parent = this;
+    }
 
-    rhs.parent = nullptr;
     return *this;
 }
 
@@ -68,75 +72,70 @@ NodeImpl::~NodeImpl() {
     Release();
 }
 
-bool NodeImpl::Equal(const std::unique_ptr<NodeImpl> &rhs) const noexcept {
-    // 前序遍历。非递归实现。
+// 前序遍历。非递归实现。
+bool NodeImpl::Equal(const Node &rhs) const noexcept {
     if (this == rhs.get()) {
         return true;
     }
 
-    struct Item {
-        const NodeImpl *lhs;
-        const NodeImpl *rhs;
-    };
-    std::stack<Item> stk;
+    std::stack<std::tuple<const NodeImpl &, const NodeImpl &>> stk;
 
-    auto IsSame = [](const Item &item) -> bool {
-        return item.lhs->type == item.rhs->type && item.lhs->op == item.rhs->op && item.lhs->value == item.rhs->value &&
-               item.lhs->varname == item.rhs->varname;
+    auto tie = [](const NodeImpl &node) {
+        return std::tie(node.type, node.op, node.value, node.varname);
     };
-    if (!IsSame({this, rhs.get()})) {
+
+    auto IsSame = [&tie](const NodeImpl &lhs, const NodeImpl &rhs) {
+        return tie(lhs) == tie(rhs);
+    };
+
+    auto CheckChildren = [&stk](const Node &lhs, const Node &rhs) {
+        // ╔═════╦═════╦════════╦═════════╗
+        // ║ lhs ║ rhs ║ return ║ emplace ║
+        // ╠═════╬═════╬════════╬═════════╣
+        // ║ T   ║ T   ║ T      ║ T       ║
+        // ╟─────╫─────╫────────╫─────────╢
+        // ║ T   ║ F   ║ F      ║ F       ║
+        // ╟─────╫─────╫────────╫─────────╢
+        // ║ F   ║ T   ║ F      ║ F       ║
+        // ╟─────╫─────╫────────╫─────────╢
+        // ║ F   ║ F   ║ T      ║ F       ║
+        // ╚═════╩═════╩════════╩═════════╝
+        if (!lhs ^ !rhs) {
+            return false;
+        }
+
+        if (lhs && rhs) {
+            stk.emplace(*lhs, *rhs);
+        }
+
+        return true;
+    };
+
+    auto CheckNode = [&IsSame, &CheckChildren](const NodeImpl &lhs, const NodeImpl &rhs) {
+        return IsSame(lhs, rhs) && CheckChildren(lhs.left, rhs.left) && CheckChildren(lhs.right, rhs.right);
+    };
+
+    if (!CheckNode(*this, *rhs)) {
         return false;
     }
 
-    if (right && rhs->right) {
-        stk.push({right.get(), rhs->right.get()});
-    } else {
-        if (right == nullptr && rhs->right == nullptr) {
-        } else {
-            return false;
-        }
-    }
-    if (left && rhs->left) {
-        stk.push({left.get(), rhs->left.get()});
-    } else {
-        if (left == nullptr && rhs->left == nullptr) {
-        } else {
-            return false;
-        }
-    }
     while (!stk.empty()) {
-        Item item = stk.top();
+        const auto &[lhs, rhs] = stk.top();
         stk.pop();
 
         // 检查
-        if (!IsSame(item)) {
+        if (!CheckNode(lhs, rhs)) {
             return false;
         }
-
-        if (item.lhs->right && item.rhs->right) {
-            stk.push({item.lhs->right.get(), item.rhs->right.get()});
-        } else {
-            if (item.lhs->right == nullptr && item.rhs->right == nullptr) {
-            } else {
-                return false;
-            }
-        }
-        if (item.lhs->left && item.rhs->left) {
-            stk.push({item.lhs->left.get(), item.rhs->left.get()});
-        } else {
-            if (item.lhs->left == nullptr && item.rhs->left == nullptr) {
-            } else {
-                return false;
-            }
-        }
     }
+
     return true;
 }
 
 std::string NodeImpl::ToString() const noexcept {
-    std::string ret;
-    ToStringNonRecursively(ret);
-    return ret;
+    std::stringstream ss;
+    ToStringNonRecursively(ss);
+    return ss.str();
 }
 
 double NodeImpl::Vpa() const {
@@ -144,66 +143,64 @@ double NodeImpl::Vpa() const {
 }
 
 NodeImpl &NodeImpl::Calc() {
-    double d = Vpa();
-    type = NodeType::NUMBER;
+    auto d = Vpa();
+    *this = {};
     value = d;
-    varname.clear();
-    left = nullptr;
-    right = nullptr;
-    parent = nullptr;
+
     return *this;
 }
 
+// 前序遍历。非递归实现。
 void NodeImpl::CheckParent() const noexcept {
-    // 前序遍历。非递归实现。
+    std::stack<std::tuple<const NodeImpl &>> stk;
 
-    std::stack<const NodeImpl *> stk;
+    auto EmplaceNode = [&stk](const Node &node) {
+        if (node) {
+            stk.emplace(*node);
+        }
+    };
+    auto TryEmplaceChildren = [&EmplaceNode](const NodeImpl &node) {
+        node.CheckOperatorNum();
+        EmplaceNode(node.left);
+        EmplaceNode(node.right);
+    };
 
-    CheckOperatorNum();
-    if (right) {
-        stk.push(right.get());
-    }
-    if (left) {
-        stk.push(left.get());
-    }
+    TryEmplaceChildren(*this);
+
     while (!stk.empty()) {
-        const NodeImpl *f = stk.top();
+        const auto &[f] = stk.top();
         stk.pop();
 
 #ifndef NDEBUG
         // 检查
-        assert(f->parent);
-        bool isLeftChild = f->parent->left.get() == f;
-        bool isRightChild = f->parent->right.get() == f;
+        assert(f.parent);
+        bool isLeftChild = f.parent->left.get() == &f;
+        bool isRightChild = f.parent->right.get() == &f;
         assert(isLeftChild || isRightChild);
 #endif
 
-        f->CheckOperatorNum();
-
-        if (f->right) {
-            stk.push(f->right.get());
-        }
-        if (f->left) {
-            stk.push(f->left.get());
-        }
+        TryEmplaceChildren(f);
     }
 }
 
 void NodeImpl::CheckOperatorNum() const noexcept {
-    if (type != NodeType::OPERATOR)
+    if (type != NodeType::OPERATOR) {
         return;
+    }
 
-    if (GetOperatorNum(op) == 1) {
-        assert(left);
-        assert(right == nullptr);
-        return;
-    }
-    if (GetOperatorNum(op) == 2) {
-        assert(left);
+    switch (GetOperatorNum(op)) {
+    case 1:
+        assert(!right);
+        break;
+    case 2:
         assert(right);
-        return;
+        break;
+    default:
+        assert(0);
+        break;
     }
-    assert(0);
+
+    assert(left);
 }
 
 std::string NodeImpl::NodeToStr() const noexcept {
@@ -219,93 +216,91 @@ std::string NodeImpl::NodeToStr() const noexcept {
     return "";
 }
 
-void NodeImpl::ToStringRecursively(std::string &output) const noexcept {
-    // 中序遍历。递归实现。
-
+// 中序遍历。递归实现。
+void NodeImpl::ToStringRecursively(std::stringstream &output) const noexcept {
     switch (type) {
     case NodeType::NUMBER:
         // 如果当前节点是数值且小于0，且前面是-运算符，那么加括号
-        if (value < 0 && parent != nullptr && parent->right.get() == this && parent->op == MathOperator::MATH_SUB) {
-            output += "(" + NodeToStr() + ")";
+        if (value < 0 && parent && parent->right.get() == this && parent->op == MathOperator::MATH_SUB) {
+            output << "(" << NodeToStr() << ")";
         } else {
-            output += NodeToStr();
+            output << NodeToStr();
         }
         return;
     case NodeType::VARIABLE:
-        output += NodeToStr();
+        output << NodeToStr();
         return;
     case NodeType::OPERATOR:
         // pass
         break;
     }
 
-    int has_parenthesis = 0;
-    if (GetOperatorNum(op) == 1) // 一元运算符：函数和取负
+    auto hasParenthesis = false;
+    auto operatorNum = GetOperatorNum(op);
+    if (operatorNum == 1) // 一元运算符：函数和取负
     {
         if (op == MathOperator::MATH_POSITIVE || op == MathOperator::MATH_NEGATIVE) {
-            output += "(" + NodeToStr();
-            has_parenthesis = 1;
+            output << "(" << NodeToStr();
         } else {
-            output += NodeToStr() + "(";
-            has_parenthesis = 1;
+            output << NodeToStr() << "(";
         }
+        hasParenthesis = true;
     } else {
         // 非一元运算符才输出，即一元运算符的输出顺序已改变
-        if (type == NodeType::OPERATOR) // 本级为运算符
-            if (parent != nullptr)
-                if ((GetOperatorNum(parent->op) == 2 && // 父运算符存在，为二元，
-                     (Rank(parent->op) > Rank(op)       // 父级优先级高于本级->加括号
+        if (type == NodeType::OPERATOR && parent) { // 本级为运算符
+            if ((GetOperatorNum(parent->op) == 2 && // 父运算符存在，为二元，
+                 (Rank(parent->op) > Rank(op)       // 父级优先级高于本级->加括号
 
-                      || ( // 两级优先级相等
-                             Rank(parent->op) == Rank(op) &&
-                             (
-                                 // 本级为父级的右子树 且父级不满足结合律->加括号
-                                 (InAssociativeLaws(parent->op) == false && this == parent->right.get()) ||
-                                 // 两级都是右结合
-                                 (InAssociativeLaws(parent->op) == false && IsLeft2Right(op) == false)))))
+                  || ( // 两级优先级相等
+                         Rank(parent->op) == Rank(op) &&
+                         (
+                             // 本级为父级的右子树 且父级不满足结合律->加括号
+                             (InAssociativeLaws(parent->op) == false && this == parent->right.get()) ||
+                             // 两级都是右结合
+                             (InAssociativeLaws(parent->op) == false && IsLeft2Right(op) == false)))))
 
-                    //||
+                //||
 
-                    ////父运算符存在，为除号，且本级为分子，则添加括号
-                    //(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
-                ) {
-                    output += "(";
-                    has_parenthesis = 1;
-                }
+                ////父运算符存在，为除号，且本级为分子，则添加括号
+                //(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
+            ) {
+                output << "(";
+                hasParenthesis = true;
+            }
+        }
     }
 
-    if (left != nullptr) // 左遍历
+    if (left) // 左遍历
     {
         left->ToStringRecursively(output);
     }
 
-    if (GetOperatorNum(op) != 1) // 非一元运算符才输出，即一元运算符的输出顺序已改变
+    if (operatorNum != 1) // 非一元运算符才输出，即一元运算符的输出顺序已改变
     {
-        output += NodeToStr();
+        output << NodeToStr();
     }
 
-    if (right != nullptr) // 右遍历
+    if (right) // 右遍历
     {
         right->ToStringRecursively(output);
     }
 
     // 回到本级时补齐右括号，包住前面的东西
-    if (has_parenthesis) {
-        output += ")";
+    if (hasParenthesis) {
+        output << ")";
     }
 }
 
-void NodeImpl::ToStringNonRecursively(std::string &output) const noexcept {
-    // 中序遍历。非递归实现。
-    std::stack<const NodeImpl *> stk;
-    const NodeImpl *cur = this;
+// 中序遍历。非递归实现。
+void NodeImpl::ToStringNonRecursively(std::stringstream &output) const noexcept {
+    std::stack<std::tuple<const NodeImpl &>> stk;
 
     NodeImpl rightParenthesis(NodeType::OPERATOR, MathOperator::MATH_RIGHT_PARENTHESIS, 0, "");
 
-    auto AddLeftLine = [&](const NodeImpl *cur) {
+    auto AddLeftLine = [&stk, &output, &rightParenthesis](const NodeImpl *cur) {
         while (cur) {
             if (cur->type != NodeType::OPERATOR) {
-                stk.push(cur);
+                stk.emplace(*cur);
                 cur = cur->left.get();
                 continue;
             }
@@ -317,168 +312,162 @@ void NodeImpl::ToStringNonRecursively(std::string &output) const noexcept {
             if (GetOperatorNum(cur->op) == 1) {
                 if ((cur->op == MathOperator::MATH_POSITIVE || cur->op == MathOperator::MATH_NEGATIVE) &&
                     (cur->left->type != NodeType::OPERATOR)) {
-                    output += cur->NodeToStr();
+                    output << cur->NodeToStr();
                     cur = cur->left.get();
                     continue;
                 }
-                output += cur->NodeToStr() + "(";
+                output << cur->NodeToStr() << "(";
 
                 // not push this op
 
                 // push ')'
-                stk.push(&rightParenthesis);
+                stk.emplace(rightParenthesis);
 
                 cur = cur->left.get();
                 continue;
             }
 
             // 二元运算符的特殊处理：
-            const NodeImpl *curParent = cur->parent;
-            if (curParent != nullptr) {
-                if ((GetOperatorNum(curParent->op) == 2 && // 父运算符存在，为二元，
-                     (Rank(curParent->op) > Rank(cur->op)  // 父级优先级高于本级->加括号
+            if (cur->parent) {
+                if ((GetOperatorNum(cur->parent->op) == 2 && // 父运算符存在，为二元，
+                     (Rank(cur->parent->op) > Rank(cur->op)  // 父级优先级高于本级->加括号
 
                       || ( // 两级优先级相等
-                             Rank(curParent->op) == Rank(cur->op) &&
+                             Rank(cur->parent->op) == Rank(cur->op) &&
                              (
                                  // 本级为父级的右子树 且父级不满足结合律->加括号
-                                 (InAssociativeLaws(curParent->op) == false && cur == curParent->right.get()) ||
+                                 (InAssociativeLaws(cur->parent->op) == false && cur == cur->parent->right.get()) ||
                                  // 两级都是右结合
-                                 (InAssociativeLaws(curParent->op) == false && IsLeft2Right(cur->op) == false)))))
+                                 (InAssociativeLaws(cur->parent->op) == false && IsLeft2Right(cur->op) == false)))))
 
                     //||
 
                     ////父运算符存在，为除号，且本级为分子，则添加括号
                     //(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
                 ) {
-                    output += "(";
+                    output << "(";
 
                     // push ')'
-                    stk.push(&rightParenthesis);
+                    stk.emplace(rightParenthesis);
 
-                    stk.push(cur);
+                    stk.emplace(*cur);
                     cur = cur->left.get();
                     continue;
                 }
             }
 
-            stk.push(cur);
+            stk.emplace(*cur);
             cur = cur->left.get();
         }
     };
-    AddLeftLine(cur);
+
+    AddLeftLine(this);
 
     while (!stk.empty()) {
-        cur = stk.top();
+        const auto &[cur] = stk.top();
         stk.pop();
 
         // output
 
         // 负数的特殊处理
         // 如果当前节点是数值且小于0，且前面是-运算符，那么加括号
-        if (cur->type == NodeType::NUMBER && cur->value < 0 && cur->parent != nullptr &&
-            cur->parent->right.get() == cur && cur->parent->op == MathOperator::MATH_SUB) {
-            output += "(" + cur->NodeToStr() + ")";
+        if (cur.type == NodeType::NUMBER && cur.value < 0 && cur.parent && cur.parent->right.get() == &cur &&
+            cur.parent->op == MathOperator::MATH_SUB) {
+            output << "(" << cur.NodeToStr() << ")";
         } else {
-            output += cur->NodeToStr();
+            output << cur.NodeToStr();
         }
 
-        if (cur->right) {
-            cur = cur->right.get();
-            AddLeftLine(cur);
+        if (cur.right) {
+            AddLeftLine(cur.right.get());
             continue;
         }
     }
 }
 
+// 后序遍历。递归实现。
 double NodeImpl::VpaRecursively() const {
-    // 后序遍历。递归实现。
 
-    double l = 0, r = 0;
-    if (left != nullptr)
-        l = left->Vpa();
-    if (right != nullptr)
-        r = right->Vpa();
+    auto vpa = [](const Node &node) {
+        return node ? node->Vpa() : 0;
+    };
 
-    if (type == NodeType::NUMBER) {
+    switch (type) {
+    case NodeType::NUMBER:
         return value;
-    }
 
-    if (type == NodeType::VARIABLE) {
+    case NodeType::VARIABLE:
         throw std::runtime_error("has variable. can not calculate to be a number");
-    }
 
-    if (type == NodeType::OPERATOR) {
-        assert((GetOperatorNum(op) == 1 && left != nullptr && right == nullptr) ||
-               (GetOperatorNum(op) == 2 && left != nullptr && right != nullptr));
-        return tomsolver::Calc(op, l, r);
+    case NodeType::OPERATOR:
+        assert((GetOperatorNum(op) == 1 && left && right == nullptr) || (GetOperatorNum(op) == 2 && left && right));
+        return tomsolver::Calc(op, vpa(left), vpa(right));
     }
 
     throw std::runtime_error("unsupported node type");
 }
 
+// 后序遍历。非递归实现。
 double NodeImpl::VpaNonRecursively() const {
-    // 后序遍历。非递归实现。
 
-    std::stack<const NodeImpl *> stk;
-    std::vector<const NodeImpl *> revertedPostOrder;
+    std::stack<std::tuple<const NodeImpl &>> stk;
+    std::forward_list<std::tuple<const NodeImpl &>> revertedPostOrder;
 
     // ==== Part I ====
 
     // 借助一个栈，得到反向的后序遍历序列，结果保存在revertedPostOrder
-    stk.push(this);
+    stk.emplace(*this);
 
-    while (1) {
-        if (stk.empty()) {
-            break;
-        }
-
-        auto f = stk.top();
+    while (!stk.empty()) {
+        const auto &[node] = stk.top();
         stk.pop();
 
-        if (f->left) {
-            stk.push(f->left.get());
+        if (node.left) {
+            stk.emplace(*node.left);
         }
 
-        if (f->right) {
-            stk.push(f->right.get());
+        if (node.right) {
+            stk.emplace(*node.right);
         }
 
-        revertedPostOrder.push_back(f);
+        revertedPostOrder.emplace_front(node);
     }
 
     // ==== Part II ====
     // revertedPostOrder的反向序列是一组逆波兰表达式，根据这组逆波兰表达式可以计算出表达式的值
     // calcStk是用来计算值的临时栈，计算完成后calcStk的size应该为1
     std::stack<double> calcStk;
-    for (auto it = revertedPostOrder.rbegin(); it != revertedPostOrder.rend(); ++it) {
-        auto f = *it;
+    // for (auto it = revertedPostOrder.rbegin(); it != revertedPostOrder.rend(); ++it) {
+    for (const auto &[node] : revertedPostOrder) {
+        switch (node.type) {
+        case NodeType::NUMBER:
+            calcStk.emplace(node.value);
+            break;
 
-        if (f->type == NodeType::NUMBER) {
-            calcStk.push(f->value);
-            continue;
-        }
+        case NodeType::OPERATOR: {
+            auto r = std::numeric_limits<double>::quiet_NaN();
 
-        if (f->type == NodeType::OPERATOR) {
-            if (GetOperatorNum(f->op) == 1) {
-                calcStk.top() = tomsolver::Calc(f->op, calcStk.top(), std::numeric_limits<double>::quiet_NaN());
-                continue;
-            }
-
-            if (GetOperatorNum(f->op) == 2) {
-                double r = calcStk.top();
+            switch (GetOperatorNum(node.op)) {
+            case 1:
+                break;
+            case 2:
+                r = calcStk.top();
                 calcStk.pop();
-
-                double &l = calcStk.top();
-                calcStk.top() = tomsolver::Calc(f->op, l, r);
-                continue;
+                break;
+            default:
+                assert(0 && "[VpaNonRecursively] unsupported operator num");
+                break;
             }
 
-            assert(0 && "[VpaNonRecursively] unsupported operator num");
+            auto &l = calcStk.top();
+            l = tomsolver::Calc(node.op, l, r);
+            break;
         }
 
-        // 其他情况抛异常
-        throw std::runtime_error("wrong");
+        default:
+            throw std::runtime_error("wrong");
+            break;
+        }
     }
 
     assert(calcStk.size() == 1);
@@ -486,156 +475,147 @@ double NodeImpl::VpaNonRecursively() const {
     return calcStk.top();
 }
 
+// 后序遍历。因为要在左右儿子都没有的情况下删除节点。
 void NodeImpl::Release() noexcept {
-    // 后序遍历。因为要在左右儿子都没有的情况下删除节点。
-
     std::stack<Node> stk;
 
-    if (left) {
-        stk.push(std::move(left));
-    }
-
-    if (right) {
-        stk.push(std::move(right));
-    }
-
-    while (1) {
-        if (stk.empty()) {
-            break;
+    auto emplaceNode = [&stk](Node node) {
+        if (node) {
+            stk.emplace(std::move(node));
         }
-
-        Node f = std::move(stk.top());
-        stk.pop();
-
-        if (f->left) {
-            stk.push(std::move(f->left));
-        }
-
-        if (f->right) {
-            stk.push(std::move(f->right));
-        }
-
-        assert(f->left == nullptr && f->right == nullptr);
-
-        // 这里如果把f填入vector，最后翻转。得到的序列就是后序遍历。
-
-        // 这里f会被自动释放。
-    }
-}
-
-std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept {
-    auto ret = std::make_unique<NodeImpl>(rhs->type, rhs->op, rhs->value, rhs->varname);
-    if (rhs->left) {
-        ret->left = Clone(rhs->left);
-        ret->left->parent = ret.get();
-    }
-
-    if (rhs->right) {
-        ret->right = Clone(rhs->right);
-        ret->right->parent = ret.get();
-    }
-    return ret;
-}
-
-std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept {
-    // 前序遍历。非递归实现。
-
-    struct Item {
-        const NodeImpl *rhsCur;                      // 当前遍历的rhs树的节点
-        const NodeImpl *parent;                      // 当前克隆节点应该连接的父节点
-        std::unique_ptr<NodeImpl> &childRefOfParent; // 当前克隆节点对应的父节点的left或者right成员的引用
     };
 
-    auto ret = std::make_unique<NodeImpl>(rhs->type, rhs->op, rhs->value, rhs->varname);
-    std::stack<Item> stk;
+    auto emplaceChildren = [&emplaceNode](NodeImpl &node) {
+        emplaceNode(std::move(node.left));
+        emplaceNode(std::move(node.right));
+    };
 
-    if (rhs->right) {
-        stk.push({rhs->right.get(), ret.get(), ret->right});
-    }
-    if (rhs->left) {
-        stk.push({rhs->left.get(), ret.get(), ret->left});
-    }
+    emplaceChildren(*this);
+
     while (!stk.empty()) {
-        Item item = stk.top();
-        const NodeImpl *rhsCur = item.rhsCur;
+        auto node = std::move(stk.top());
         stk.pop();
 
-        // 复制
-        auto clonedNode = std::make_unique<NodeImpl>(rhsCur->type, rhsCur->op, rhsCur->value, rhsCur->varname);
-        clonedNode->parent = item.parent;
-        item.childRefOfParent = std::move(clonedNode);
-        std::unique_ptr<NodeImpl> &cur = item.childRefOfParent;
+        emplaceChildren(*node);
 
-        if (rhsCur->right) {
-            stk.push({rhsCur->right.get(), cur.get(), cur->right});
-        }
-        if (rhsCur->left) {
-            stk.push({rhsCur->left.get(), cur.get(), cur->left});
-        }
+        assert(!node->left && !node->right);
+
+        // 这里如果把node填入vector，最后翻转。得到的序列就是后序遍历。
+
+        // 这里node会被自动释放。
     }
+}
+
+Node CloneRecursively(const Node &src) noexcept {
+    auto ret = std::make_unique<NodeImpl>(src->type, src->op, src->value, src->varname);
+    auto Copy = [ret = ret.get()](Node &tgt, const Node &src) {
+        if (src) {
+            tgt = Clone(src);
+            tgt->parent = ret;
+        }
+    };
+
+    Copy(ret->left, src->left);
+    Copy(ret->right, src->right);
+
     return ret;
 }
 
-void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept {
+// 前序遍历。非递归实现。
+Node CloneNonRecursively(const Node &src) noexcept {
+    std::stack<std::tuple<const NodeImpl &, const NodeImpl &, Node &>> stk;
+
+    auto MakeNode = [](const NodeImpl &src, const NodeImpl *parent = nullptr) {
+        auto node = std::make_unique<NodeImpl>(src.type, src.op, src.value, src.varname);
+        node->parent = parent;
+        return node;
+    };
+
+    auto EmplaceNode = [&stk](const Node &src, const NodeImpl &parent, Node &tgt) {
+        if (src) {
+            stk.emplace(*src, parent, tgt);
+        }
+    };
+
+    auto EmplaceChildren = [&EmplaceNode](const NodeImpl &src, Node &tgt) {
+        EmplaceNode(src.left, *tgt, tgt->left);
+        EmplaceNode(src.right, *tgt, tgt->right);
+    };
+
+    auto ret = MakeNode(*src);
+    EmplaceChildren(*src, ret);
+
+    while (!stk.empty()) {
+        const auto &[src, parent, tgt] = stk.top();
+        stk.pop();
+
+        tgt = MakeNode(src, &parent);
+        EmplaceChildren(src, tgt);
+    }
+
+    return ret;
+}
+
+void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept {
     n1->parent = parent;
     child = std::move(n1);
 }
 
-void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std::unique_ptr<NodeImpl> &n1) noexcept {
+void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept {
     auto n1Clone = std::make_unique<NodeImpl>(*n1);
     n1Clone->parent = parent;
     child = std::move(n1Clone);
 }
 
-std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::NodeImpl> &n) noexcept {
+std::ostream &operator<<(std::ostream &out, const Node &n) noexcept {
     out << n->ToString();
     return out;
 }
 
-std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node &&right) noexcept {
+Node Operator(MathOperator op, Node left, Node right) noexcept {
     auto ret = std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
-    if (left) {
-        left->parent = ret.get();
-        ret->left = std::move(left);
-    }
-    if (right) {
-        right->parent = ret.get();
-        ret->right = std::move(right);
-    }
+
+    auto SetChild = [ret = ret.get()](Node &tgt, Node src) {
+        if (src) {
+            src->parent = ret;
+            tgt = std::move(src);
+        }
+    };
+
+    SetChild(ret->left, std::move(left));
+    SetChild(ret->right, std::move(right));
+
     return ret;
 }
 
+// 前序遍历。非递归实现。
 std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
-    // 前序遍历。非递归实现。
     std::set<std::string> ret;
 
-    std::stack<const NodeImpl *> stk;
+    std::stack<std::tuple<const NodeImpl &>> stk;
 
-    if (type == NodeType::VARIABLE) {
-        ret.insert(varname);
-    }
+    auto EmplaceNode = [&stk](const Node &node) {
+        if (node) {
+            stk.emplace(*node);
+        }
+    };
 
-    if (right) {
-        stk.push(right.get());
-    }
-    if (left) {
-        stk.push(left.get());
-    }
+    auto EmplaceChild = [&ret, &EmplaceNode](const NodeImpl &node) {
+        if (node.type == NodeType::VARIABLE) {
+            ret.emplace(node.varname);
+        }
+        EmplaceNode(node.left);
+        EmplaceNode(node.right);
+    };
+
+    EmplaceChild(*this);
+
     while (!stk.empty()) {
-        const NodeImpl *f = stk.top();
+        const auto &[node] = stk.top();
         stk.pop();
-
-        if (f->type == NodeType::VARIABLE) {
-            ret.insert(f->varname);
-        }
-
-        if (f->right) {
-            stk.push(f->right.get());
-        }
-        if (f->left) {
-            stk.push(f->left.get());
-        }
+        EmplaceChild(node);
     }
+
     return ret;
 }
 
@@ -649,30 +629,15 @@ Node Move(Node &rhs) noexcept {
     return std::move(rhs);
 }
 
-std::unique_ptr<internal::NodeImpl> Num(double num) noexcept {
+Node Num(double num) noexcept {
     return std::make_unique<internal::NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
 }
 
 bool VarNameIsLegal(const std::string &varname) noexcept {
-    if (varname.empty()) {
-        return false;
-    }
-    char c = varname[0];
-    if (!isalpha(c) && c != '_') {
-        return false;
-    }
-    auto n = varname.size();
-    for (size_t i = 1; i < n; ++i) {
-        c = varname[i];
-        if (isalnum(c) || c == '_') {
-            continue;
-        }
-        return false;
-    }
-    return true;
+    return std::regex_match(varname, std::regex{R"((?=\w)\D\w*)"});
 }
 
-std::unique_ptr<internal::NodeImpl> Var(const std::string &varname) {
+Node Var(const std::string &varname) {
     if (!VarNameIsLegal(varname)) {
         throw std::runtime_error("Illegal varname: " + varname);
     }

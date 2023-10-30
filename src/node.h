@@ -4,6 +4,7 @@
 
 #include <iostream>
 
+#include <sstream>
 #include <vector>
 #include <type_traits>
 #include <memory>
@@ -45,7 +46,7 @@ struct NodeImpl {
 
     ~NodeImpl();
 
-    bool Equal(const std::unique_ptr<NodeImpl> &rhs) const noexcept;
+    bool Equal(const Node &rhs) const noexcept;
 
     /**
      * 把整个节点以中序遍历的顺序输出为字符串。
@@ -81,12 +82,13 @@ struct NodeImpl {
     void CheckParent() const noexcept;
 
 private:
-    NodeType type;
-    MathOperator op;
+    NodeType type = NodeType::NUMBER;
+    MathOperator op = MathOperator::MATH_NULL;
     double value;
     std::string varname;
-    const NodeImpl *parent;
-    std::unique_ptr<NodeImpl> left, right;
+    const NodeImpl *parent = nullptr;
+    Node left, right;
+    NodeImpl() = default;
 
     /**
      * 本节点如果是OPERATOR，检查操作数数量和left, right指针是否匹配。
@@ -98,9 +100,9 @@ private:
      */
     std::string NodeToStr() const noexcept;
 
-    void ToStringRecursively(std::string &output) const noexcept;
+    void ToStringRecursively(std::stringstream &output) const noexcept;
 
-    void ToStringNonRecursively(std::string &output) const noexcept;
+    void ToStringNonRecursively(std::stringstream &output) const noexcept;
 
     /**
      * 计算表达式数值。递归实现。
@@ -125,23 +127,23 @@ private:
      */
     void Release() noexcept;
 
-    friend std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left, Node &&right) noexcept;
+    friend Node Operator(MathOperator op, Node left, Node right) noexcept;
 
-    friend std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
-    friend std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+    friend Node CloneRecursively(const Node &rhs) noexcept;
+    friend Node CloneNonRecursively(const Node &rhs) noexcept;
 
-    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
-                             std::unique_ptr<NodeImpl> &&n1) noexcept;
-    friend void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child,
-                             const std::unique_ptr<NodeImpl> &n1) noexcept;
+    friend void CopyOrMoveTo(NodeImpl *parent, Node &child,
+                             Node &&n1) noexcept;
+    friend void CopyOrMoveTo(NodeImpl *parent, Node &child,
+                             const Node &n1) noexcept;
 
-    friend std::ostream &operator<<(std::ostream &out, const std::unique_ptr<NodeImpl> &n) noexcept;
+    friend std::ostream &operator<<(std::ostream &out, const Node &n) noexcept;
 
     template <typename T>
-    friend std::unique_ptr<NodeImpl> UnaryOperator(MathOperator op, T &&n) noexcept;
+    friend Node UnaryOperator(MathOperator op, T &&n) noexcept;
 
     template <typename T1, typename T2>
-    friend std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
+    friend Node BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
 
     friend class tomsolver::SymMat;
     friend class SimplifyFunctions;
@@ -150,36 +152,36 @@ private:
     friend class ParseFunctions;
 };
 
-std::unique_ptr<NodeImpl> CloneRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+Node CloneRecursively(const Node &rhs) noexcept;
 
-std::unique_ptr<NodeImpl> CloneNonRecursively(const std::unique_ptr<NodeImpl> &rhs) noexcept;
+Node CloneNonRecursively(const Node &rhs) noexcept;
 
 /**
  * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
  * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
  */
-void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, std::unique_ptr<NodeImpl> &&n1) noexcept;
+void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept;
 
 /**
  * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
  * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
  */
-void CopyOrMoveTo(NodeImpl *parent, std::unique_ptr<NodeImpl> &child, const std::unique_ptr<NodeImpl> &n1) noexcept;
+void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept;
 
 /**
  * 重载std::ostream的<<操作符以输出一个Node节点。
  */
-std::ostream &operator<<(std::ostream &out, const std::unique_ptr<internal::NodeImpl> &n) noexcept;
+std::ostream &operator<<(std::ostream &out, const Node &n) noexcept;
 
 template <typename T>
-std::unique_ptr<NodeImpl> UnaryOperator(MathOperator op, T &&n) noexcept {
+Node UnaryOperator(MathOperator op, T &&n) noexcept {
     auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
     CopyOrMoveTo(ret.get(), ret->left, std::forward<T>(n));
     return ret;
 }
 
 template <typename T1, typename T2>
-std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
+Node BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
     auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
     CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
     CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
@@ -189,7 +191,7 @@ std::unique_ptr<NodeImpl> BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noex
 /**
  * 新建一个运算符节点。
  */
-std::unique_ptr<internal::NodeImpl> Operator(MathOperator op, Node &&left = nullptr, Node &&right = nullptr) noexcept;
+Node Operator(MathOperator op, Node left = nullptr, Node right = nullptr) noexcept;
 
 } // namespace internal
 
@@ -203,7 +205,7 @@ Node Move(Node &rhs) noexcept;
 /**
  * 新建一个数值节点。
  */
-std::unique_ptr<internal::NodeImpl> Num(double num) noexcept;
+Node Num(double num) noexcept;
 
 /**
  * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
@@ -214,81 +216,81 @@ bool VarNameIsLegal(const std::string &varname) noexcept;
  * 新建一个变量节点。
  * @exception runtime_error 名字不合法
  */
-std::unique_ptr<internal::NodeImpl> Var(const std::string &varname);
+Node Var(const std::string &varname);
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
 operator+(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator+=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
+operator+=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
 operator-(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T1>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
 operator-(T1 &&n1) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T1>(n1));
 }
 
 template <typename T1>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
 operator+(T1 &&n1) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T1>(n1));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator-=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
+operator-=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
 operator*(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator*=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
+operator*=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
 operator/(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator/=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
+operator/=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, std::unique_ptr<internal::NodeImpl>>
+std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
 operator^(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_POWER, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, std::unique_ptr<internal::NodeImpl>> &
-operator^=(std::unique_ptr<internal::NodeImpl> &n1, T &&n2) noexcept {
+std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
+operator^=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_POWER, std::move(n1), std::forward<T>(n2));
     return n1;
 }
