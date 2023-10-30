@@ -2,16 +2,15 @@
 #include "error_type.h"
 #include "math_operator.h"
 
-#include <iostream>
-
-#include <sstream>
-#include <vector>
-#include <type_traits>
-#include <memory>
-#include <string>
-#include <stack>
-#include <set>
 #include <cassert>
+#include <iostream>
+#include <memory>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <string>
+#include <type_traits>
+#include <vector>
 
 namespace tomsolver {
 
@@ -132,10 +131,8 @@ private:
     friend Node CloneRecursively(const Node &rhs) noexcept;
     friend Node CloneNonRecursively(const Node &rhs) noexcept;
 
-    friend void CopyOrMoveTo(NodeImpl *parent, Node &child,
-                             Node &&n1) noexcept;
-    friend void CopyOrMoveTo(NodeImpl *parent, Node &child,
-                             const Node &n1) noexcept;
+    friend void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept;
+    friend void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept;
 
     friend std::ostream &operator<<(std::ostream &out, const Node &n) noexcept;
 
@@ -218,79 +215,70 @@ bool VarNameIsLegal(const std::string &varname) noexcept;
  */
 Node Var(const std::string &varname);
 
+template <typename... T>
+using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;
+
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
-operator+(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator+(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
-operator+=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> &operator+=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
-operator-(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator-(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
-template <typename T1>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
-operator-(T1 &&n1) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T1>(n1));
-}
-
-template <typename T1>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
-operator+(T1 &&n1) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T1>(n1));
+template <typename T>
+SfinaeNode<T> operator-(T &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T>(n1));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
-operator-=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> operator+(T &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T>(n1));
+}
+
+template <typename T>
+SfinaeNode<T> &operator-=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
-operator*(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator*(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
-operator*=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> &operator*=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
-operator/(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator/(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
-operator/=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> &operator/=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node>
-operator^(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator^(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_POWER, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &
-operator^=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> &operator^=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_POWER, std::move(n1), std::forward<T>(n2));
     return n1;
 }

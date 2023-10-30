@@ -1,7 +1,7 @@
 #include "config.h"
 
-#include <regex>
 #include <array>
+#include <regex>
 
 namespace tomsolver {
 
