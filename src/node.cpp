@@ -4,18 +4,17 @@
 #include "error_type.h"
 #include "math_operator.h"
 
-#include <iostream>
-
-#include <regex>
-#include <utility>
-#include <forward_list>
-#include <vector>
-#include <limits>
-#include <type_traits>
-#include <memory>
-#include <string>
-#include <stack>
 #include <cassert>
+#include <forward_list>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <regex>
+#include <stack>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace tomsolver {
 

@@ -18,7 +18,7 @@ AllowShortLambdasOnASingleLine: Empty
 AlwaysBreakTemplateDeclarations: true
 
 # 禁用include重排序
-SortIncludes: false
+SortIncludes: true
 ---
 Language: Cpp
 # Force pointers to the type for C++.
