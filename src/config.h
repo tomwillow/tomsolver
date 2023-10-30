@@ -39,20 +39,15 @@ struct Config {
      */
     bool allowIndeterminateEquation = false;
 
-    // 添加新的选项务必同步到Reset方法！
-
-    Config();
-
     void Reset() noexcept;
 
-    const char *GetDoubleFormatStr() const noexcept;
-
-private:
-    char doubleFormatStr[16] = "%.16f";
+    template <auto = 0>
+    static Config &get() {
+        static Config config;
+        return config;
+    }
 };
 
 std::string ToString(double value) noexcept;
-
-Config &GetConfig() noexcept;
 
 } // namespace tomsolver

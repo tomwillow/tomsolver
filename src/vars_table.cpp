@@ -87,7 +87,7 @@ bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
             return false;
         }
         double value = pr.second;
-        if (std::abs(it->second - value) > GetConfig().epsilon) {
+        if (std::abs(it->second - value) > Config::get().epsilon) {
             return false;
         }
     }

@@ -342,7 +342,7 @@ double Calc(MathOperator op, double v1, double v2) {
         break;
     }
 
-    if (GetConfig().throwOnInvalidValue == false) {
+    if (Config::get().throwOnInvalidValue == false) {
         return ret;
     }
 

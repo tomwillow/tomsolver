@@ -2,6 +2,7 @@
 
 #define _USE_MATH_DEFINES
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <functional>
@@ -164,120 +165,46 @@ struct Config {
      */
     bool allowIndeterminateEquation = false;
 
-    // 添加新的选项务必同步到Reset方法！
-
-    Config();
-
     void Reset() noexcept;
 
-    const char *GetDoubleFormatStr() const noexcept;
-
-private:
-    char doubleFormatStr[16] = "%.16f";
+    template <auto = 0>
+    static Config &get() {
+        static Config config;
+        return config;
+    }
 };
 
 std::string ToString(double value) noexcept;
-
-Config &GetConfig() noexcept;
 
 } // namespace tomsolver
 
 namespace tomsolver {
 
 std::string ToString(double value) noexcept {
+    static const std::array strategy = {
+        std::tuple{"%.16e", std::regex{"\\.?0+(?=e)"}},
+        std::tuple{"%.16f", std::regex{"\\.?0+(?=$)"}},
+    };
+
+    if (value == 0.0) {
+        return "0";
+    }
+
     char buf[64];
-    int ret = -1;
 
     // 绝对值过大 或者 绝对值过小，应该使用科学计数法来表示
-    if ((std::abs(value) >= 1.0e16 || std::abs(value) <= 1.0e-16) && value != 0.0) {
-        ret = snprintf(buf, sizeof(buf), "%.16e", value);
+    auto getStrategyIdx = [absValue = std::abs(value)] {
+        return (absValue >= 1.0e16 || absValue <= 1.0e-16) ? 0 : 1;
+    };
 
-        int state = 0;
-        int stripPos = sizeof(buf) - 1;
-        int ePos = sizeof(buf) - 1;
-        for (int i = ret - 1; i >= 0; --i) {
-            switch (state) {
-            case 0:
-                if (buf[i] == 'e') {
-                    ePos = i;
-                    state = 1;
-                    break;
-                }
-                break;
-            case 1:
-                if (buf[i] == '0') {
-                    stripPos = i;
-                    continue;
-                }
-                if (buf[i] == '.') {
-                    stripPos = i;
-                }
-                goto end_of_scientific_loop;
-            }
-        }
-    end_of_scientific_loop:
-        // 如果没有尾后0
-        if (stripPos == sizeof(buf) - 1) {
-            return buf;
-        }
+    auto &[fmt, re] = strategy[getStrategyIdx()];
 
-        if (stripPos > ePos)
-            assert(0 && "err: stripPos>ePos");
-        int i = stripPos;
-        int j = ePos;
-        while (1) {
-            buf[i] = buf[j];
-
-            if (buf[j] == 0) {
-                break;
-            }
-
-            ++i;
-            ++j;
-        }
-
-        return buf;
-    } else {
-        ret = snprintf(buf, sizeof(buf), GetConfig().GetDoubleFormatStr(), value);
-    }
-
-    int stripPos = sizeof(buf) - 1;
-    for (int i = ret - 1; i >= 0; --i) {
-        if (buf[i] == '0') {
-            stripPos = i;
-            continue;
-        }
-        if (buf[i] == '.') {
-            stripPos = i;
-            break;
-        }
-        break;
-    }
-    buf[stripPos] = 0;
-    return buf;
-}
-
-Config &GetConfig() noexcept {
-    static Config config;
-    return config;
-}
-
-Config::Config() {
-    Reset();
+    sprintf(buf, fmt, value);
+    return std::regex_replace(buf, re, "");
 }
 
 void Config::Reset() noexcept {
-    throwOnInvalidValue = true;
-    epsilon = 1.0e-9;
-    logLevel = LogLevel::WARN;
-    maxIterations = 100;
-    nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
-    initialValue = 1.0;
-    allowIndeterminateEquation = false;
-}
-
-const char *Config::GetDoubleFormatStr() const noexcept {
-    return doubleFormatStr;
+    *this = {};
 }
 
 } // namespace tomsolver
@@ -707,7 +634,7 @@ double Calc(MathOperator op, double v1, double v2) {
         break;
     }
 
-    if (GetConfig().throwOnInvalidValue == false) {
+    if (Config::get().throwOnInvalidValue == false) {
         return ret;
     }
 
@@ -1014,7 +941,7 @@ const std::vector<double> &Mat::operator[](std::size_t i) const noexcept {
 bool Mat::operator==(double m) const noexcept {
     for (auto &vec : data)
         for (auto &val : vec) {
-            if (std::abs(val - m) >= GetConfig().epsilon)
+            if (std::abs(val - m) >= Config::get().epsilon)
                 return false;
         }
     return true;
@@ -1025,7 +952,7 @@ bool Mat::operator==(const Mat &b) const noexcept {
     assert(cols == b.cols);
     for (int i = 0; i < rows; ++i)
         for (int j = 0; j < cols; ++j)
-            if (std::abs(data[i][j] - b[i][j]) > GetConfig().epsilon)
+            if (std::abs(data[i][j] - b[i][j]) > Config::get().epsilon)
                 return false;
     return true;
 }
@@ -1243,7 +1170,7 @@ Mat Mat::Inverse() const {
     Mat ans(n, n);
     double det = Det(A, n); // Determinant, 역행렬을 시킬 행렬의 행렬식을 구함
 
-    if (std::abs(det) <= GetConfig().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
+    if (std::abs(det) <= Config::get().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
     {
         throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "");
     }
@@ -1283,7 +1210,7 @@ Mat EachDivide(const Mat &a, const Mat &b) noexcept {
 bool IsZero(const Mat &mat) noexcept {
     for (auto &vec : mat.data)
         for (auto d : vec)
-            if (d > GetConfig().epsilon)
+            if (d > Config::get().epsilon)
                 return false;
     return true;
 }
@@ -1432,7 +1359,7 @@ namespace tomsolver {
  * 求解线性方程组Ax = b。传入矩阵A，向量b，返回向量x。
  * @exception MathError 奇异矩阵
  * @exception MathError 矛盾方程组
- * @exception MathError 不定方程（设置GetConfig().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
+ * @exception MathError 不定方程（设置Config::get().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
  *
  */
 Vec SolveLinear(const Mat &A, const Vec &b);
@@ -1482,7 +1409,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         A.SwapRow(y, maxAbsRowIndex);
         b.SwapRow(y, maxAbsRowIndex);
 
-        while (std::abs(A[y][x]) < GetConfig().epsilon) // 如果当前值为0  x一直递增到非0
+        while (std::abs(A[y][x]) < Config::get().epsilon) // 如果当前值为0  x一直递增到非0
         {
             x++;
             if (x == cols)
@@ -1501,7 +1428,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         if (x == cols) // 本行全为0
         {
             RankA = y;
-            if (std::abs(b[y]) < GetConfig().epsilon)
+            if (std::abs(b[y]) < Config::get().epsilon)
                 RankAb = y;
 
             if (RankA != RankAb) // 奇异，且系数矩阵及增广矩阵秩不相等->无解
@@ -1519,7 +1446,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         // 每行化为0
         for (decltype(rows) row = y + 1; row < rows; row++) // 下1行->最后1行
         {
-            if (std::abs(A[row][x]) < GetConfig().epsilon)
+            if (std::abs(A[row][x]) < Config::get().epsilon)
                 ;
             else {
                 double mi = A[row][x];
@@ -1566,7 +1493,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
 
     if (RankA < cols && RankA == RankAb) {
         if (bIndeterminateEquation) {
-            if (!GetConfig().allowIndeterminateEquation)
+            if (!Config::get().allowIndeterminateEquation)
                 throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION,
                                 std::string("A = ") + AA.ToString() + "\nb = " + bb.ToString());
         } else
@@ -1741,7 +1668,7 @@ bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
             return false;
         }
         double value = pr.second;
-        if (std::abs(it->second - value) > GetConfig().epsilon) {
+        if (std::abs(it->second - value) > Config::get().epsilon) {
             return false;
         }
     }
@@ -3168,7 +3095,7 @@ public:
             bool lChildIs1 = n->left->type == NodeType::NUMBER && n->left->value == 1.0;
             bool rChildIs1 = n->right->type == NodeType::NUMBER && n->right->value == 1.0;
 
-            // 任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
+            //任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
             if ((n->op == MathOperator::MATH_MULTIPLY && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_DIVIDE && lChildIs0) || (n->op == MathOperator::MATH_POWER && lChildIs0)) {
                 n = Num(0);
@@ -3176,7 +3103,7 @@ public:
                 return;
             }
 
-            // 任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
+            //任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
             if ((n->op == MathOperator::MATH_ADD && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_SUB && rChildIs0) ||
                 (n->op == MathOperator::MATH_MULTIPLY && (lChildIs1 || rChildIs1)) ||
@@ -3846,7 +3773,7 @@ VarsTable Solve(const VarsTable &varsTable, const SymVec &equations);
 
 /**
  * 解非线性方程组equations。
- * 变量名通过分析equations得到。初值通过GetConfig()得到。
+ * 变量名通过分析equations得到。初值通过Config::get()得到。
  * @exception runtime_error 迭代次数超出限制
  */
 VarsTable Solve(const SymVec &equations);
@@ -3918,13 +3845,13 @@ VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equatio
 
     SymMat jaEqs = Jacobian(equations, table.Vars());
 
-    if (GetConfig().logLevel >= LogLevel::TRACE) {
+    if (Config::get().logLevel >= LogLevel::TRACE) {
         cout << "Jacobian = " << jaEqs.ToString() << endl;
     }
 
     while (1) {
         Vec phi = equations.Clone().Subs(table).Calc().ToMat().ToVec();
-        if (GetConfig().logLevel >= LogLevel::TRACE) {
+        if (Config::get().logLevel >= LogLevel::TRACE) {
             cout << "iteration = " << it << endl;
             cout << "phi = " << phi << endl;
         }
@@ -3933,7 +3860,7 @@ VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equatio
             break;
         }
 
-        if (it > GetConfig().maxIterations) {
+        if (it > Config::get().maxIterations) {
             throw runtime_error("迭代次数超出限制");
         }
 
@@ -3943,7 +3870,7 @@ VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equatio
 
         q += deltaq;
 
-        if (GetConfig().logLevel >= LogLevel::TRACE) {
+        if (Config::get().logLevel >= LogLevel::TRACE) {
             cout << "ja = " << ja << endl;
             cout << "deltaq = " << deltaq << endl;
             cout << "q = " << q << endl;
@@ -3964,12 +3891,12 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
     SymMat JaEqs = Jacobian(equations, table.Vars());
 
-    if (GetConfig().logLevel >= LogLevel::TRACE) {
+    if (Config::get().logLevel >= LogLevel::TRACE) {
         cout << "Jacobi = " << JaEqs << endl;
     }
 
     while (1) {
-        if (GetConfig().logLevel >= LogLevel::TRACE) {
+        if (Config::get().logLevel >= LogLevel::TRACE) {
             cout << "iteration = " << it << endl;
         }
 
@@ -3977,7 +3904,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
         Vec F = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算F
 
-        if (GetConfig().logLevel >= LogLevel::TRACE) {
+        if (Config::get().logLevel >= LogLevel::TRACE) {
             cout << "F = " << F << endl;
         }
 
@@ -3990,7 +3917,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
             Mat J = JaEqs.Clone().Subs(table).Calc().ToMat(); // 计算雅可比矩阵
 
-            if (GetConfig().logLevel >= LogLevel::TRACE) {
+            if (Config::get().logLevel >= LogLevel::TRACE) {
                 cout << "J = " << J << endl;
             }
 
@@ -4002,7 +3929,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
             Vec d = SolveLinear(J.Transpose() * J + mu * Mat(J.Rows(), J.Cols()).Ones(),
                                 -(J.Transpose() * F).ToVec()); // 得到d
 
-            if (GetConfig().logLevel >= LogLevel::TRACE) {
+            if (Config::get().logLevel >= LogLevel::TRACE) {
                 cout << "d = " << d << endl;
             }
 
@@ -4032,7 +3959,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
             FNew = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算新的F
 
-            if (GetConfig().logLevel >= LogLevel::TRACE) {
+            if (Config::get().logLevel >= LogLevel::TRACE) {
                 cout << "it=" << it << endl;
                 cout << "\talpha=" << alpha << endl;
                 cout << "mu=" << mu << endl;
@@ -4049,7 +3976,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
                 mu *= 10.0; // 扩大λ，使模型倾向梯度下降方向
             }
 
-            if (it++ == GetConfig().maxIterations)
+            if (it++ == Config::get().maxIterations)
                 goto overIterate;
         }
 
@@ -4059,16 +3986,16 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
         F = FNew; // 更新F
 
-        if (it++ == GetConfig().maxIterations)
+        if (it++ == Config::get().maxIterations)
             goto overIterate;
 
-        if (GetConfig().logLevel >= LogLevel::TRACE) {
+        if (Config::get().logLevel >= LogLevel::TRACE) {
             cout << std::string(20, '=') << endl;
         }
     }
 
 success:
-    if (GetConfig().logLevel >= LogLevel::TRACE) {
+    if (Config::get().logLevel >= LogLevel::TRACE) {
         cout << "success" << endl;
     }
     return table;
@@ -4078,20 +4005,20 @@ overIterate:
 }
 
 VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
-    switch (GetConfig().nonlinearMethod) {
+    switch (Config::get().nonlinearMethod) {
     case NonlinearMethod::NEWTON_RAPHSON:
         return SolveByNewtonRaphson(varsTable, equations);
     case NonlinearMethod::LM:
         return SolveByLM(varsTable, equations);
     }
     throw runtime_error("invalid config.NonlinearMethod value: " +
-                        std::to_string(static_cast<int>(GetConfig().nonlinearMethod)));
+                        std::to_string(static_cast<int>(Config::get().nonlinearMethod)));
 }
 
 VarsTable Solve(const SymVec &equations) {
     auto varNames = equations.GetAllVarNames();
     std::vector<std::string> vecVarNames(varNames.begin(), varNames.end());
-    VarsTable varsTable(std::move(vecVarNames), GetConfig().initialValue);
+    VarsTable varsTable(std::move(vecVarNames), Config::get().initialValue);
     return Solve(varsTable, equations);
 }
 

@@ -28,7 +28,7 @@ int main() {
     SymVec f{{Parse("exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"), Parse("x1 * cos(x2) + x2 * sin(x1) - 0.5")}};
 
     // 设置初值为0.0
-    GetConfig().initialValue = 0.0;
+    Config::get().initialValue = 0.0;
 
     // 求解，结果保存到ans
     VarsTable ans = Solve(f);

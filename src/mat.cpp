@@ -57,7 +57,7 @@ const std::vector<double> &Mat::operator[](std::size_t i) const noexcept {
 bool Mat::operator==(double m) const noexcept {
     for (auto &vec : data)
         for (auto &val : vec) {
-            if (std::abs(val - m) >= GetConfig().epsilon)
+            if (std::abs(val - m) >= Config::get().epsilon)
                 return false;
         }
     return true;
@@ -68,7 +68,7 @@ bool Mat::operator==(const Mat &b) const noexcept {
     assert(cols == b.cols);
     for (int i = 0; i < rows; ++i)
         for (int j = 0; j < cols; ++j)
-            if (std::abs(data[i][j] - b[i][j]) > GetConfig().epsilon)
+            if (std::abs(data[i][j] - b[i][j]) > Config::get().epsilon)
                 return false;
     return true;
 }
@@ -286,7 +286,7 @@ Mat Mat::Inverse() const {
     Mat ans(n, n);
     double det = Det(A, n); // Determinant, 역행렬을 시킬 행렬의 행렬식을 구함
 
-    if (std::abs(det) <= GetConfig().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
+    if (std::abs(det) <= Config::get().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
     {
         throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "");
     }
@@ -326,7 +326,7 @@ Mat EachDivide(const Mat &a, const Mat &b) noexcept {
 bool IsZero(const Mat &mat) noexcept {
     for (auto &vec : mat.data)
         for (auto d : vec)
-            if (d > GetConfig().epsilon)
+            if (d > Config::get().epsilon)
                 return false;
     return true;
 }

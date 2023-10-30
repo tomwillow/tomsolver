@@ -48,7 +48,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         A.SwapRow(y, maxAbsRowIndex);
         b.SwapRow(y, maxAbsRowIndex);
 
-        while (std::abs(A[y][x]) < GetConfig().epsilon) // 如果当前值为0  x一直递增到非0
+        while (std::abs(A[y][x]) < Config::get().epsilon) // 如果当前值为0  x一直递增到非0
         {
             x++;
             if (x == cols)
@@ -67,7 +67,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         if (x == cols) // 本行全为0
         {
             RankA = y;
-            if (std::abs(b[y]) < GetConfig().epsilon)
+            if (std::abs(b[y]) < Config::get().epsilon)
                 RankAb = y;
 
             if (RankA != RankAb) // 奇异，且系数矩阵及增广矩阵秩不相等->无解
@@ -85,7 +85,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         // 每行化为0
         for (decltype(rows) row = y + 1; row < rows; row++) // 下1行->最后1行
         {
-            if (std::abs(A[row][x]) < GetConfig().epsilon)
+            if (std::abs(A[row][x]) < Config::get().epsilon)
                 ;
             else {
                 double mi = A[row][x];
@@ -132,7 +132,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
 
     if (RankA < cols && RankA == RankAb) {
         if (bIndeterminateEquation) {
-            if (!GetConfig().allowIndeterminateEquation)
+            if (!Config::get().allowIndeterminateEquation)
                 throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION,
                                 std::string("A = ") + AA.ToString() + "\nb = " + bb.ToString());
         } else
