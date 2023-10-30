@@ -117,11 +117,11 @@ TEST(SolveBase, IndeterminateEquation) {
     } catch (const MathError &e) { cout << e.what() << endl; }
 
     // 设置为允许不定方程
-    GetConfig().allowIndeterminateEquation = true;
+    Config::get().allowIndeterminateEquation = true;
 
     // 结束时恢复设置
     std::shared_ptr<void> defer(nullptr, [&](...) {
-        GetConfig().Reset();
+        Config::get().Reset();
     });
 
     VarsTable got = Solve(f);
