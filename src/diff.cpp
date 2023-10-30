@@ -12,56 +12,39 @@ namespace internal {
 class DiffFunctions {
 public:
     struct DiffNode {
-        NodeImpl *node;
-        bool isLeftChild;
+        NodeImpl &node;
+        const bool isLeftChild;
 
-        DiffNode(NodeImpl *node, bool isLeftChild) : node(node), isLeftChild(isLeftChild) {
-            if (node->parent) {
-                if (node->parent->left.get() == node) {
-                    if (!isLeftChild) {
-                        assert(0 && "inner bug");
-                    }
-                } else {
-                    if (isLeftChild) {
-                        assert(0 && "inner bug");
-                    }
-                }
-            }
-        }
+        DiffNode(NodeImpl &node) : node(node), isLeftChild(node.parent && node.parent->left.get() == &node) {}
     };
 
-    static void DiffOnce(std::unique_ptr<NodeImpl> &root, const std::string &varname) {
+    static void DiffOnce(Node &root, const std::string &varname) {
         std::queue<DiffNode> q;
 
         if (root->type == NodeType::OPERATOR) {
             DiffOnceOperator(root, q);
         } else {
-            q.push(DiffNode(root.get(), true));
+            q.emplace(*root);
         }
 
         while (!q.empty()) {
-            DiffNode f = q.front();
+            auto &[node, isLeftChild] = q.front();
             q.pop();
 
-            switch (f.node->type) {
+            switch (node.type) {
             case NodeType::VARIABLE:
-                f.node->type = NodeType::NUMBER;
-                if (f.node->varname == varname) {
-                    f.node->value = 1;
-                } else {
-                    f.node->value = 0;
-                }
-                f.node->varname = "";
+                node.type = NodeType::NUMBER;
+                node.value = node.varname == varname ? 1 : 0;
+                node.varname = "";
                 break;
+
             case NodeType::NUMBER:
-                f.node->value = 0;
+                node.value = 0;
                 break;
+
             case NodeType::OPERATOR: {
-                if (f.isLeftChild) {
-                    DiffOnceOperator(const_cast<NodeImpl *>(f.node->parent)->left, q);
-                } else {
-                    DiffOnceOperator(const_cast<NodeImpl *>(f.node->parent)->right, q);
-                }
+                auto &child = isLeftChild ? node.parent->left : node.parent->right;
+                DiffOnceOperator(const_cast<Node &>(child), q);
                 break;
             }
             default:
@@ -70,13 +53,13 @@ public:
         }
     }
 
-    static void DiffOnceOperator(std::unique_ptr<NodeImpl> &node, std::queue<DiffNode> &q) {
+    static void DiffOnceOperator(Node &node, std::queue<DiffNode> &q) {
         auto parent = node->parent;
 
         // 调用前提：node是1元操作符
         // 如果node的成员是数字，那么整个node变为数字节点，value=0，且返回true
         // 例如： sin(1)' = 0
-        auto CullNumberMember = [&]() -> bool {
+        auto CullNumberMember = [&node]() -> bool {
             assert(GetOperatorNum(node->op) == 1);
             assert(node->left);
             if (node->left->type == NodeType::NUMBER) {
@@ -92,7 +75,7 @@ public:
         // 调用前提：node是2元操作符
         // 如果node的成员是数字，那么整个node变为数字节点，value=0，且返回true
         // 例如： (2*3)' = 0
-        auto CullNumberMemberBinary = [&]() -> bool {
+        auto CullNumberMemberBinary = [&node]() -> bool {
             assert(GetOperatorNum(node->op) == 2);
             assert(node->left && node->right);
             if (node->left->type == NodeType::NUMBER && node->right->type == NodeType::NUMBER) {
@@ -113,7 +96,7 @@ public:
         }
         case MathOperator::MATH_POSITIVE:
         case MathOperator::MATH_NEGATIVE: {
-            q.push(DiffNode(node->left.get(), true));
+            q.emplace(*node->left);
             return;
         }
 
@@ -125,8 +108,8 @@ public:
 
             // sin(u)' = cos(u) * u'
             node->op = MathOperator::MATH_COS;
-            Node u2 = Clone(node->left);
-            q.push(DiffNode(u2.get(), false));
+            auto u2 = Clone(node->left);
+            q.emplace(*u2);
             node = Move(node) * Move(u2);
             node->parent = parent;
             break;
@@ -138,8 +121,8 @@ public:
 
             // cos(u)' = -sin(u) * u'
             node->op = MathOperator::MATH_SIN;
-            Node u2 = Clone(node->left);
-            q.push(DiffNode(u2.get(), false));
+            auto u2 = Clone(node->left);
+            q.emplace(*u2);
             node = -Move(node) * Move(u2);
             node->parent = parent;
             break;
@@ -151,9 +134,9 @@ public:
 
             // tan'u = 1/(cos(u)^2) * u'
             node->op = MathOperator::MATH_COS;
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = Num(1) / (Move(node) ^ Num(2)) * Move(u2);
             node->parent = parent;
             return;
@@ -164,9 +147,9 @@ public:
             }
 
             // asin'u = 1/sqrt(1-u^2) * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / sqrt(Num(1) - (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
@@ -177,9 +160,9 @@ public:
             }
 
             // acos'u = -1/sqrt(1-u^2) * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(-1) / sqrt(Num(1) - (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
@@ -190,9 +173,9 @@ public:
             }
 
             // atan'u = 1/(1+u^2) * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / (Num(1) + (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
@@ -203,9 +186,9 @@ public:
             }
 
             // sqrt(u)' = 1/(2*sqrt(u)) * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = Num(1) / (Num(2) * Move(node)) * Move(u2);
             node->parent = parent;
             return;
@@ -216,9 +199,9 @@ public:
             }
 
             // ln(u)' = 1/u * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / Move(u)) * Move(u2);
             node->parent = parent;
             return;
@@ -229,10 +212,10 @@ public:
             }
 
             // loga(u)' = 1/(u * ln(a)) * u'
-            double a = 2.0;
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto a = 2.0;
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / (Move(u) * Num(std::log(a)))) * Move(u2);
             node->parent = parent;
             return;
@@ -243,10 +226,10 @@ public:
             }
 
             // loga(u)' = 1/(u * ln(a)) * u'
-            double a = 10.0;
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto a = 10.0;
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / (Move(u) * Num(std::log(a)))) * Move(u2);
             node->parent = parent;
             return;
@@ -261,8 +244,8 @@ public:
                 return;
 
             // (e^u)' = e^u * u'
-            Node u2 = Clone(node->left);
-            q.push(DiffNode(u2.get(), false));
+            auto u2 = Clone(node->left);
+            q.emplace(*u2);
             node = Move(node) * Move(u2);
             node->parent = parent;
             break;
@@ -276,22 +259,20 @@ public:
             }
             // (u + v)' = u' + v'
             if (node->left) {
-                q.push(DiffNode(node->left.get(), true));
+                q.emplace(*node->left);
             }
             if (node->right) {
-                q.push(DiffNode(node->right.get(), false));
+                q.emplace(*node->right);
             }
             return;
         case MathOperator::MATH_MULTIPLY: {
-            bool leftIsNumber = node->left->type == NodeType::NUMBER;
-            bool rightIsNumber = node->right->type == NodeType::NUMBER;
             // 两个操作数中有一个是数字
-            if (leftIsNumber) {
-                q.push(DiffNode(node->right.get(), false));
+            if ( node->left->type == NodeType::NUMBER) {
+                q.emplace(*node->right);
                 return;
             }
-            if (rightIsNumber) {
-                q.push(DiffNode(node->left.get(), true));
+            if (node->right->type == NodeType::NUMBER) {
+                q.emplace(*node->left);
                 return;
             }
 
@@ -300,23 +281,23 @@ public:
             }
 
             // (u*v)' = u' * v + u * v'
-            Node &u = node->left;
-            Node &v = node->right;
-            q.push(DiffNode(u.get(), true));
-            Node u2 = Clone(u);
-            Node v2 = Clone(v);
-            q.push(DiffNode(v2.get(), false));
+            auto &u = node->left;
+            auto &v = node->right;
+            q.emplace(*u);
+            auto u2 = Clone(u);
+            auto v2 = Clone(v);
+            q.emplace(*v2);
             node = Move(node) + Move(u2) * Move(v2);
             node->parent = parent;
             return;
         }
         case MathOperator::MATH_DIVIDE: {
-            // bool leftIsNumber = node->left->type == NodeType::NUMBER;
-            bool rightIsNumber = node->right->type == NodeType::NUMBER;
+            // auto leftIsNumber = node->left->type == NodeType::NUMBER;
+            auto rightIsNumber = node->right->type == NodeType::NUMBER;
 
             // f(x)/number = f'(x)/number
             if (rightIsNumber) {
-                q.push(DiffNode(node->left.get(), true));
+                q.emplace(*node->left);
                 return;
             }
 
@@ -325,13 +306,13 @@ public:
             }
 
             // (u/v)' = (u'v - uv')/(v^2)
-            Node &u = node->left;
-            Node &v = node->right;
-            Node u2 = Clone(u);
-            Node v2 = Clone(v);
-            Node v3 = Clone(v);
-            q.push(DiffNode(u.get(), true));
-            q.push(DiffNode(v2.get(), false));
+            auto &u = node->left;
+            auto &v = node->right;
+            auto u2 = Clone(u);
+            auto v2 = Clone(v);
+            auto v3 = Clone(v);
+            q.emplace(*u);
+            q.emplace(*v2);
             node = (Move(u) * Move(v) - Move(u2) * Move(v2)) / (Move(v3) ^ Num(2));
             node->parent = parent;
             return;
@@ -342,16 +323,16 @@ public:
                 return;
             }
 
-            bool lChildIsNumber = node->left->type == NodeType::NUMBER;
-            bool rChildIsNumber = node->right->type == NodeType::NUMBER;
+            auto lChildIsNumber = node->left->type == NodeType::NUMBER;
+            auto rChildIsNumber = node->right->type == NodeType::NUMBER;
 
             // (u^a)' = a*u^(a-1) * u'
             if (rChildIsNumber) {
-                Node &a = node->right;
-                double aValue = a->value;
-                Node &u = node->left;
-                Node u2 = Clone(u);
-                q.push(DiffNode(u2.get(), false));
+                auto &a = node->right;
+                auto aValue = a->value;
+                auto &u = node->left;
+                auto u2 = Clone(u);
+                q.emplace(*u2);
                 node = std::move(a) * (std::move(u) ^ Num(aValue - 1)) * std::move(u2);
                 node->parent = parent;
                 return;
@@ -359,11 +340,11 @@ public:
 
             // (a^x)' = a^x * ln(a)  when a>0 and a!=1
             if (lChildIsNumber) {
-                Node &a = node->left;
-                double aValue = a->value;
-                Node &u = node->right;
-                Node u2 = Clone(u);
-                q.push(DiffNode(u2.get(), false));
+                auto &a = node->left;
+                auto aValue = a->value;
+                auto &u = node->right;
+                auto u2 = Clone(u);
+                q.emplace(*u2);
                 node = (std::move(a) ^ std::move(u)) * log(Num(aValue)) * std::move(u2);
                 node->parent = parent;
                 return;
@@ -371,10 +352,10 @@ public:
 
             // (u^v)' = ( e^(v*ln(u)) )' = e^(v*ln(u)) * (v*ln(u))' = u^v * (v*ln(u))'
             // 左右都不是数字
-            Node &u = node->left;
-            Node &v = node->right;
-            Node vln_u = Clone(v) * log(Clone(u));
-            q.push(DiffNode(vln_u.get(), false));
+            auto &u = node->left;
+            auto &v = node->right;
+            auto vln_u = Clone(v) * log(Clone(u));
+            q.emplace(*vln_u);
             node = Move(node) * std::move(vln_u);
             node->parent = parent;
             return;
@@ -406,18 +387,18 @@ public:
 } // namespace internal
 
 Node Diff(const Node &node, const std::string &varname, int i) {
-    Node node2 = Clone(node);
+    auto node2 = Clone(node);
     return Diff(std::move(node2), varname, i);
 }
 
 Node Diff(Node &&node, const std::string &varname, int i) {
     assert(i > 0);
-    Node n = std::move(node);
+    auto n = std::move(node);
     while (i--) {
         internal::DiffFunctions::DiffOnce(n, varname);
     }
 #ifndef NDEBUG
-    std::string s = n->ToString();
+    auto s = n->ToString();
     n->CheckParent();
 #endif
     Simplify(n);
