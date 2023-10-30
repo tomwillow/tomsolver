@@ -2,7 +2,7 @@
 
 ![workflow](https://github.com/tomwillow/tomsolver/actions/workflows/cmake-multi-platform.yml/badge.svg)
 
-Simplest, Well-tested, Non-linear equations solver library by C++14.
+Simplest, Well-tested, Non-linear equations solver library by C++17.
 
 origin: https://github.com/tomwillow/tomsolver
 
