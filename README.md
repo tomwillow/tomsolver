@@ -2,7 +2,7 @@
 
 ![workflow](https://github.com/tomwillow/tomsolver/actions/workflows/cmake-multi-platform.yml/badge.svg)
 
-C++14 极简非线性方程组求解器
+C++17 极简非线性方程组求解器
 
 "让C++求解非线性方程组像Matlab fsolve一样简单"
 
@@ -66,7 +66,7 @@ int main() {
     SymVec f{{Parse("exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"), Parse("x1 * cos(x2) + x2 * sin(x1) - 0.5")}};
 
     // 设置初值为0.0
-    GetConfig().initialValue = 0.0;
+    Config::get().initialValue = 0.0;
 
     // 求解，结果保存到ans
     VarsTable ans = Solve(f);
