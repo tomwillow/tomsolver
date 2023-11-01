@@ -1,10 +1,11 @@
 #include "nonlinear.h"
 
-#include "linear.h"
-#include "error_type.h"
 #include "config.h"
+#include "error_type.h"
+#include "linear.h"
 
 #include <cassert>
+#include <iostream>
 
 using std::cout;
 using std::endl;
@@ -134,8 +135,9 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
             cout << "F = " << F << endl;
         }
 
-        if (F == 0) // F值为0，满足方程组求根条件
-            goto success;
+        if (F == 0) { // F值为0，满足方程组求根条件
+            break;
+        }
 
         Vec FNew(n);   // 下一轮F
         Vec deltaq(n); // Δq
@@ -152,7 +154,8 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
             // 牛顿法的 d=-(J+λI)^(-1)*F
 
             // 方向向量
-            Vec d = SolveLinear(J.Transpose()*J + mu * Mat(J.Rows(), J.Cols()).Ones(), -(J.Transpose()*F).ToVec()); // 得到d
+            Vec d = SolveLinear(J.Transpose() * J + mu * Mat(J.Rows(), J.Cols()).Ones(),
+                                -(J.Transpose() * F).ToVec()); // 得到d
 
             if (Config::get().logLevel >= LogLevel::TRACE) {
                 cout << "d = " << d << endl;
@@ -201,8 +204,9 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
                 mu *= 10.0; // 扩大λ，使模型倾向梯度下降方向
             }
 
-            if (it++ == Config::get().maxIterations)
-                goto overIterate;
+            if (it++ == Config::get().maxIterations) {
+                throw runtime_error("迭代次数超出限制");
+            }
         }
 
         q += deltaq; // 应用Δq，更新q值
@@ -211,22 +215,20 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
         F = FNew; // 更新F
 
-        if (it++ == Config::get().maxIterations)
-            goto overIterate;
+        if (it++ == Config::get().maxIterations) {
+            throw runtime_error("迭代次数超出限制");
+        }
 
         if (Config::get().logLevel >= LogLevel::TRACE) {
             cout << std::string(20, '=') << endl;
         }
     }
 
-success:
     if (Config::get().logLevel >= LogLevel::TRACE) {
         cout << "success" << endl;
     }
-    return table;
 
-overIterate:
-    throw runtime_error("迭代次数超出限制");
+    return table;
 }
 
 VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {

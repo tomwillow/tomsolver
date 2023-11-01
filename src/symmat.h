@@ -1,11 +1,13 @@
 #pragma once
 
-#include "node.h"
 #include "mat.h"
+#include "node.h"
 #include "vars_table.h"
 
-#include <set>
 #include <map>
+#include <memory>
+#include <set>
+#include <valarray>
 
 namespace tomsolver {
 
@@ -20,7 +22,7 @@ public:
     /**
      * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
      */
-    SymMat(const std::initializer_list<std::initializer_list<Node>> &lst) noexcept;
+    SymMat(std::initializer_list<std::initializer_list<Node>> init) noexcept;
 
     /**
      * 从数值矩阵构造符号矩阵
@@ -86,14 +88,14 @@ public:
      */
     bool operator==(const SymMat &rhs) const noexcept;
 
-    const std::vector<Node> &operator[](int row) const noexcept;
-
-    std::vector<Node> &operator[](int row) noexcept;
+    Node& Value(int i, int j) noexcept;
+    const Node& Value(int i, int j) const noexcept;
 
     std::string ToString() const noexcept;
 
 protected:
-    std::vector<std::vector<Node>> data;
+    int rows, cols;
+    std::unique_ptr<std::valarray<Node>> data;
 
     friend SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
 };
@@ -108,7 +110,7 @@ public:
     /**
      * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
      */
-    SymVec(const std::initializer_list<Node> &lst) noexcept;
+    SymVec(std::initializer_list<Node> init) noexcept;
 
     /**
      * 如果rhs和自己的维数不匹配会触发assert。

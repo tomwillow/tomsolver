@@ -24,9 +24,10 @@ Original Inverse(), Adjoint(), GetCofactor(), Det() is from https://github.com/t
 
 #include "error_type.h"
 
-#include <vector>
-#include <iostream>
 #include <cassert>
+#include <iostream>
+#include <utility>
+#include <valarray>
 
 namespace tomsolver {
 
@@ -34,18 +35,23 @@ class Vec;
 
 class Mat {
 public:
-    explicit Mat(int row, int col) noexcept;
+    explicit Mat(int row, int col, double initValue = 0) noexcept;
 
-    explicit Mat(int row, int col, double initValue) noexcept;
+    Mat(std::initializer_list<std::initializer_list<double>> init) noexcept;
 
-    Mat(const std::vector<std::vector<double>> &init) noexcept;
-    Mat(std::vector<std::vector<double>> &&init) noexcept;
+    Mat(int row, int col, std::valarray<double> data) noexcept;
 
-    Mat(const std::initializer_list<std::initializer_list<double>> &init) noexcept;
+    Mat(const Mat &) = default;
+    Mat(Mat &&) = default;
+    Mat &operator=(const Mat &) = default;
+    Mat &operator=(Mat &&) = default;
 
-    std::vector<double> &operator[](std::size_t i) noexcept;
-
-    const std::vector<double> &operator[](std::size_t i) const noexcept;
+    std::slice_array<double> Row(int i, int offset = 0);
+    std::slice_array<double> Col(int j, int offset = 0);
+    auto Row(int i, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
+    auto Col(int j, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
+    const double &Value(int i, int j) const;
+    double &Value(int i, int j);
 
     bool operator==(double m) const noexcept;
     bool operator==(const Mat &b) const noexcept;
@@ -72,10 +78,11 @@ public:
     Vec ToVec() const;
 
     Mat &SwapRow(int i, int j) noexcept;
+    Mat &SwapCol(int i, int j) noexcept;
 
     std::string ToString() const noexcept;
 
-    void Resize(int newRows) noexcept;
+    void Resize(int newRows, int newCols) noexcept;
 
     Mat &Zero() noexcept;
 
@@ -107,7 +114,7 @@ public:
 protected:
     int rows;
     int cols;
-    std::vector<std::vector<double>> data;
+    std::valarray<double> data;
 
     friend Mat operator*(double k, const Mat &mat) noexcept;
     friend std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
@@ -145,83 +152,34 @@ double Det(const Mat &A, int n) noexcept;
 
 class Vec : public Mat {
 public:
-    explicit Vec(int rows) noexcept;
+    explicit Vec(int rows, double initValue = 0) noexcept;
 
-    explicit Vec(int rows, double initValue) noexcept;
+    Vec(std::initializer_list<double> init) noexcept;
 
-    Vec(const std::initializer_list<double> &init) noexcept;
+    Vec(std::valarray<double> data) noexcept;
 
     Mat &AsMat() noexcept;
 
     void Resize(int newRows) noexcept;
 
-    double &operator[](std::size_t i) noexcept {
-        return data[i][0];
-    }
+    double &operator[](std::size_t i) noexcept;
 
-    double operator[](std::size_t i) const noexcept {
-        return data[i][0];
-    }
+    double operator[](std::size_t i) const noexcept;
 
-    Vec operator+(const Vec &b) const noexcept {
-        assert(rows == b.rows);
-        assert(cols == 1 && b.cols == 1);
-        Vec ans(b);
-        for (int i = 0; i < rows; ++i) {
-            ans[i] = data[i][0] + b[i];
-        }
-        return ans;
-    }
+    Vec operator+(const Vec &b) const noexcept;
 
     // be negative
-    Vec operator-() noexcept {
-        Vec ans(*this);
-        for (auto &vec : ans.data)
-            vec[0] = -vec[0];
-        return ans;
-    }
+    Vec operator-() noexcept;
 
-    Vec operator-(const Vec &b) const noexcept {
-        assert(rows == b.rows);
-        Vec ans(b);
-        for (int i = 0; i < rows; ++i) {
-            ans[i] = data[i][0] - b[i];
-        }
-        return ans;
-    }
+    Vec operator-(const Vec &b) const noexcept;
 
-    Vec operator*(double m) const noexcept {
-        Vec ans = *this;
-        for (auto &vec : ans.data)
-            vec[0] *= m;
-        return ans;
-    }
+    Vec operator*(double m) const noexcept;
 
-    Vec operator*(const Vec &b) const noexcept {
-        assert(rows == b.rows);
-        Vec ans(b);
-        for (int i = 0; i < rows; ++i) {
-            ans[i] = data[i][0] * b[i];
-        }
-        return ans;
-    }
+    Vec operator*(const Vec &b) const noexcept;
 
-    Vec operator/(const Vec &b) const noexcept {
-        assert(rows == b.rows);
-        Vec ans(b);
-        for (int i = 0; i < rows; ++i) {
-            ans[i] = data[i][0] / b[i];
-        }
-        return ans;
-    }
+    Vec operator/(const Vec &b) const noexcept;
 
-    bool operator<(const Vec &b) noexcept {
-        assert(rows == b.rows);
-        for (int i = 0; i < rows; ++i)
-            if (data[i][0] >= b[i])
-                return false;
-        return true;
-    }
+    bool operator<(const Vec &b) noexcept;
 
     friend double Dot(const Vec &a, const Vec &b) noexcept;
     friend Vec operator*(double k, const Vec &V);

@@ -1,227 +1,194 @@
 #include "symmat.h"
 
+#include "config.h"
 #include "diff.h"
+#include "mat.h"
+#include "node.h"
 #include "subs.h"
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <memory>
+#include <pthread.h>
+#include <utility>
 
 namespace tomsolver {
 
-namespace internal {} // namespace internal
+using DataType = std::valarray<Node>;
 
-SymMat::SymMat(int rows, int cols) noexcept {
+SymMat::SymMat(int rows, int cols) noexcept : rows(rows), cols(cols) {
     assert(rows > 0 && cols > 0);
-    data.resize(rows);
-    for (auto &row : data) {
-        row.resize(cols);
-    }
+    data.reset(new DataType(rows * cols));
 }
 
-SymMat::SymMat(const std::initializer_list<std::initializer_list<Node>> &lst) noexcept
-    : SymMat(static_cast<int>(lst.size()), static_cast<int>(lst.begin()->size())) {
-    for (auto it1 = lst.begin(); it1 != lst.end(); ++it1) {
-        std::size_t i = it1 - lst.begin();
-        for (auto it2 = it1->begin(); it2 != it1->end(); ++it2) {
-            std::size_t j = it2 - it1->begin();
-            auto &node = const_cast<Node &>(*it2);
-            data[i][j] = std::move(node);
+SymMat::SymMat(std::initializer_list<std::initializer_list<Node>> init) noexcept {
+    rows = static_cast<int>(init.size());
+    cols = static_cast<int>(std::max(init, [](auto lhs, auto rhs) {
+                                return lhs.size() < rhs.size();
+                            }).size());
+    data.reset(new DataType(rows * cols));
+
+    auto i = 0;
+    for (auto val : init) {
+        auto j = 0;
+        for (auto &node : val) {
+            (*data)[i * cols + j++] = std::move(const_cast<Node &>(node));
         }
+        i++;
     }
 }
 
 SymMat::SymMat(const Mat &rhs) noexcept : SymMat(rhs.Rows(), rhs.Cols()) {
-    for (int i = 0; i < rhs.Rows(); ++i) {
-        for (int j = 0; j < rhs.Cols(); ++j) {
-            data[i][j] = Num(rhs[i][j]);
-        }
-    }
+    std::generate(std::begin(*data), std::end(*data), [p = std::addressof(rhs.Value(0, 0))]() mutable {
+        return Num(*p++);
+    });
 }
 
 SymMat SymMat::Clone() const noexcept {
     SymMat ret(Rows(), Cols());
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            ret.data[i][j] = tomsolver::Clone(data[i][j]);
-        }
-    }
+    std::generate(std::begin(*ret.data), std::end(*ret.data), [iter = std::begin(*data)]() mutable {
+        return tomsolver::Clone(*iter++);
+    });
     return ret;
 }
 
 bool SymMat::Empty() const noexcept {
-    return data.empty();
+    return data->size() == 0;
 }
 
 int SymMat::Rows() const noexcept {
-    return static_cast<int>(data.size());
+    return rows;
 }
 
 int SymMat::Cols() const noexcept {
-    if (Rows()) {
-        return static_cast<int>(data[0].size());
-    }
-    return 0;
+    return cols;
 }
 
 SymVec SymMat::ToSymVec() const {
-    assert(Rows() > 0);
-    if (Cols() != 1) {
+    assert(rows > 0);
+    if (cols != 1) {
         throw std::runtime_error("SymMat::ToSymVec fail. rows is not one");
     }
-    SymVec v(Rows());
-    for (int j = 0; j < Rows(); ++j) {
-        v.data[j][0] = tomsolver::Clone(data[j][0]);
-    }
-    return v;
+    return ToSymVecOneByOne();
 }
 
 SymVec SymMat::ToSymVecOneByOne() const noexcept {
-    SymVec ans(Rows() * Cols());
-    int index = 0;
-    for (auto &row : data) {
-        for (auto &node : row) {
-            ans[index++] = tomsolver::Clone(node);
-        }
-    }
-    return ans;
+    SymVec v(rows * cols);
+    std::generate(std::begin(*v.data), std::end(*v.data), [iter = std::begin(*data)]() mutable {
+        return tomsolver::Clone(*iter++);
+    });
+    return v;
 }
 
 Mat SymMat::ToMat() const {
-    std::vector<std::vector<double>> arr(Rows(), std::vector<double>(Cols()));
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            if (data[i][j]->type != NodeType::NUMBER) {
-                throw std::runtime_error("ToMat error: node is not number");
-            }
-            arr[i][j] = data[i][j]->value;
+    std::valarray<double> newData(data->size());
+    std::generate(std::begin(newData), std::end(newData), [iter = std::begin(*data)]() mutable {
+        if ((**iter).type != NodeType::NUMBER) {
+            throw std::runtime_error("ToMat error: node is not number");
         }
-    }
-    return Mat(std::move(arr));
+        return (**iter++).value;
+    });
+    return {rows, cols, newData};
 }
 
 SymMat &SymMat::Calc() {
-    for (auto &row : data) {
-        for (auto &node : row) {
-            node->Calc();
-        }
+    for (auto &node : *data) {
+        node->Calc();
     }
     return *this;
 }
 
 SymMat &SymMat::Subs(const std::map<std::string, double> &varValues) noexcept {
-    for (auto &row : data) {
-        for (auto &node : row) {
-            node = tomsolver::Subs(std::move(node), varValues);
-        }
+    for (auto &node : *data) {
+        node = tomsolver::Subs(std::move(node), varValues);
     }
     return *this;
 }
 
 SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
-    for (auto &row : data) {
-        for (auto &node : row) {
-            node = tomsolver::Subs(std::move(node), varsTable);
-        }
+    for (auto &node : *data) {
+        node = tomsolver::Subs(std::move(node), varsTable);
     }
     return *this;
 }
 
 std::set<std::string> SymMat::GetAllVarNames() const noexcept {
     std::set<std::string> ret;
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            auto varNames = data[i][j]->GetAllVarNames();
-            ret.insert(varNames.begin(), varNames.end());
-        }
+    for (auto &node : *data) {
+        ret.merge(node->GetAllVarNames());
     }
     return ret;
 }
 
 SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
-    assert(rhs.Rows() == Rows() && rhs.Cols() == Cols());
-    SymMat ret(Rows(), Cols());
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            ret.data[i][j] = tomsolver::Clone(data[i][j]) - tomsolver::Clone(rhs.data[i][j]);
-        }
-    }
+    assert(rhs.rows == rows && rhs.cols == cols);
+    SymMat ret(rows, cols);
+    std::generate(std::begin(*ret.data), std::end(*ret.data),
+                  [lhsIter = std::begin(*data), rhsIter = std::begin(*rhs.data)]() mutable {
+                      return *lhsIter++ - *rhsIter++;
+                  });
     return ret;
 }
 
 SymMat SymMat::operator*(const SymMat &rhs) const {
-    if (Cols() != rhs.Rows()) {
+    if (cols != rhs.rows) {
         throw MathError(ErrorType::SIZE_NOT_MATCH, "");
     }
-    SymMat ans(Rows(), rhs.Cols());
+
+    SymMat ans(rows, rhs.cols);
     for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < rhs.Cols(); ++j) {
-            Node sum = data[i][0] * rhs[0][j];
-            for (int k = 1; k < Cols(); ++k) {
-                sum += data[i][k] * rhs[k][j];
+        for (int j = 0; j < rhs.cols; ++j) {
+            auto sum = Value(i, 0) * rhs.Value(0, j);
+            for (int k = 1; k < cols; ++k) {
+                sum += Value(i, k) * rhs.Value(k, j);
             }
-            ans[i][j] = Move(sum);
+            ans.Value(i, j) = Move(sum);
         }
     }
     return ans;
 }
 
 bool SymMat::operator==(const SymMat &rhs) const noexcept {
-    if (rhs.Rows() != Rows() || rhs.Cols() != Cols()) {
+    if (rhs.rows != rows || rhs.cols != cols) {
         return false;
     }
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            if (!data[i][j]->Equal(rhs.data[i][j])) {
-                return false;
-            }
-        }
-    }
-    return true;
+    return std::equal(std::begin(*data), std::end(*data), std::begin(*rhs.data), [](auto &node1, auto &node2) {
+        return node1->Equal(node2);
+    });
 }
 
-const std::vector<Node> &SymMat::operator[](int row) const noexcept {
-    assert(row < Rows());
-    return data[row];
+Node &SymMat::Value(int i, int j) noexcept {
+    return (*data)[i * cols + j];
 }
 
-std::vector<Node> &SymMat::operator[](int row) noexcept {
-    assert(row < Rows());
-    return data[row];
+const Node &SymMat::Value(int i, int j) const noexcept {
+    return (*data)[i * cols + j];
 }
 
 std::string SymMat::ToString() const noexcept {
-    if (Empty())
+    if (data->size() == 0) {
         return "[]";
-    std::string s;
-    s.reserve(256);
-
-    auto OutputRow = [&](int i) {
-        int j = 0;
-        for (; j < Cols() - 1; ++j) {
-            s += data[i][j]->ToString() + ", ";
-        }
-        s += data[i][j]->ToString();
-    };
-
-    s += "[";
-    OutputRow(0);
-    s += "\n";
-
-    int i = 1;
-    for (; i < Rows() - 1; ++i) {
-        s += " ";
-        OutputRow(i);
-        s += "\n";
     }
-    s += " ";
-    OutputRow(i);
-    s += "]";
-    return s;
+
+    std::stringstream ss;
+    ss << "[";
+
+    size_t i = 0;
+    for (auto &node : *data) {
+        ss << (i == 0 ? "" : " ") << node->ToString();
+        i++;
+        ss << (i % cols == 0 ? (i == data->size() ? "]" : "\n") : ", ");
+    }
+
+    return ss.str();
 }
 
 SymVec::SymVec(int rows) noexcept : SymMat(rows, 1) {}
 
-SymVec::SymVec(const std::initializer_list<Node> &lst) noexcept : SymMat(static_cast<int>(lst.size()), 1) {
-    for (auto it = lst.begin(); it != lst.end(); ++it) {
-        auto &node = const_cast<Node &>(*it);
-        data[it - lst.begin()][0] = std::move(node);
+SymVec::SymVec(std::initializer_list<Node> init) noexcept : SymMat(static_cast<int>(init.size()), 1) {
+    auto i = 0;
+    for (auto &node : init) {
+        (*data)[i++] = std::move(const_cast<Node &>(node));
     }
 }
 
@@ -230,22 +197,25 @@ SymVec SymVec::operator-(const SymVec &rhs) const noexcept {
 }
 
 Node &SymVec::operator[](std::size_t index) noexcept {
-    return data[index][0];
+    return (*data)[index];
 }
 
 const Node &SymVec::operator[](std::size_t index) const noexcept {
-    return data[index][0];
+    return (*data)[index];
 }
 
 SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept {
-    int rows = equations.Rows();
+    int rows = equations.rows;
     int cols = static_cast<int>(vars.size());
     SymMat ja(rows, cols);
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            ja.data[i][j] = Diff(equations.data[i][0], vars[j]);
-        }
-    }
+    std::generate(std::begin(*ja.data), std::end(*ja.data),
+                  [iter = std::begin(*equations.data), &vars, i = size_t{0}]() mutable {
+                      if (i == vars.size()) {
+                          i = 0;
+                          iter++;
+                      }
+                      return Diff(*iter, vars[i++]);
+                  });
     return ja;
 }
 

@@ -120,7 +120,7 @@ TEST(SolveBase, IndeterminateEquation) {
     Config::get().allowIndeterminateEquation = true;
 
     // 结束时恢复设置
-    std::shared_ptr<void> defer(nullptr, [&](...) {
+    std::shared_ptr<void> defer(nullptr, [](auto) {
         Config::get().Reset();
     });
 
