@@ -1,6 +1,6 @@
-#include "nonlinear.h"
 #include "config.h"
 #include "functions.h"
+#include "nonlinear.h"
 #include "parse.h"
 
 #include "memory_leak_detection.h"
@@ -148,7 +148,7 @@ TEST(Solve, Case2) {
     Config::get().nonlinearMethod = NonlinearMethod::LM;
 
     // 结束时恢复设置
-    std::shared_ptr<void> defer(nullptr, [&](...) {
+    std::shared_ptr<void> defer(nullptr, [](auto) {
         Config::get().Reset();
     });
 

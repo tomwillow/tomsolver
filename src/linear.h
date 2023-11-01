@@ -11,6 +11,6 @@ namespace tomsolver {
  * @exception MathError 不定方程（设置Config::get().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
  *
  */
-Vec SolveLinear(const Mat &A, const Vec &b);
+Vec SolveLinear(Mat A, Vec b);
 
 } // namespace tomsolver
