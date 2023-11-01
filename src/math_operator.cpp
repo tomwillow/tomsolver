@@ -4,6 +4,7 @@
 #include <limits>
 #include <cassert>
 #include <cmath>
+#include <sstream>
 
 namespace tomsolver {
 
@@ -349,20 +350,21 @@ double Calc(MathOperator op, double v1, double v2) {
     bool isInvalid = (ret == std::numeric_limits<double>::infinity()) ||
                      (ret == -std::numeric_limits<double>::infinity()) || (ret != ret);
     if (isInvalid) {
-        std::string info;
-        info = "expression: \"";
+        // std::string info;
+        std::stringstream info;
+        info << "expression: \"";
         switch (GetOperatorNum(op)) {
         case 1:
-            info += MathOperatorToStr(op) + " " + ToString(v1);
+            info << MathOperatorToStr(op) << " " << ToString(v1);
             break;
         case 2:
-            info += ToString(v1) + " " + MathOperatorToStr(op) + " " + ToString(v2);
+            info << ToString(v1) << " " << MathOperatorToStr(op) << " " << ToString(v2);
             break;
         default:
             assert(0);
         }
-        info += "\"";
-        throw MathError(ErrorType::ERROR_INVALID_NUMBER, info);
+        info << "\"";
+        throw MathError(ErrorType::ERROR_INVALID_NUMBER, info.str());
     }
 
     return ret;
