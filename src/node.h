@@ -86,7 +86,7 @@ private:
     MathOperator op = MathOperator::MATH_NULL;
     double value;
     std::string varname;
-    const NodeImpl *parent = nullptr;
+    NodeImpl *parent = nullptr;
     Node left, right;
     NodeImpl() = default;
 

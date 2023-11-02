@@ -9,9 +9,6 @@
 
 using namespace tomsolver;
 
-using std::cout;
-using std::endl;
-
 TEST(Subs, Base) {
     MemoryLeakDetection mld;
 

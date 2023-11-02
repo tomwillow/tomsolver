@@ -120,8 +120,7 @@ public:
 
         // ==== Part II ====
         std::for_each(revertedPostOrder.rbegin(), revertedPostOrder.rend(), [](SimplifyNode &snode) {
-            auto &parent = *const_cast<NodeImpl *>(snode.node.parent);
-            SimplifySingleNode(snode.isLeftChild ? parent.left : parent.right);
+            SimplifySingleNode(snode.isLeftChild ? snode.node.parent->left : snode.node.parent->right);
         });
 
         SimplifyFunctions::SimplifySingleNode(node);
