@@ -46,6 +46,9 @@ struct Config {
         static Config config;
         return config;
     }
+
+private:
+    Config() = default;
 };
 
 std::string ToString(double value) noexcept;
