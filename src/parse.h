@@ -3,6 +3,8 @@
 #include "node.h"
 
 #include <stdexcept>
+#include <string_view>
+#include <utility>
 
 namespace tomsolver {
 
@@ -18,7 +20,19 @@ protected:
 
 class SingleParseError : public ParseError {
 public:
-    SingleParseError(int line, int pos, const std::string &content, const std::string &errInfo);
+    template <typename... T>
+    SingleParseError(int line, int pos, std::string_view content, T &&...errInfo)
+        : line(line), pos(pos), content(content) {
+        std::stringstream ss;
+
+        ss << "[Parse Error] ";
+        (ss << ... << std::forward<T>(errInfo));
+        ss << " at(" << line << ", " << pos << "):\n"
+           << content << "\n"
+           << std::string(pos, ' ') << "^---- error position";
+
+        whatStr = ss.str();
+    }
 
     virtual const char *what() const noexcept override;
 
@@ -27,11 +41,10 @@ public:
     int GetPos() const noexcept;
 
 private:
-    int line;            // 行号
-    int pos;             // 第几个字符
-    std::string content; // 整行文本
-    std::string errInfo; // 报错信息
-    std::string whatStr; // 完整的错误信息
+    int line;                 // 行号
+    int pos;                  // 第几个字符
+    std::string_view content; // 整行文本
+    std::string whatStr;      // 完整的错误信息
 };
 
 class MultiParseError : public ParseError {
@@ -48,13 +61,13 @@ private:
 namespace internal {
 
 struct Token {
-    std::string s;                        // token内容
-    int line;                             // 行号
-    int pos;                              // 第几个字符
-    bool isBaseOperator;                  // 是否为基本运算符（单个字符的运算符以及左右括号）
-    Node node;                            // 节点
-    std::shared_ptr<std::string> content; // 整行文本
-    Token(int line, int pos, bool isBaseOperator, const std::string &s, const std::shared_ptr<std::string> &content)
+    std::string_view s;       // token内容
+    int line;                 // 行号
+    int pos;                  // 第几个字符
+    bool isBaseOperator;      // 是否为基本运算符（单个字符的运算符以及左右括号）
+    std::string_view content; // 整行文本
+    Node node;                // 节点
+    Token(int line, int pos, bool isBaseOperator, std::string_view s, std::string_view content)
         : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
 };
 
@@ -64,7 +77,7 @@ public:
      * 解析表达式字符串为in order记号流。其实就是做词法分析。
      * @exception ParseError
      */
-    static std::deque<Token> ParseToTokens(const std::string &expression);
+    static std::deque<Token> ParseToTokens(std::string_view expression);
 
     /**
      * 由in order序列得到post order序列。实质上是把记号流转化为逆波兰表达式。
@@ -85,6 +98,8 @@ public:
  * 把字符串解析为表达式。
  * @exception ParseError
  */
-Node Parse(const std::string &expression);
+Node Parse(std::string_view expression);
+
+Node operator""_f(const char *exp, size_t);
 
 } // namespace tomsolver

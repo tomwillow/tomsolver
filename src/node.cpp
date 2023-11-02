@@ -632,15 +632,20 @@ Node Num(double num) noexcept {
     return std::make_unique<internal::NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
 }
 
-bool VarNameIsLegal(const std::string &varname) noexcept {
-    return std::regex_match(varname, std::regex{R"((?=\w)\D\w*)"});
+Node Op(MathOperator op) noexcept {
+    return std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
 }
 
-Node Var(const std::string &varname) {
+bool VarNameIsLegal(std::string_view varname) noexcept {
+    return std::regex_match(varname.begin(), varname.end(), std::regex{R"((?=\w)\D\w*)"});
+}
+
+Node Var(std::string_view varname) {
+    auto name =  std::string{varname};
     if (!VarNameIsLegal(varname)) {
-        throw std::runtime_error("Illegal varname: " + varname);
+        throw std::runtime_error("Illegal varname: " + name);
     }
-    return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, varname);
+    return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, std::move(name));
 }
 
 } // namespace tomsolver

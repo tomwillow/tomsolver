@@ -28,9 +28,9 @@ TEST(Solve, Base) {
                     a*sin(x(1)) + b*sin(x(1)-x(2)) + c*sin(x(1)-x(2)-x(3)),
                     x(1)-x(2)-x(3)    ];
     */
-    Node f1 = Parse("a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)");
-    Node f2 = Parse("a*sin(x1) + b*sin(x1-x2) + c*sin(x1-x2-x3)");
-    Node f3 = Parse("x1-x2-x3");
+    Node f1 = "a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)"_f;
+    Node f2 = "a*sin(x1) + b*sin(x1-x2) + c*sin(x1-x2-x3)"_f;
+    Node f3 = "x1-x2-x3"_f;
 
     SymVec f{Move(f1), Move(f2), Move(f3)};
 
@@ -115,7 +115,7 @@ TEST(Solve, Case1) {
     });
 
     // 构造方程组
-    SymVec f{{Parse("exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"), Parse("x1 * cos(x2) + x2 * sin(x1) - 0.5")}};
+    SymVec f{{"exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f, "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f}};
 
     // 求解，结果保存到ans
     VarsTable ans = Solve(f);

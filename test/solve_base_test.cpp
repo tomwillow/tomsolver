@@ -105,8 +105,8 @@ TEST(SolveBase, IndeterminateEquation) {
 
     std::setlocale(LC_ALL, ".UTF8");
 
-    Node f1 = Parse("cos(x1) + cos(x1-x2) + cos(x1-x2-x3) - 1");
-    Node f2 = Parse("sin(x1) + sin(x1-x2) + sin(x1-x2-x3) + 2");
+    Node f1 = "cos(x1) + cos(x1-x2) + cos(x1-x2-x3) - 1"_f;
+    Node f2 = "sin(x1) + sin(x1-x2) + sin(x1-x2-x3) + 2"_f;
 
     SymVec f{Move(f1), Move(f2)};
 

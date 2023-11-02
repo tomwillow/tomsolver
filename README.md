@@ -63,7 +63,7 @@ int main() {
      */
 
     // 构造方程组
-    SymVec f{{Parse("exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"), Parse("x1 * cos(x2) + x2 * sin(x1) - 0.5")}};
+    SymVec f{{"exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f, "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f}};
 
     // 设置初值为0.0
     Config::get().initialValue = 0.0;
