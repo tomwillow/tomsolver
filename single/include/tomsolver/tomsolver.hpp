@@ -51,7 +51,7 @@ enum class ErrorType {
     SIZE_NOT_MATCH                       // 维数不匹配
 };
 
-std::string GetErrorInfo(ErrorType err);
+inline std::string GetErrorInfo(ErrorType err);
 
 class MathError : public std::exception {
 public:
@@ -70,7 +70,7 @@ private:
 
 namespace tomsolver {
 
-std::string GetErrorInfo(ErrorType err) {
+inline std::string GetErrorInfo(ErrorType err) {
     switch (err) {
     case ErrorType::ERROR_INVALID_NUMBER:
         return u8"invalid number";
@@ -126,17 +126,17 @@ std::string GetErrorInfo(ErrorType err) {
     return u8"GetErrorInfo: bug";
 }
 
-MathError::MathError(ErrorType errorType, std::string_view extInfo) : errorType(errorType) {
+inline MathError::MathError(ErrorType errorType, std::string_view extInfo) : errorType(errorType) {
     std::stringstream ss;
     ss << GetErrorInfo(errorType) << ": \"" << extInfo << "\"";
     errInfo = ss.str();
 }
 
-const char *MathError::what() const noexcept {
+inline const char *MathError::what() const noexcept {
     return errInfo.c_str();
 }
 
-ErrorType MathError::GetErrorType() const noexcept {
+inline ErrorType MathError::GetErrorType() const noexcept {
     return errorType;
 }
 
@@ -192,13 +192,13 @@ private:
     Config() = default;
 };
 
-std::string ToString(double value) noexcept;
+inline std::string ToString(double value) noexcept;
 
 } // namespace tomsolver
 
 namespace tomsolver {
 
-std::string ToString(double value) noexcept {
+inline std::string ToString(double value) noexcept {
     static const std::array strategy = {
         std::tuple{"%.16e", std::regex{"\\.?0+(?=e)"}},
         std::tuple{"%.16f", std::regex{"\\.?0+(?=$)"}},
@@ -221,7 +221,7 @@ std::string ToString(double value) noexcept {
     return std::regex_replace(buf, re, "");
 }
 
-void Config::Reset() noexcept {
+inline void Config::Reset() noexcept {
     *this = {};
 }
 
@@ -232,12 +232,12 @@ namespace tomsolver {
 constexpr double PI = M_PI;
 
 template <typename T>
-T radians(T &&t) noexcept {
+inline T radians(T &&t) noexcept {
     return std::forward<T>(t) / 180.0 * PI;
 }
 
 template <typename T>
-T degrees(T &&t) noexcept {
+inline T degrees(T &&t) noexcept {
     return std::forward<T>(t) * 180.0 / PI;
 }
 
@@ -277,47 +277,47 @@ enum class MathOperator {
 /**
  * 操作符转std::string
  */
-std::string MathOperatorToStr(MathOperator op);
+inline std::string MathOperatorToStr(MathOperator op);
 
 /**
  * 取得操作数的数量。
  */
-int GetOperatorNum(MathOperator op) noexcept;
+inline int GetOperatorNum(MathOperator op) noexcept;
 
 /**
 * 返回运算符的优先级
 
 */
-int Rank(MathOperator op) noexcept;
+inline int Rank(MathOperator op) noexcept;
 
 /**
  * 返回运算符结合性
  */
-bool IsLeft2Right(MathOperator eOperator) noexcept;
+inline bool IsLeft2Right(MathOperator eOperator) noexcept;
 
 /**
  * 返回是否满足交换律
  */
-bool InAssociativeLaws(MathOperator eOperator) noexcept;
+inline bool InAssociativeLaws(MathOperator eOperator) noexcept;
 
 /**
  * 返回是否是函数
  */
-bool IsFunction(MathOperator op) noexcept;
+inline bool IsFunction(MathOperator op) noexcept;
 
 /**
  * 是整数 且 为偶数
  * FIXME: 超出long long范围的处理
  */
-bool IsIntAndEven(double n) noexcept;
+inline bool IsIntAndEven(double n) noexcept;
 
-double Calc(MathOperator op, double v1, double v2);
+inline double Calc(MathOperator op, double v1, double v2);
 
 } // namespace tomsolver
 
 namespace tomsolver {
 
-std::string MathOperatorToStr(MathOperator op) {
+inline std::string MathOperatorToStr(MathOperator op) {
     switch (op) {
     case MathOperator::MATH_NULL:
         assert(0);
@@ -376,7 +376,7 @@ std::string MathOperatorToStr(MathOperator op) {
     return "err";
 }
 
-int GetOperatorNum(MathOperator op) noexcept {
+inline int GetOperatorNum(MathOperator op) noexcept {
     switch (op) {
     case MathOperator::MATH_POSITIVE: // 正负号
     case MathOperator::MATH_NEGATIVE:
@@ -416,7 +416,7 @@ int GetOperatorNum(MathOperator op) noexcept {
     return 0;
 }
 
-int Rank(MathOperator op) noexcept {
+inline int Rank(MathOperator op) noexcept {
     switch (op) {
     case MathOperator::MATH_SIN:
     case MathOperator::MATH_COS:
@@ -464,7 +464,7 @@ int Rank(MathOperator op) noexcept {
     return 0;
 }
 
-bool IsLeft2Right(MathOperator eOperator) noexcept {
+inline bool IsLeft2Right(MathOperator eOperator) noexcept {
     switch (eOperator) {
     case MathOperator::MATH_MOD: //%
     case MathOperator::MATH_AND: //&
@@ -502,7 +502,7 @@ bool IsLeft2Right(MathOperator eOperator) noexcept {
     return false;
 }
 
-bool InAssociativeLaws(MathOperator eOperator) noexcept {
+inline bool InAssociativeLaws(MathOperator eOperator) noexcept {
     switch (eOperator) {
 
     case MathOperator::MATH_POSITIVE: // 正负号
@@ -542,7 +542,7 @@ bool InAssociativeLaws(MathOperator eOperator) noexcept {
     return false;
 }
 
-bool IsFunction(MathOperator op) noexcept {
+inline bool IsFunction(MathOperator op) noexcept {
     switch (op) {
     case MathOperator::MATH_SIN:
     case MathOperator::MATH_COS:
@@ -578,7 +578,7 @@ bool IsFunction(MathOperator op) noexcept {
     return false;
 }
 
-double Calc(MathOperator op, double v1, double v2) {
+inline double Calc(MathOperator op, double v1, double v2) {
     double ret = std::numeric_limits<double>::quiet_NaN();
     switch (op) {
     case MathOperator::MATH_SIN:
@@ -682,7 +682,7 @@ double Calc(MathOperator op, double v1, double v2) {
 } // namespace tomsolver
 /*
 
-Original Inverse(), Adjoint(), GetCofactor(), Det() is from https://github.com/taehwan642:
+inline Original Inverse(), Adjoint(), GetCofactor(), Det() is from https://github.com/taehwan642:
 
 ///////////////////////////////////////////
     MADE BY TAE HWAN KIM, SHIN JAE HO
@@ -799,29 +799,29 @@ protected:
     friend double Det(const Mat &A, int n) noexcept;
 };
 
-Mat operator*(double k, const Mat &mat) noexcept;
+inline Mat operator*(double k, const Mat &mat) noexcept;
 
-std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
+inline std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
 
-Mat EachDivide(const Mat &a, const Mat &b) noexcept;
+inline Mat EachDivide(const Mat &a, const Mat &b) noexcept;
 
-bool IsZero(const Mat &mat) noexcept;
+inline bool IsZero(const Mat &mat) noexcept;
 
-bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
+inline bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
 
-int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept;
+inline int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept;
 
 /**
  * 伴随矩阵。
  */
-void Adjoint(const Mat &A, Mat &adj) noexcept;
+inline void Adjoint(const Mat &A, Mat &adj) noexcept;
 
-void GetCofactor(const Mat &A, Mat &temp, int p, int q, int n) noexcept;
+inline void GetCofactor(const Mat &A, Mat &temp, int p, int q, int n) noexcept;
 
 /**
  * 计算矩阵的行列式值。
  */
-double Det(const Mat &A, int n) noexcept;
+inline double Det(const Mat &A, int n) noexcept;
 
 class Vec : public Mat {
 public:
@@ -861,18 +861,18 @@ public:
 /**
  * 向量点乘。
  */
-double Dot(const Vec &a, const Vec &b) noexcept;
+inline double Dot(const Vec &a, const Vec &b) noexcept;
 
 } // namespace tomsolver
 
 namespace tomsolver {
 
-Mat::Mat(int rows, int cols, double initValue) noexcept : rows(rows), cols(cols), data(initValue, rows * cols) {
+inline Mat::Mat(int rows, int cols, double initValue) noexcept : rows(rows), cols(cols), data(initValue, rows * cols) {
     assert(rows > 0);
     assert(cols > 0);
 }
 
-Mat::Mat(std::initializer_list<std::initializer_list<double>> init) noexcept {
+inline Mat::Mat(std::initializer_list<std::initializer_list<double>> init) noexcept {
     rows = static_cast<int>(init.size());
     assert(rows > 0);
     cols = static_cast<int>(std::max(init, [](auto lhs, auto rhs) {
@@ -887,39 +887,40 @@ Mat::Mat(std::initializer_list<std::initializer_list<double>> init) noexcept {
     }
 }
 
-Mat::Mat(int rows, int cols, std::valarray<double> data) noexcept : rows(rows), cols(cols), data(std::move(data)) {}
+inline Mat::Mat(int rows, int cols, std::valarray<double> data) noexcept
+    : rows(rows), cols(cols), data(std::move(data)) {}
 
-std::slice_array<double> Mat::Row(int i, int offset) {
+inline std::slice_array<double> Mat::Row(int i, int offset) {
     return data[std::slice(cols * i + offset, cols - offset, 1)];
 }
 
-std::slice_array<double> Mat::Col(int j, int offset) {
+inline std::slice_array<double> Mat::Col(int j, int offset) {
     return data[std::slice(j + offset * cols, rows - offset, cols)];
 }
 
-auto Mat::Row(int i, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
+inline auto Mat::Row(int i, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
     return data[std::slice(cols * i + offset, cols - offset, 1)];
 }
 
-auto Mat::Col(int j, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
+inline auto Mat::Col(int j, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
     return data[std::slice(j + offset * cols, rows - offset, cols)];
 }
 
-const double &Mat::Value(int i, int j) const {
+inline const double &Mat::Value(int i, int j) const {
     return data[i * cols + j];
 }
 
-double &Mat::Value(int i, int j) {
+inline double &Mat::Value(int i, int j) {
     return data[i * cols + j];
 }
 
-bool Mat::operator==(double m) const noexcept {
+inline bool Mat::operator==(double m) const noexcept {
     return std::all_of(std::begin(data), std::end(data), [m](auto val) {
         return std::abs(val - m) < Config::get().epsilon;
     });
 }
 
-bool Mat::operator==(const Mat &b) const noexcept {
+inline bool Mat::operator==(const Mat &b) const noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
     return std::all_of(std::begin(data), std::end(data), [iter = std::begin(b.data)](auto val) mutable {
@@ -928,34 +929,34 @@ bool Mat::operator==(const Mat &b) const noexcept {
 }
 
 // be negative
-Mat Mat::operator-() noexcept {
+inline Mat Mat::operator-() noexcept {
     return {rows, cols, -data};
 }
 
-Mat Mat::operator+(const Mat &b) const noexcept {
+inline Mat Mat::operator+(const Mat &b) const noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
     return {rows, cols, data + b.data};
 }
 
-Mat &Mat::operator+=(const Mat &b) noexcept {
+inline Mat &Mat::operator+=(const Mat &b) noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
     data += b.data;
     return *this;
 }
 
-Mat Mat::operator-(const Mat &b) const noexcept {
+inline Mat Mat::operator-(const Mat &b) const noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
     return {rows, cols, data - b.data};
 }
 
-Mat Mat::operator*(double m) const noexcept {
+inline Mat Mat::operator*(double m) const noexcept {
     return {rows, cols, data * m};
 }
 
-Mat Mat::operator*(const Mat &b) const noexcept {
+inline Mat Mat::operator*(const Mat &b) const noexcept {
     assert(cols == b.rows);
     Mat ans(rows, b.cols);
     for (auto i = 0; i < rows; ++i) {
@@ -966,15 +967,15 @@ Mat Mat::operator*(const Mat &b) const noexcept {
     return ans;
 }
 
-int Mat::Rows() const noexcept {
+inline int Mat::Rows() const noexcept {
     return rows;
 }
 
-int Mat::Cols() const noexcept {
+inline int Mat::Cols() const noexcept {
     return cols;
 }
 
-Vec Mat::ToVec() const {
+inline Vec Mat::ToVec() const {
     assert(rows > 0);
     if (cols != 1) {
         throw std::runtime_error("Mat::ToVec fail. rows is not one");
@@ -985,7 +986,7 @@ Vec Mat::ToVec() const {
     return v;
 }
 
-Mat &Mat::SwapRow(int i, int j) noexcept {
+inline Mat &Mat::SwapRow(int i, int j) noexcept {
     if (i == j) {
         return *this;
     }
@@ -1001,7 +1002,7 @@ Mat &Mat::SwapRow(int i, int j) noexcept {
     return *this;
 }
 
-Mat &Mat::SwapCol(int i, int j) noexcept {
+inline Mat &Mat::SwapCol(int i, int j) noexcept {
     if (i == j) {
         return *this;
     }
@@ -1017,7 +1018,7 @@ Mat &Mat::SwapCol(int i, int j) noexcept {
     return *this;
 }
 
-std::string Mat::ToString() const noexcept {
+inline std::string Mat::ToString() const noexcept {
     if (data.size() == 0) {
         return "[]";
     }
@@ -1035,7 +1036,7 @@ std::string Mat::ToString() const noexcept {
     return ss.str();
 }
 
-void Mat::Resize(int newRows, int newCols) noexcept {
+inline void Mat::Resize(int newRows, int newCols) noexcept {
     assert(newRows > 0 && newCols > 0);
     auto temp = std::move(data);
     data.resize(newRows * newCols);
@@ -1047,39 +1048,39 @@ void Mat::Resize(int newRows, int newCols) noexcept {
     cols = newCols;
 }
 
-Mat &Mat::Zero() noexcept {
+inline Mat &Mat::Zero() noexcept {
     data = 0;
     return *this;
 }
 
-Mat &Mat::Ones() noexcept {
+inline Mat &Mat::Ones() noexcept {
     assert(rows == cols);
     Zero();
     data[std::slice(0, rows, cols + 1)] = 1;
     return *this;
 }
 
-double Mat::Norm2() const noexcept {
+inline double Mat::Norm2() const noexcept {
     return (data * data).sum();
 }
 
-double Mat::NormInfinity() const noexcept {
+inline double Mat::NormInfinity() const noexcept {
     return std::abs(data).max();
 }
 
-double Mat::NormNegInfinity() const noexcept {
+inline double Mat::NormNegInfinity() const noexcept {
     return std::abs(data).min();
 }
 
-double Mat::Min() const noexcept {
+inline double Mat::Min() const noexcept {
     return data.min();
 }
 
-void Mat::SetValue(double value) noexcept {
+inline void Mat::SetValue(double value) noexcept {
     data = value;
 }
 
-bool Mat::PositiveDetermine() const noexcept {
+inline bool Mat::PositiveDetermine() const noexcept {
     assert(rows == cols);
     for (int i = 1; i <= rows; ++i) {
         if (Det(*this, i) <= 0) {
@@ -1089,7 +1090,7 @@ bool Mat::PositiveDetermine() const noexcept {
     return true;
 }
 
-Mat Mat::Transpose() const noexcept {
+inline Mat Mat::Transpose() const noexcept {
     Mat ans(cols, rows);
     for (auto i = 0; i < cols; i++) {
         ans.Row(i) = Col(i);
@@ -1097,7 +1098,7 @@ Mat Mat::Transpose() const noexcept {
     return ans;
 }
 
-Mat Mat::Inverse() const {
+inline Mat Mat::Inverse() const {
     assert(rows == cols);
     int n = rows;
     double det = Det(*this, n); // Determinant, 역행렬을 시킬 행렬의 행렬식을 구함
@@ -1114,37 +1115,37 @@ Mat Mat::Inverse() const {
     return {n, n, adj.data / det};
 }
 
-Mat operator*(double k, const Mat &mat) noexcept {
+inline Mat operator*(double k, const Mat &mat) noexcept {
     Mat ans(mat);
     ans.data *= k;
     return ans;
 }
 
-Mat EachDivide(const Mat &a, const Mat &b) noexcept {
+inline Mat EachDivide(const Mat &a, const Mat &b) noexcept {
     assert(a.rows == b.rows);
     assert(a.cols == b.cols);
     return {a.rows, b.cols, b.data / b.data};
 }
 
-bool IsZero(const Mat &mat) noexcept {
+inline bool IsZero(const Mat &mat) noexcept {
     return std::all_of(std::begin(mat.data), std::end(mat.data), [](auto val) {
         return std::abs(val) <= Config::get().epsilon;
     });
 }
 
-bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
+inline bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
     assert(v1.rows == v2.rows && v1.cols == v2.cols);
     return std::all_of(std::begin(v1.data), std::end(v1.data), [iter = std::begin(v2.data)](auto val) mutable {
         return val < *iter++;
     });
 }
 
-int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
+inline int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
     std::valarray temp = std::abs(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
     return std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
 }
 
-void Adjoint(const Mat &A, Mat &adj) noexcept // 딸림행렬, 수반행렬
+inline void Adjoint(const Mat &A, Mat &adj) noexcept // 딸림행렬, 수반행렬
 {
     if (A.rows == 1) // 예외처리
     {
@@ -1170,8 +1171,8 @@ void Adjoint(const Mat &A, Mat &adj) noexcept // 딸림행렬, 수반행렬
     }
 }
 
-void GetCofactor(const Mat &A, Mat &cofactor, int p, int q,
-                 int n) noexcept // 여인수를 구해다주는 함수!
+inline void GetCofactor(const Mat &A, Mat &cofactor, int p, int q,
+                        int n) noexcept // 여인수를 구해다주는 함수!
 {
     /*
          ┌───┄┄┄┄┄┄┄┄┬───┬┄┄┄┄┄┄┄┄───┐   size of region A = p * q
@@ -1219,7 +1220,7 @@ void GetCofactor(const Mat &A, Mat &cofactor, int p, int q,
     }
 }
 
-double Det(const Mat &A, int n) noexcept {
+inline double Det(const Mat &A, int n) noexcept {
     if (n == 0) {
         return 0;
     }
@@ -1252,77 +1253,77 @@ double Det(const Mat &A, int n) noexcept {
     return D; // 마지막엔 n X n 행렬의 Determinant를 리턴해준다.
 }
 
-Vec::Vec(int rows, double initValue) noexcept : Mat(rows, 1, initValue) {}
+inline Vec::Vec(int rows, double initValue) noexcept : Mat(rows, 1, initValue) {}
 
-Vec::Vec(std::initializer_list<double> init) noexcept : Vec(std::valarray<double>{init}) {}
+inline Vec::Vec(std::initializer_list<double> init) noexcept : Vec(std::valarray<double>{init}) {}
 
-Vec::Vec(std::valarray<double> init) noexcept : Vec(static_cast<int>(init.size())) {
+inline Vec::Vec(std::valarray<double> init) noexcept : Vec(static_cast<int>(init.size())) {
     data = std::move(init);
 }
 
-Mat &Vec::AsMat() noexcept {
+inline Mat &Vec::AsMat() noexcept {
     return *this;
 }
 
-void Vec::Resize(int newRows) noexcept {
+inline void Vec::Resize(int newRows) noexcept {
     assert(newRows > 0);
     Mat::Resize(newRows, 1);
 }
 
-double &Vec::operator[](std::size_t i) noexcept {
+inline double &Vec::operator[](std::size_t i) noexcept {
     return data[i];
 }
 
-double Vec::operator[](std::size_t i) const noexcept {
+inline double Vec::operator[](std::size_t i) const noexcept {
     return data[i];
 }
 
-Vec Vec::operator+(const Vec &b) const noexcept {
+inline Vec Vec::operator+(const Vec &b) const noexcept {
     assert(rows == b.rows);
     assert(cols == 1 && b.cols == 1);
     return {data + b.data};
 }
 
-Vec Vec::operator-() noexcept {
+inline Vec Vec::operator-() noexcept {
     return {-data};
 }
 
-Vec Vec::operator-(const Vec &b) const noexcept {
+inline Vec Vec::operator-(const Vec &b) const noexcept {
     assert(rows == b.rows);
     return {data - b.data};
 }
 
-Vec Vec::operator*(double m) const noexcept {
+inline Vec Vec::operator*(double m) const noexcept {
     return {data * m};
 }
 
-Vec Vec::operator*(const Vec &b) const noexcept {
+inline Vec Vec::operator*(const Vec &b) const noexcept {
     assert(rows == b.rows);
     return {data * b.data};
 }
 
-Vec Vec::operator/(const Vec &b) const noexcept {
+inline Vec Vec::operator/(const Vec &b) const noexcept {
     assert(rows == b.rows);
     return {data / b.data};
 }
 
-bool Vec::operator<(const Vec &b) noexcept {
+inline bool Vec::operator<(const Vec &b) noexcept {
     assert(rows == b.rows);
     return std::all_of(std::begin(data), std::end(data), [iter = std::begin(b.data)](auto val) mutable {
         return val < *iter++;
     });
 }
 
-Vec operator*(double k, const Vec &v) {
+inline Vec operator*(double k, const Vec &v) {
     return {v.data * k};
 }
 
-double Dot(const Vec &a, const Vec &b) noexcept {
+inline double Dot(const Vec &a, const Vec &b) noexcept {
     assert(a.rows == b.rows);
     return (a.data * b.data).sum();
 }
 
-std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept {
+inline std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept {
     return out << mat.ToString();
 }
 
@@ -1337,13 +1338,13 @@ namespace tomsolver {
  * @exception MathError 不定方程（设置Config::get().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
  *
  */
-Vec SolveLinear(Mat A, Vec b);
+inline Vec SolveLinear(Mat A, Vec b);
 
 } // namespace tomsolver
 
 namespace tomsolver {
 
-Vec SolveLinear(Mat A, Vec b) {
+inline Vec SolveLinear(Mat A, Vec b) {
     int rows = A.Rows(); // 行数
     int cols = rows;     // 列数=未知数个数
 
@@ -1544,13 +1545,13 @@ private:
     std::map<std::string, double> table;
 };
 
-std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept;
+inline std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept;
 
 } // namespace tomsolver
 
 namespace tomsolver {
 
-VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
+inline VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
     : vars(vars), values(static_cast<int>(vars.size()), initValue) {
     for (auto &var : vars) {
         table.try_emplace(var, initValue);
@@ -1558,12 +1559,12 @@ VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
     assert(vars.size() == table.size() && "vars is not unique");
 }
 
-VarsTable::VarsTable(std::initializer_list<std::pair<std::string, double>> initList)
+inline VarsTable::VarsTable(std::initializer_list<std::pair<std::string, double>> initList)
     : VarsTable({initList.begin(), initList.end()}) {
     assert(vars.size() == table.size() && "vars is not unique");
 }
 
-VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
+inline VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
     : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
     int i = 0;
     for (auto &[var, val] : table) {
@@ -1573,19 +1574,19 @@ VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
     }
 }
 
-int VarsTable::VarNums() const noexcept {
+inline int VarsTable::VarNums() const noexcept {
     return static_cast<int>(table.size());
 }
 
-const std::vector<std::string> &VarsTable::Vars() const noexcept {
+inline const std::vector<std::string> &VarsTable::Vars() const noexcept {
     return vars;
 }
 
-const Vec &VarsTable::Values() const noexcept {
+inline const Vec &VarsTable::Values() const noexcept {
     return values;
 }
 
-void VarsTable::SetValues(const Vec &v) noexcept {
+inline void VarsTable::SetValues(const Vec &v) noexcept {
     assert(v.Rows() == values.Rows());
     values = v;
     for (int i = 0; i < values.Rows(); ++i) {
@@ -1593,27 +1594,27 @@ void VarsTable::SetValues(const Vec &v) noexcept {
     }
 }
 
-bool VarsTable::Has(const std::string &varname) const noexcept {
+inline bool VarsTable::Has(const std::string &varname) const noexcept {
     return table.find(varname) != table.end();
 }
 
-std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
+inline std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
     return table.begin();
 }
 
-std::map<std::string, double>::const_iterator VarsTable::end() const noexcept {
+inline std::map<std::string, double>::const_iterator VarsTable::end() const noexcept {
     return table.end();
 }
 
-std::map<std::string, double>::const_iterator VarsTable::cbegin() const noexcept {
+inline std::map<std::string, double>::const_iterator VarsTable::cbegin() const noexcept {
     return table.cbegin();
 }
 
-std::map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
+inline std::map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
     return table.cend();
 }
 
-bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
+inline bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
     return values.Rows() == rhs.values.Rows() &&
            std::equal(table.begin(), table.end(), rhs.table.begin(), [](const auto &lhs, const auto &rhs) {
                auto &[lVar, lVal] = lhs;
@@ -1622,7 +1623,7 @@ bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
            });
 }
 
-double VarsTable::operator[](const std::string &varname) const {
+inline double VarsTable::operator[](const std::string &varname) const {
     auto it = table.find(varname);
     if (it == table.end()) {
         throw std::out_of_range("no such variable: " + varname);
@@ -1630,7 +1631,7 @@ double VarsTable::operator[](const std::string &varname) const {
     return it->second;
 }
 
-std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
+inline std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
     for (auto &[var, val] : table) {
         out << var << " = " << tomsolver::ToString(val) << std::endl;
     }
@@ -1776,36 +1777,36 @@ private:
     friend class ParseFunctions;
 };
 
-Node CloneRecursively(const Node &rhs) noexcept;
+inline Node CloneRecursively(const Node &rhs) noexcept;
 
-Node CloneNonRecursively(const Node &rhs) noexcept;
+inline Node CloneNonRecursively(const Node &rhs) noexcept;
 
 /**
  * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
  * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
  */
-void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept;
+inline void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept;
 
 /**
  * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
  * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
  */
-void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept;
+inline void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept;
 
 /**
  * 重载std::ostream的<<操作符以输出一个Node节点。
  */
-std::ostream &operator<<(std::ostream &out, const Node &n) noexcept;
+inline std::ostream &operator<<(std::ostream &out, const Node &n) noexcept;
 
 template <typename T>
-Node UnaryOperator(MathOperator op, T &&n) noexcept {
+inline Node UnaryOperator(MathOperator op, T &&n) noexcept {
     auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
     CopyOrMoveTo(ret.get(), ret->left, std::forward<T>(n));
     return ret;
 }
 
 template <typename T1, typename T2>
-Node BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
+inline Node BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
     auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
     CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
     CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
@@ -1815,102 +1816,102 @@ Node BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
 /**
  * 新建一个运算符节点。
  */
-Node Operator(MathOperator op, Node left = nullptr, Node right = nullptr) noexcept;
+inline Node Operator(MathOperator op, Node left = nullptr, Node right = nullptr) noexcept;
 
 } // namespace internal
 
-Node Clone(const Node &rhs) noexcept;
+inline Node Clone(const Node &rhs) noexcept;
 
 /**
  * 对节点进行移动。等同于std::move。
  */
-Node Move(Node &rhs) noexcept;
+inline Node Move(Node &rhs) noexcept;
 
 /**
  * 新建一个数值节点。
  */
-Node Num(double num) noexcept;
+inline Node Num(double num) noexcept;
 
 /**
  * 新建一个函数节点。
  */
-Node Op(MathOperator op);
+inline Node Op(MathOperator op);
 
 /**
  * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
  */
-bool VarNameIsLegal(std::string_view varname) noexcept;
+inline bool VarNameIsLegal(std::string_view varname) noexcept;
 
 /**
  * 新建一个变量节点。
  * @exception runtime_error 名字不合法
  */
-Node Var(std::string_view varname);
+inline Node Var(std::string_view varname);
 
 template <typename... T>
 using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;
 
 template <typename T1, typename T2>
-SfinaeNode<T1, T2> operator+(T1 &&n1, T2 &&n2) noexcept {
+inline SfinaeNode<T1, T2> operator+(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-SfinaeNode<T> &operator+=(Node &n1, T &&n2) noexcept {
+inline SfinaeNode<T> &operator+=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-SfinaeNode<T1, T2> operator-(T1 &&n1, T2 &&n2) noexcept {
+inline SfinaeNode<T1, T2> operator-(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-SfinaeNode<T> operator-(T &&n1) noexcept {
+inline SfinaeNode<T> operator-(T &&n1) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T>(n1));
 }
 
 template <typename T>
-SfinaeNode<T> operator+(T &&n1) noexcept {
+inline SfinaeNode<T> operator+(T &&n1) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T>(n1));
 }
 
 template <typename T>
-SfinaeNode<T> &operator-=(Node &n1, T &&n2) noexcept {
+inline SfinaeNode<T> &operator-=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-SfinaeNode<T1, T2> operator*(T1 &&n1, T2 &&n2) noexcept {
+inline SfinaeNode<T1, T2> operator*(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-SfinaeNode<T> &operator*=(Node &n1, T &&n2) noexcept {
+inline SfinaeNode<T> &operator*=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-SfinaeNode<T1, T2> operator/(T1 &&n1, T2 &&n2) noexcept {
+inline SfinaeNode<T1, T2> operator/(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-SfinaeNode<T> &operator/=(Node &n1, T &&n2) noexcept {
+inline SfinaeNode<T> &operator/=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-SfinaeNode<T1, T2> operator^(T1 &&n1, T2 &&n2) noexcept {
+inline SfinaeNode<T1, T2> operator^(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_POWER, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-SfinaeNode<T> &operator^=(Node &n1, T &&n2) noexcept {
+inline SfinaeNode<T> &operator^=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_POWER, std::move(n1), std::forward<T>(n2));
     return n1;
 }
@@ -1921,11 +1922,11 @@ namespace tomsolver {
 
 namespace internal {
 
-NodeImpl::NodeImpl(const NodeImpl &rhs) noexcept {
+inline NodeImpl::NodeImpl(const NodeImpl &rhs) noexcept {
     *this = rhs;
 }
 
-NodeImpl &NodeImpl::operator=(const NodeImpl &rhs) noexcept {
+inline NodeImpl &NodeImpl::operator=(const NodeImpl &rhs) noexcept {
     type = rhs.type;
     op = rhs.op;
     value = rhs.value;
@@ -1946,11 +1947,11 @@ NodeImpl &NodeImpl::operator=(const NodeImpl &rhs) noexcept {
     return *this;
 }
 
-NodeImpl::NodeImpl(NodeImpl &&rhs) noexcept {
+inline NodeImpl::NodeImpl(NodeImpl &&rhs) noexcept {
     *this = std::move(rhs);
 }
 
-NodeImpl &NodeImpl::operator=(NodeImpl &&rhs) noexcept {
+inline NodeImpl &NodeImpl::operator=(NodeImpl &&rhs) noexcept {
     type = std::exchange(rhs.type, {});
     op = std::exchange(rhs.op, {});
     value = std::exchange(rhs.value, {});
@@ -1968,12 +1969,12 @@ NodeImpl &NodeImpl::operator=(NodeImpl &&rhs) noexcept {
     return *this;
 }
 
-NodeImpl::~NodeImpl() {
+inline NodeImpl::~NodeImpl() {
     Release();
 }
 
 // 前序遍历。非递归实现。
-bool NodeImpl::Equal(const Node &rhs) const noexcept {
+inline bool NodeImpl::Equal(const Node &rhs) const noexcept {
     if (this == rhs.get()) {
         return true;
     }
@@ -2032,17 +2033,17 @@ bool NodeImpl::Equal(const Node &rhs) const noexcept {
     return true;
 }
 
-std::string NodeImpl::ToString() const noexcept {
+inline std::string NodeImpl::ToString() const noexcept {
     std::stringstream ss;
     ToStringNonRecursively(ss);
     return ss.str();
 }
 
-double NodeImpl::Vpa() const {
+inline double NodeImpl::Vpa() const {
     return VpaNonRecursively();
 }
 
-NodeImpl &NodeImpl::Calc() {
+inline NodeImpl &NodeImpl::Calc() {
     auto d = Vpa();
     *this = {};
     value = d;
@@ -2051,7 +2052,7 @@ NodeImpl &NodeImpl::Calc() {
 }
 
 // 前序遍历。非递归实现。
-void NodeImpl::CheckParent() const noexcept {
+inline void NodeImpl::CheckParent() const noexcept {
     std::stack<std::tuple<const NodeImpl &>> stk;
 
     auto EmplaceNode = [&stk](const Node &node) {
@@ -2083,7 +2084,7 @@ void NodeImpl::CheckParent() const noexcept {
     }
 }
 
-void NodeImpl::CheckOperatorNum() const noexcept {
+inline void NodeImpl::CheckOperatorNum() const noexcept {
     if (type != NodeType::OPERATOR) {
         return;
     }
@@ -2103,7 +2104,7 @@ void NodeImpl::CheckOperatorNum() const noexcept {
     assert(left);
 }
 
-std::string NodeImpl::NodeToStr() const noexcept {
+inline std::string NodeImpl::NodeToStr() const noexcept {
     switch (type) {
     case NodeType::NUMBER:
         return tomsolver::ToString(value);
@@ -2117,7 +2118,7 @@ std::string NodeImpl::NodeToStr() const noexcept {
 }
 
 // 中序遍历。递归实现。
-void NodeImpl::ToStringRecursively(std::stringstream &output) const noexcept {
+inline void NodeImpl::ToStringRecursively(std::stringstream &output) const noexcept {
     switch (type) {
     case NodeType::NUMBER:
         // 如果当前节点是数值且小于0，且前面是-运算符，那么加括号
@@ -2192,7 +2193,7 @@ void NodeImpl::ToStringRecursively(std::stringstream &output) const noexcept {
 }
 
 // 中序遍历。非递归实现。
-void NodeImpl::ToStringNonRecursively(std::stringstream &output) const noexcept {
+inline void NodeImpl::ToStringNonRecursively(std::stringstream &output) const noexcept {
     std::stack<std::tuple<const NodeImpl &>> stk;
 
     NodeImpl rightParenthesis(NodeType::OPERATOR, MathOperator::MATH_RIGHT_PARENTHESIS, 0, "");
@@ -2286,7 +2287,7 @@ void NodeImpl::ToStringNonRecursively(std::stringstream &output) const noexcept 
 }
 
 // 后序遍历。递归实现。
-double NodeImpl::VpaRecursively() const {
+inline double NodeImpl::VpaRecursively() const {
 
     auto vpa = [](const Node &node) {
         return node ? node->Vpa() : 0;
@@ -2308,7 +2309,7 @@ double NodeImpl::VpaRecursively() const {
 }
 
 // 后序遍历。非递归实现。
-double NodeImpl::VpaNonRecursively() const {
+inline double NodeImpl::VpaNonRecursively() const {
 
     std::stack<std::tuple<const NodeImpl &>> stk;
     std::forward_list<std::tuple<const NodeImpl &>> revertedPostOrder;
@@ -2376,7 +2377,7 @@ double NodeImpl::VpaNonRecursively() const {
 }
 
 // 后序遍历。因为要在左右儿子都没有的情况下删除节点。
-void NodeImpl::Release() noexcept {
+inline void NodeImpl::Release() noexcept {
     std::stack<Node> stk;
 
     auto emplaceNode = [&stk](Node node) {
@@ -2406,7 +2407,7 @@ void NodeImpl::Release() noexcept {
     }
 }
 
-Node CloneRecursively(const Node &src) noexcept {
+inline Node CloneRecursively(const Node &src) noexcept {
     auto ret = std::make_unique<NodeImpl>(src->type, src->op, src->value, src->varname);
     auto Copy = [ret = ret.get()](Node &tgt, const Node &src) {
         if (src) {
@@ -2422,7 +2423,7 @@ Node CloneRecursively(const Node &src) noexcept {
 }
 
 // 前序遍历。非递归实现。
-Node CloneNonRecursively(const Node &src) noexcept {
+inline Node CloneNonRecursively(const Node &src) noexcept {
     std::stack<std::tuple<const NodeImpl &, NodeImpl &, Node &>> stk;
 
     auto MakeNode = [](const NodeImpl &src, NodeImpl *parent = nullptr) {
@@ -2456,23 +2457,23 @@ Node CloneNonRecursively(const Node &src) noexcept {
     return ret;
 }
 
-void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept {
+inline void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept {
     n1->parent = parent;
     child = std::move(n1);
 }
 
-void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept {
+inline void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept {
     auto n1Clone = std::make_unique<NodeImpl>(*n1);
     n1Clone->parent = parent;
     child = std::move(n1Clone);
 }
 
-std::ostream &operator<<(std::ostream &out, const Node &n) noexcept {
+inline std::ostream &operator<<(std::ostream &out, const Node &n) noexcept {
     out << n->ToString();
     return out;
 }
 
-Node Operator(MathOperator op, Node left, Node right) noexcept {
+inline Node Operator(MathOperator op, Node left, Node right) noexcept {
     auto ret = std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
 
     auto SetChild = [ret = ret.get()](Node &tgt, Node src) {
@@ -2489,7 +2490,7 @@ Node Operator(MathOperator op, Node left, Node right) noexcept {
 }
 
 // 前序遍历。非递归实现。
-std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
+inline std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
     std::set<std::string> ret;
 
     std::stack<std::tuple<const NodeImpl &>> stk;
@@ -2521,30 +2522,30 @@ std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
 
 } // namespace internal
 
-Node Clone(const Node &rhs) noexcept {
+inline Node Clone(const Node &rhs) noexcept {
     return internal::CloneNonRecursively(rhs);
 }
 
-Node Move(Node &rhs) noexcept {
+inline Node Move(Node &rhs) noexcept {
     return std::move(rhs);
 }
 
-Node Num(double num) noexcept {
+inline Node Num(double num) noexcept {
     return std::make_unique<internal::NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
 }
 
-Node Op(MathOperator op) {
+inline Node Op(MathOperator op) {
     if (op == MathOperator::MATH_NULL) {
         throw std::runtime_error("Illegal MathOperator: MATH_NULL");
     }
     return std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
 }
 
-bool VarNameIsLegal(std::string_view varname) noexcept {
+inline bool VarNameIsLegal(std::string_view varname) noexcept {
     return std::regex_match(varname.begin(), varname.end(), std::regex{R"((?=\w)\D\w*)"});
 }
 
-Node Var(std::string_view varname) {
+inline Node Var(std::string_view varname) {
     auto name = std::string{varname};
     if (!VarNameIsLegal(varname)) {
         throw std::runtime_error("Illegal varname: " + name);
@@ -2557,57 +2558,57 @@ Node Var(std::string_view varname) {
 namespace tomsolver {
 
 template <typename T>
-Node sin(T &&n) noexcept {
+inline Node sin(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_SIN, std::forward<T>(n));
 }
 
 template <typename T>
-Node cos(T &&n) noexcept {
+inline Node cos(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_COS, std::forward<T>(n));
 }
 
 template <typename T>
-Node tan(T &&n) noexcept {
+inline Node tan(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_TAN, std::forward<T>(n));
 }
 
 template <typename T>
-Node asin(T &&n) noexcept {
+inline Node asin(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_ARCSIN, std::forward<T>(n));
 }
 
 template <typename T>
-Node acos(T &&n) noexcept {
+inline Node acos(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_ARCCOS, std::forward<T>(n));
 }
 
 template <typename T>
-Node atan(T &&n) noexcept {
+inline Node atan(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_ARCTAN, std::forward<T>(n));
 }
 
 template <typename T>
-Node sqrt(T &&n) noexcept {
+inline Node sqrt(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_SQRT, std::forward<T>(n));
 }
 
 template <typename T>
-Node log(T &&n) noexcept {
+inline Node log(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_LOG, std::forward<T>(n));
 }
 
 template <typename T>
-Node log2(T &&n) noexcept {
+inline Node log2(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_LOG2, std::forward<T>(n));
 }
 
 template <typename T>
-Node log10(T &&n) noexcept {
+inline Node log10(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_LOG10, std::forward<T>(n));
 }
 
 template <typename T>
-Node exp(T &&n) noexcept {
+inline Node exp(T &&n) noexcept {
     return internal::UnaryOperator(MathOperator::MATH_EXP, std::forward<T>(n));
 }
 
@@ -2619,13 +2620,13 @@ namespace tomsolver {
  * node对varname求导。在node包含多个变量时，是对varname求偏导。
  * @exception runtime_error 如果表达式内包含AND(&) OR(|) MOD(%)这类不能求导的运算符，则抛出异常
  */
-Node Diff(const Node &node, const std::string &varname, int i = 1);
+inline Node Diff(const Node &node, const std::string &varname, int i = 1);
 
 /**
  * node对varname求导。在node包含多个变量时，是对varname求偏导。
  * @exception runtime_error 如果表达式内包含AND(&) OR(|) MOD(%)这类不能求导的运算符，则抛出异常
  */
-Node Diff(Node &&node, const std::string &varname, int i = 1);
+inline Node Diff(Node &&node, const std::string &varname, int i = 1);
 
 } // namespace tomsolver
 
@@ -2742,9 +2743,9 @@ public:
     const Node &operator[](std::size_t index) const noexcept;
 };
 
-SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
+inline SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
 
-std::ostream &operator<<(std::ostream &out, const SymMat &symMat) noexcept;
+inline std::ostream &operator<<(std::ostream &out, const SymMat &symMat) noexcept;
 
 } // namespace tomsolver
 
@@ -2753,52 +2754,52 @@ namespace tomsolver {
 /**
  * 用newNode节点替换oldVar指定的变量。
  */
-Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept;
+inline Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept;
 
 /**
  * 用newNode节点替换oldVar指定的变量。
  */
-Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept;
+inline Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
+inline Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
+inline Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept;
+inline Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept;
+inline Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept;
+inline Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept;
+inline Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(const Node &node, const VarsTable &varsTable) noexcept;
+inline Node Subs(const Node &node, const VarsTable &varsTable) noexcept;
 
 /**
  * 用newNodes节点替换oldVars指定的变量。
  */
-Node Subs(Node &&node, const VarsTable &varsTable) noexcept;
+inline Node Subs(Node &&node, const VarsTable &varsTable) noexcept;
 
 } // namespace tomsolver
 
@@ -2857,21 +2858,21 @@ public:
 
 } // namespace internal
 
-Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept {
+inline Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept {
     return Subs(Clone(node), oldVar, newNode);
 }
 
-Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
+inline Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
     std::map<std::string, Node> dict;
     dict.try_emplace(oldVar, Clone(newNode));
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
-Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
+inline Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
     return Subs(Clone(node), oldVars, newNodes);
 }
 
-Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
+inline Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
     assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
     std::map<std::string, Node> dict;
     for (size_t i = 0; i < oldVars.size(); ++i) {
@@ -2880,19 +2881,19 @@ Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &ne
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
-Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept {
+inline Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept {
     return Subs(Clone(node), dict);
 }
 
-Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept {
+inline Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept {
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
-Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept {
+inline Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept {
     return Subs(Clone(node), varValues);
 }
 
-Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
+inline Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
     std::map<std::string, Node> dict;
     for (auto &[var, val] : varValues) {
         dict.try_emplace(var, Num(val));
@@ -2900,11 +2901,11 @@ Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept 
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
-Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
+inline Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
     return Subs(Clone(node), varsTable);
 }
 
-Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
+inline Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
     std::map<std::string, Node> dict;
     for (auto &[var, val] : varsTable) {
         dict.try_emplace(var, Num(val));
@@ -2916,7 +2917,7 @@ Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
 
 namespace tomsolver {
 
-void Simplify(Node &node) noexcept;
+inline void Simplify(Node &node) noexcept;
 
 } // namespace tomsolver
 
@@ -3084,7 +3085,7 @@ public:
 
 } // namespace internal
 
-void Simplify(Node &node) noexcept {
+inline void Simplify(Node &node) noexcept {
     internal::SimplifyFunctions::SimplifyWholeNode(node);
     return;
 }
@@ -3183,9 +3184,9 @@ public:
  * 把字符串解析为表达式。
  * @exception ParseError
  */
-Node Parse(std::string_view expression);
+inline Node Parse(std::string_view expression);
 
-Node operator""_f(const char *exp, size_t);
+inline Node operator""_f(const char *exp, size_t);
 
 } // namespace tomsolver
 
@@ -3193,7 +3194,7 @@ namespace tomsolver {
 
 namespace {
 
-constexpr auto fnv1a(std::string_view s) {
+inline constexpr auto fnv1a(std::string_view s) {
     constexpr uint64_t offsetBasis = 14695981039346656037ul;
     constexpr uint64_t prime = 1099511628211ul;
 
@@ -3206,12 +3207,12 @@ constexpr auto fnv1a(std::string_view s) {
     return hash;
 }
 
-constexpr auto operator""_fnv1a(const char *s, size_t) {
+inline constexpr auto operator""_fnv1a(const char *s, size_t) {
     return fnv1a(s);
 }
 
 /* 是基本运算符()+-* /^&|% */
-bool IsBasicOperator(char c) noexcept {
+inline bool IsBasicOperator(char c) noexcept {
     switch (c) {
     case '(':
     case ')':
@@ -3229,7 +3230,7 @@ bool IsBasicOperator(char c) noexcept {
 }
 
 /*  */
-MathOperator BaseOperatorCharToEnum(char c, bool unary) noexcept {
+inline MathOperator BaseOperatorCharToEnum(char c, bool unary) noexcept {
     switch (c) {
     case '(':
         return MathOperator::MATH_LEFT_PARENTHESIS;
@@ -3258,7 +3259,7 @@ MathOperator BaseOperatorCharToEnum(char c, bool unary) noexcept {
     return MathOperator::MATH_NULL;
 }
 
-MathOperator Str2Function(std::string_view s) noexcept {
+inline MathOperator Str2Function(std::string_view s) noexcept {
     switch (fnv1a(s)) {
     case "sin"_fnv1a:
         return MathOperator::MATH_SIN;
@@ -3288,19 +3289,19 @@ MathOperator Str2Function(std::string_view s) noexcept {
 
 } // namespace
 
-const char *SingleParseError::what() const noexcept {
+inline const char *SingleParseError::what() const noexcept {
     return whatStr.c_str();
 }
 
-int SingleParseError::GetLine() const noexcept {
+inline int SingleParseError::GetLine() const noexcept {
     return line;
 }
 
-int SingleParseError::GetPos() const noexcept {
+inline int SingleParseError::GetPos() const noexcept {
     return pos;
 }
 
-MultiParseError::MultiParseError(const std::vector<SingleParseError> &parseErrors) : parseErrors(parseErrors) {
+inline MultiParseError::MultiParseError(const std::vector<SingleParseError> &parseErrors) : parseErrors(parseErrors) {
     std::stringstream ss;
     std::transform(parseErrors.rbegin(), parseErrors.rend(), std::ostream_iterator<const char *>(ss, "\n"),
                    [](const auto &err) {
@@ -3309,13 +3310,13 @@ MultiParseError::MultiParseError(const std::vector<SingleParseError> &parseError
     whatStr = ss.str();
 }
 
-const char *MultiParseError::what() const noexcept {
+inline const char *MultiParseError::what() const noexcept {
     return whatStr.c_str();
 }
 
 namespace internal {
 
-std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
+inline std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
 
     if (content.empty()) {
         throw SingleParseError(0, 0, "empty input", content);
@@ -3378,7 +3379,7 @@ std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
     return ret;
 }
 
-std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder) {
+inline std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder) {
     std::vector<Token> postOrder;
     int parenthesisBalance = 0;
     std::stack<Token> tokenStack;
@@ -3469,7 +3470,7 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
 }
 
 // 将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
-Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
+inline Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
     std::stack<Token> tokenStack;
     auto pushToken = [&tokenStack](Token &token) {
         tokenStack.emplace(std::move(token));
@@ -3540,14 +3541,14 @@ Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
 
 } // namespace internal
 
-Node Parse(std::string_view expression) {
+inline Node Parse(std::string_view expression) {
     auto tokens = internal::ParseFunctions::ParseToTokens(expression);
     auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
     auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
     return node;
 }
 
-Node operator""_f(const char *exp, size_t) {
+inline Node operator""_f(const char *exp, size_t) {
     return Parse(exp);
 }
 
@@ -3558,40 +3559,40 @@ namespace tomsolver {
 /**
  * Armijo方法一维搜索，寻找alpha
  */
-double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::function<Mat(Vec)> df);
+inline double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::function<Mat(Vec)> df);
 
 /**
  * 割线法 进行一维搜索，寻找alpha
  */
-double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double uncert = 1.0e-5);
+inline double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double uncert = 1.0e-5);
 
 /**
  * 解非线性方程组equations。
  * 初值及变量名通过varsTable传入。
  * @exception runtime_error 迭代次数超出限制
  */
-VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations);
+inline VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations);
 
 /**
  * 解非线性方程组equations。
  * 初值及变量名通过varsTable传入。
  * @exception runtime_error 迭代次数超出限制
  */
-VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations);
+inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations);
 
 /**
  * 解非线性方程组equations。
  * 初值及变量名通过varsTable传入。
  * @exception runtime_error 迭代次数超出限制
  */
-VarsTable Solve(const VarsTable &varsTable, const SymVec &equations);
+inline VarsTable Solve(const VarsTable &varsTable, const SymVec &equations);
 
 /**
  * 解非线性方程组equations。
  * 变量名通过分析equations得到。初值通过Config::get()得到。
  * @exception runtime_error 迭代次数超出限制
  */
-VarsTable Solve(const SymVec &equations);
+inline VarsTable Solve(const SymVec &equations);
 
 } // namespace tomsolver
 
@@ -3601,7 +3602,7 @@ using std::runtime_error;
 
 namespace tomsolver {
 
-double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::function<Mat(Vec)> df) {
+inline double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::function<Mat(Vec)> df) {
     double alpha = 1;   // a > 0
     double gamma = 0.4; // 取值范围(0, 0.5)越大越快
     double sigma = 0.5; // 取值范围(0, 1)越大越慢
@@ -3620,7 +3621,7 @@ double Armijo(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, std::functi
     return alpha;
 }
 
-double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double uncert) {
+inline double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double uncert) {
     double alpha_cur = 0;
 
     double alpha_new = 1;
@@ -3652,7 +3653,7 @@ double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double u
     return alpha_new;
 }
 
-VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations) {
+inline VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations) {
     int it = 0; // 迭代计数
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
@@ -3698,7 +3699,7 @@ VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equatio
     return table;
 }
 
-VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
+inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
     int it = 0; // 迭代计数
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
@@ -3819,7 +3820,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
     return table;
 }
 
-VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
+inline VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
     switch (Config::get().nonlinearMethod) {
     case NonlinearMethod::NEWTON_RAPHSON:
         return SolveByNewtonRaphson(varsTable, equations);
@@ -3830,7 +3831,7 @@ VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
                         std::to_string(static_cast<int>(Config::get().nonlinearMethod)));
 }
 
-VarsTable Solve(const SymVec &equations) {
+inline VarsTable Solve(const SymVec &equations) {
     auto varNames = equations.GetAllVarNames();
     std::vector<std::string> vecVarNames(varNames.begin(), varNames.end());
     VarsTable varsTable(std::move(vecVarNames), Config::get().initialValue);
@@ -4220,12 +4221,12 @@ public:
 
 } // namespace internal
 
-Node Diff(const Node &node, const std::string &varname, int i) {
+inline Node Diff(const Node &node, const std::string &varname, int i) {
     auto node2 = Clone(node);
     return Diff(std::move(node2), varname, i);
 }
 
-Node Diff(Node &&node, const std::string &varname, int i) {
+inline Node Diff(Node &&node, const std::string &varname, int i) {
     assert(i > 0);
     auto n = std::move(node);
     while (i--) {
@@ -4248,12 +4249,12 @@ namespace tomsolver {
 
 using DataType = std::valarray<Node>;
 
-SymMat::SymMat(int rows, int cols) noexcept : rows(rows), cols(cols) {
+inline SymMat::SymMat(int rows, int cols) noexcept : rows(rows), cols(cols) {
     assert(rows > 0 && cols > 0);
     data.reset(new DataType(rows * cols));
 }
 
-SymMat::SymMat(std::initializer_list<std::initializer_list<Node>> init) noexcept {
+inline SymMat::SymMat(std::initializer_list<std::initializer_list<Node>> init) noexcept {
     rows = static_cast<int>(init.size());
     cols = static_cast<int>(std::max(init, [](auto lhs, auto rhs) {
                                 return lhs.size() < rhs.size();
@@ -4270,13 +4271,13 @@ SymMat::SymMat(std::initializer_list<std::initializer_list<Node>> init) noexcept
     }
 }
 
-SymMat::SymMat(const Mat &rhs) noexcept : SymMat(rhs.Rows(), rhs.Cols()) {
+inline SymMat::SymMat(const Mat &rhs) noexcept : SymMat(rhs.Rows(), rhs.Cols()) {
     std::generate(std::begin(*data), std::end(*data), [p = std::addressof(rhs.Value(0, 0))]() mutable {
         return Num(*p++);
     });
 }
 
-SymMat SymMat::Clone() const noexcept {
+inline SymMat SymMat::Clone() const noexcept {
     SymMat ret(Rows(), Cols());
     std::generate(std::begin(*ret.data), std::end(*ret.data), [iter = std::begin(*data)]() mutable {
         return tomsolver::Clone(*iter++);
@@ -4284,19 +4285,19 @@ SymMat SymMat::Clone() const noexcept {
     return ret;
 }
 
-bool SymMat::Empty() const noexcept {
+inline bool SymMat::Empty() const noexcept {
     return data->size() == 0;
 }
 
-int SymMat::Rows() const noexcept {
+inline int SymMat::Rows() const noexcept {
     return rows;
 }
 
-int SymMat::Cols() const noexcept {
+inline int SymMat::Cols() const noexcept {
     return cols;
 }
 
-SymVec SymMat::ToSymVec() const {
+inline SymVec SymMat::ToSymVec() const {
     assert(rows > 0);
     if (cols != 1) {
         throw std::runtime_error("SymMat::ToSymVec fail. rows is not one");
@@ -4304,7 +4305,7 @@ SymVec SymMat::ToSymVec() const {
     return ToSymVecOneByOne();
 }
 
-SymVec SymMat::ToSymVecOneByOne() const noexcept {
+inline SymVec SymMat::ToSymVecOneByOne() const noexcept {
     SymVec v(rows * cols);
     std::generate(std::begin(*v.data), std::end(*v.data), [iter = std::begin(*data)]() mutable {
         return tomsolver::Clone(*iter++);
@@ -4312,7 +4313,7 @@ SymVec SymMat::ToSymVecOneByOne() const noexcept {
     return v;
 }
 
-Mat SymMat::ToMat() const {
+inline Mat SymMat::ToMat() const {
     std::valarray<double> newData(data->size());
     std::generate(std::begin(newData), std::end(newData), [iter = std::begin(*data)]() mutable {
         if ((**iter).type != NodeType::NUMBER) {
@@ -4323,28 +4324,28 @@ Mat SymMat::ToMat() const {
     return {rows, cols, newData};
 }
 
-SymMat &SymMat::Calc() {
+inline SymMat &SymMat::Calc() {
     for (auto &node : *data) {
         node->Calc();
     }
     return *this;
 }
 
-SymMat &SymMat::Subs(const std::map<std::string, double> &varValues) noexcept {
+inline SymMat &SymMat::Subs(const std::map<std::string, double> &varValues) noexcept {
     for (auto &node : *data) {
         node = tomsolver::Subs(std::move(node), varValues);
     }
     return *this;
 }
 
-SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
+inline SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
     for (auto &node : *data) {
         node = tomsolver::Subs(std::move(node), varsTable);
     }
     return *this;
 }
 
-std::set<std::string> SymMat::GetAllVarNames() const noexcept {
+inline std::set<std::string> SymMat::GetAllVarNames() const noexcept {
     std::set<std::string> ret;
     for (auto &node : *data) {
         ret.merge(node->GetAllVarNames());
@@ -4352,7 +4353,7 @@ std::set<std::string> SymMat::GetAllVarNames() const noexcept {
     return ret;
 }
 
-SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
+inline SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
     assert(rhs.rows == rows && rhs.cols == cols);
     SymMat ret(rows, cols);
     std::generate(std::begin(*ret.data), std::end(*ret.data),
@@ -4362,7 +4363,7 @@ SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
     return ret;
 }
 
-SymMat SymMat::operator*(const SymMat &rhs) const {
+inline SymMat SymMat::operator*(const SymMat &rhs) const {
     if (cols != rhs.rows) {
         throw MathError(ErrorType::SIZE_NOT_MATCH);
     }
@@ -4380,7 +4381,7 @@ SymMat SymMat::operator*(const SymMat &rhs) const {
     return ans;
 }
 
-bool SymMat::operator==(const SymMat &rhs) const noexcept {
+inline bool SymMat::operator==(const SymMat &rhs) const noexcept {
     if (rhs.rows != rows || rhs.cols != cols) {
         return false;
     }
@@ -4389,15 +4390,15 @@ bool SymMat::operator==(const SymMat &rhs) const noexcept {
     });
 }
 
-Node &SymMat::Value(int i, int j) noexcept {
+inline Node &SymMat::Value(int i, int j) noexcept {
     return (*data)[i * cols + j];
 }
 
-const Node &SymMat::Value(int i, int j) const noexcept {
+inline const Node &SymMat::Value(int i, int j) const noexcept {
     return (*data)[i * cols + j];
 }
 
-std::string SymMat::ToString() const noexcept {
+inline std::string SymMat::ToString() const noexcept {
     if (data->size() == 0) {
         return "[]";
     }
@@ -4415,28 +4416,28 @@ std::string SymMat::ToString() const noexcept {
     return ss.str();
 }
 
-SymVec::SymVec(int rows) noexcept : SymMat(rows, 1) {}
+inline SymVec::SymVec(int rows) noexcept : SymMat(rows, 1) {}
 
-SymVec::SymVec(std::initializer_list<Node> init) noexcept : SymMat(static_cast<int>(init.size()), 1) {
+inline SymVec::SymVec(std::initializer_list<Node> init) noexcept : SymMat(static_cast<int>(init.size()), 1) {
     auto i = 0;
     for (auto &node : init) {
         (*data)[i++] = std::move(const_cast<Node &>(node));
     }
 }
 
-SymVec SymVec::operator-(const SymVec &rhs) const noexcept {
+inline SymVec SymVec::operator-(const SymVec &rhs) const noexcept {
     return SymMat::operator-(rhs).ToSymVec();
 }
 
-Node &SymVec::operator[](std::size_t index) noexcept {
+inline Node &SymVec::operator[](std::size_t index) noexcept {
     return (*data)[index];
 }
 
-const Node &SymVec::operator[](std::size_t index) const noexcept {
+inline const Node &SymVec::operator[](std::size_t index) const noexcept {
     return (*data)[index];
 }
 
-SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept {
+inline SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept {
     int rows = equations.rows;
     int cols = static_cast<int>(vars.size());
     SymMat ja(rows, cols);
@@ -4451,7 +4452,7 @@ SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) n
     return ja;
 }
 
-std::ostream &operator<<(std::ostream &out, const SymMat &symMat) noexcept {
+inline std::ostream &operator<<(std::ostream &out, const SymMat &symMat) noexcept {
     return out << symMat.ToString();
 }
 

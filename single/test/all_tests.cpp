@@ -1402,10 +1402,10 @@ TEST(SolveBase, IndeterminateEquation) {
 
     std::setlocale(LC_ALL, ".UTF8");
 
-    Node f1 = "cos(x1) + cos(x1-x2) + cos(x1-x2-x3) - 1"_f;
-    Node f2 = "sin(x1) + sin(x1-x2) + sin(x1-x2-x3) + 2"_f;
-
-    SymVec f{Move(f1), Move(f2)};
+    SymVec f = {
+        "cos(x1) + cos(x1-x2) + cos(x1-x2-x3) - 1"_f,
+        "sin(x1) + sin(x1-x2) + sin(x1-x2-x3) + 2"_f,
+    };
 
     // 不定方程，应该抛出异常
     try {
@@ -1441,11 +1441,11 @@ TEST(Solve, Base) {
                     a*sin(x(1)) + b*sin(x(1)-x(2)) + c*sin(x(1)-x(2)-x(3)),
                     x(1)-x(2)-x(3)    ];
     */
-    Node f1 = "a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)"_f;
-    Node f2 = "a*sin(x1) + b*sin(x1-x2) + c*sin(x1-x2-x3)"_f;
-    Node f3 = "x1-x2-x3"_f;
-
-    SymVec f{Move(f1), Move(f2), Move(f3)};
+    SymVec f = {
+        "a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)"_f,
+        "a*sin(x1) + b*sin(x1-x2) + c*sin(x1-x2-x3)"_f,
+        "x1-x2-x3"_f,
+    };
 
     // 目标位置为：[0.5 0.4 0]
     SymVec b{Num(0.5), Num(0.4), Num(0)};
@@ -1527,7 +1527,10 @@ TEST(Solve, Case1) {
     });
 
     // 构造方程组
-    SymVec f{{"exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f, "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f}};
+    SymVec f = {
+        "exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f,
+        "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f,
+    };
 
     // 求解，结果保存到ans
     VarsTable ans = Solve(f);

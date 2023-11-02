@@ -73,7 +73,11 @@ class MyClass:
                 self.defines.append(stripedLine)
                 continue
 
-            self.contents.append(line.rstrip())
+            if re.match(r"^(?<!inline)[a-zA-Z].+\(", line):
+                # 添加 inline 消除 ODR 警告
+                self.contents.append(f"inline {line.rstrip()}")
+            else:
+                self.contents.append(line.rstrip())
 
         print("analysis: ", filename, ":")
         print("  inner deps: ", self.depsInner)
