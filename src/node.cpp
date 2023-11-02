@@ -632,7 +632,10 @@ Node Num(double num) noexcept {
     return std::make_unique<internal::NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
 }
 
-Node Op(MathOperator op) noexcept {
+Node Op(MathOperator op) {
+    if (op == MathOperator::MATH_NULL) {
+        throw std::runtime_error("Illegal MathOperator: MATH_NULL");
+    }
     return std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
 }
 
