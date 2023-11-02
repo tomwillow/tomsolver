@@ -152,7 +152,7 @@ std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
     auto tryComfirmToken = [&ret, &iter, &s, &content] {
         if (size_t size = std::distance(s, iter)) {
             auto exp = std::string_view{s, size};
-            auto &token = ret.emplace_back(exp, 0, std::distance(content.begin(), s), false, content);
+            auto &token = ret.emplace_back(0, std::distance(content.begin(), s), false, exp, content);
 
             // 检验是否为浮点数
             try {
@@ -186,7 +186,7 @@ std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
             tryComfirmToken();
             auto unaryOp = ret.empty() || (ret.back().node->type == NodeType::OPERATOR &&
                                            ret.back().node->op != MathOperator::MATH_RIGHT_PARENTHESIS);
-            ret.emplace_back(std::string_view{iter, 1}, 0, std::distance(content.begin(), iter), true, content).node =
+            ret.emplace_back(0, std::distance(content.begin(), iter), true, std::string_view{iter, 1}, content).node =
                 Op(BaseOperatorCharToEnum(*iter, unaryOp));
             s = ++iter;
         } else if (isspace(*iter)) {
@@ -248,7 +248,7 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
                 postOrder.emplace_back(popToken());
             }
             while (!tokenStack.empty() && (tokenStack.top().node->op == MathOperator::MATH_POSITIVE ||
-                                     tokenStack.top().node->op == MathOperator::MATH_NEGATIVE)) {
+                                           tokenStack.top().node->op == MathOperator::MATH_NEGATIVE)) {
                 postOrder.emplace_back(popToken());
             }
             continue;
