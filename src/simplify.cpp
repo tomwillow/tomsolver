@@ -1,9 +1,11 @@
 #include "simplify.h"
+#include "math_operator.h"
+#include "node.h"
 
-#include <iostream>
-#include <stack>
 #include <algorithm>
 #include <cassert>
+#include <iostream>
+#include <stack>
 
 namespace tomsolver {
 
@@ -12,39 +14,28 @@ namespace internal {
 class SimplifyFunctions {
 public:
     struct SimplifyNode {
-        NodeImpl *node;
+        NodeImpl &node;
         bool isLeftChild;
 
-        SimplifyNode(NodeImpl *node, bool isLeftChild) : node(node), isLeftChild(isLeftChild) {
-            if (node->parent) {
-                if (node->parent->left.get() == node) {
-                    if (!isLeftChild) {
-                        assert(0 && "inner bug");
-                    }
-                } else {
-                    if (isLeftChild) {
-                        assert(0 && "inner bug");
-                    }
-                }
-            }
-        }
+        SimplifyNode(NodeImpl &node) : node(node), isLeftChild(!node.parent || node.parent->left.get() == &node) {}
     };
 
+    // 对单节点n进行化简。
     static void SimplifySingleNode(std::unique_ptr<NodeImpl> &n) noexcept {
-        const NodeImpl *parent = n->parent;
-        // 对单节点n进行化简。
-
+        auto parent = n->parent;
+        switch (GetOperatorNum(n->op)) {
         // 对于1元运算符，且儿子是数字的，直接计算出来
-        if (GetOperatorNum(n->op) == 1 && n->left->type == NodeType::NUMBER) {
-            n->type = NodeType::NUMBER;
-            n->value = tomsolver::Calc(n->op, n->left->value, 0);
-            n->op = MathOperator::MATH_NULL;
-            n->left = nullptr;
-            return;
-        }
+        case 1:
+            if (n->left->type == NodeType::NUMBER) {
+                n->type = NodeType::NUMBER;
+                n->value = tomsolver::Calc(n->op, n->left->value, 0);
+                n->op = MathOperator::MATH_NULL;
+                n->left = nullptr;
+            }
+            break;
 
         // 对于2元运算符
-        if (GetOperatorNum(n->op) == 2) {
+        case 2:
             // 儿子是数字的，直接计算出来
             if (n->left->type == NodeType::NUMBER && n->right->type == NodeType::NUMBER) {
                 n->type = NodeType::NUMBER;
@@ -61,7 +52,7 @@ public:
             bool lChildIs1 = n->left->type == NodeType::NUMBER && n->left->value == 1.0;
             bool rChildIs1 = n->right->type == NodeType::NUMBER && n->right->value == 1.0;
 
-            //任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
+            // 任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
             if ((n->op == MathOperator::MATH_MULTIPLY && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_DIVIDE && lChildIs0) || (n->op == MathOperator::MATH_POWER && lChildIs0)) {
                 n = Num(0);
@@ -69,7 +60,7 @@ public:
                 return;
             }
 
-            //任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
+            // 任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
             if ((n->op == MathOperator::MATH_ADD && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_SUB && rChildIs0) ||
                 (n->op == MathOperator::MATH_MULTIPLY && (lChildIs1 || rChildIs1)) ||
@@ -89,13 +80,18 @@ public:
         }
     }
 
+    // 后序遍历。非递归实现。
     static void SimplifyWholeNode(Node &node) {
-        using SimplifyNode = internal::SimplifyFunctions::SimplifyNode;
-        // 后序遍历。非递归实现。
 
         // 借助一个栈，得到反向的后序遍历序列，结果保存在revertedPostOrder。除了root节点，root节点不保存在revertedPostOrder里，最后单独化简。
         std::stack<SimplifyNode> stk;
         std::deque<SimplifyNode> revertedPostOrder;
+
+        auto popNode = [&stk] {
+            auto node = std::move(stk.top());
+            stk.pop();
+            return node;
+        };
 
         // ==== Part I ====
 
@@ -103,26 +99,20 @@ public:
             return;
         }
 
-        stk.push(SimplifyNode(node.get(), true));
+        stk.push(SimplifyNode(*node.get()));
 
-        while (1) {
-            if (stk.empty()) {
-                break;
+        while (!stk.empty()) {
+            auto f = popNode();
+
+            if (f.node.left && f.node.left->type == NodeType::OPERATOR) {
+                stk.push(SimplifyNode(*f.node.left.get()));
             }
 
-            auto f = stk.top();
-            auto n = f.node;
-            stk.pop();
-
-            if (n->left && n->left->type == NodeType::OPERATOR) {
-                stk.push(SimplifyNode(n->left.get(), true));
+            if (f.node.right && f.node.right->type == NodeType::OPERATOR) {
+                stk.push(SimplifyNode(*f.node.right.get()));
             }
 
-            if (n->right && n->right->type == NodeType::OPERATOR) {
-                stk.push(SimplifyNode(n->right.get(), false));
-            }
-
-            revertedPostOrder.push_back(f);
+            revertedPostOrder.emplace_back(std::move(f));
         }
 
         // pop掉root，root最后单独处理
@@ -130,13 +120,8 @@ public:
 
         // ==== Part II ====
         std::for_each(revertedPostOrder.rbegin(), revertedPostOrder.rend(), [](SimplifyNode &snode) {
-            if (snode.isLeftChild) {
-                Node &n = const_cast<NodeImpl *>(snode.node->parent)->left;
-                SimplifyFunctions::SimplifySingleNode(n);
-            } else {
-                Node &n = const_cast<NodeImpl *>(snode.node->parent)->right;
-                SimplifyFunctions::SimplifySingleNode(n);
-            }
+            auto &parent = *const_cast<NodeImpl *>(snode.node.parent);
+            SimplifySingleNode(snode.isLeftChild ? parent.left : parent.right);
         });
 
         SimplifyFunctions::SimplifySingleNode(node);
