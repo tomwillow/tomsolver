@@ -27,7 +27,7 @@ Vec SolveLinear(Mat A, Vec b) {
     {
         if (rows > cols) {
             // 过定义方程组
-            throw MathError(ErrorType::ERROR_OVER_DETERMINED_EQUATIONS, "");
+            throw MathError(ErrorType::ERROR_OVER_DETERMINED_EQUATIONS);
         } else {
             // 不定方程组
             ret.Resize(cols);
@@ -71,7 +71,7 @@ Vec SolveLinear(Mat A, Vec b) {
 
             if (RankA != RankAb) {
                 // 奇异，且系数矩阵及增广矩阵秩不相等->无解
-                throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "");
+                throw MathError(ErrorType::ERROR_SINGULAR_MATRIX);
             } else {
                 // 跳出for，得到特解
                 break;
@@ -126,7 +126,7 @@ Vec SolveLinear(Mat A, Vec b) {
                                 "A = " + A.ToString() + "\nb = " + b.ToString());
             }
         } else {
-            throw MathError(ErrorType::ERROR_INFINITY_SOLUTIONS, "");
+            throw MathError(ErrorType::ERROR_INFINITY_SOLUTIONS);
         }
     }
 

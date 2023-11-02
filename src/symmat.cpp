@@ -132,7 +132,7 @@ SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
 
 SymMat SymMat::operator*(const SymMat &rhs) const {
     if (cols != rhs.rows) {
-        throw MathError(ErrorType::SIZE_NOT_MATCH, "");
+        throw MathError(ErrorType::SIZE_NOT_MATCH);
     }
 
     SymMat ans(rows, rhs.cols);
