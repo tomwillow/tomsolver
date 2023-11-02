@@ -2,10 +2,10 @@
 
 #include <gtest/gtest.h>
 
-#include <cmath>
-#include <random>
 #include <chrono>
+#include <cmath>
 #include <deque>
+#include <random>
 
 using namespace tomsolver;
 
@@ -29,13 +29,13 @@ public:
 #undef min
 
 #define _CRTDBG_MAP_ALLOC // to get more details
+#include <crtdbg.h>       //for malloc and free
 #include <stdlib.h>
-#include <crtdbg.h> //for malloc and free
 
 #include <gtest/gtest.h>
 
-#include <iostream>
 #include <cassert>
+#include <iostream>
 
 class MemoryLeakDetection final {
 public:
@@ -71,9 +71,9 @@ private:
 
 #endif
 
+#include <chrono>
 #include <cmath>
 #include <random>
-#include <chrono>
 
 using std::cout;
 using std::endl;
@@ -505,7 +505,7 @@ TEST(Diff, Combine2) {
     MemoryLeakDetection mld;
 
     {
-        Node n = Parse("sin(x)/log(x*y)");
+        Node n = "sin(x)/log(x*y)"_f;
         Node dn = Diff(n, "y");
         dn->CheckParent();
         cout << dn->ToString() << endl;
@@ -613,7 +613,7 @@ TEST(Linear, Base) {
     Mat A = {{2, 1, -5, 1}, {1, -5, 0, 7}, {0, 2, 1, -1}, {1, 6, -1, -4}};
     Vec b = {13, -9, 6, 0};
 
-    auto x = SolveLinear(A, b);
+    auto x = SolveLinear(std::move(A), std::move(b));
 
     Vec expected = {-66.5555555555555429, 25.6666666666666643, -18.777777777777775, 26.55555555555555};
 
@@ -1395,8 +1395,8 @@ TEST(SolveBase, IndeterminateEquation) {
 
     std::setlocale(LC_ALL, ".UTF8");
 
-    Node f1 = Parse("cos(x1) + cos(x1-x2) + cos(x1-x2-x3) - 1");
-    Node f2 = Parse("sin(x1) + sin(x1-x2) + sin(x1-x2-x3) + 2");
+    Node f1 = "cos(x1) + cos(x1-x2) + cos(x1-x2-x3) - 1"_f;
+    Node f2 = "sin(x1) + sin(x1-x2) + sin(x1-x2-x3) + 2"_f;
 
     SymVec f{Move(f1), Move(f2)};
 
@@ -1412,7 +1412,7 @@ TEST(SolveBase, IndeterminateEquation) {
     Config::get().allowIndeterminateEquation = true;
 
     // 结束时恢复设置
-    std::shared_ptr<void> defer(nullptr, [&](...) {
+    std::shared_ptr<void> defer(nullptr, [](auto) {
         Config::get().Reset();
     });
 
@@ -1434,9 +1434,9 @@ TEST(Solve, Base) {
                     a*sin(x(1)) + b*sin(x(1)-x(2)) + c*sin(x(1)-x(2)-x(3)),
                     x(1)-x(2)-x(3)    ];
     */
-    Node f1 = Parse("a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)");
-    Node f2 = Parse("a*sin(x1) + b*sin(x1-x2) + c*sin(x1-x2-x3)");
-    Node f3 = Parse("x1-x2-x3");
+    Node f1 = "a*cos(x1) + b*cos(x1-x2) + c*cos(x1-x2-x3)"_f;
+    Node f2 = "a*sin(x1) + b*sin(x1-x2) + c*sin(x1-x2-x3)"_f;
+    Node f3 = "x1-x2-x3"_f;
 
     SymVec f{Move(f1), Move(f2), Move(f3)};
 
@@ -1520,7 +1520,7 @@ TEST(Solve, Case1) {
     });
 
     // 构造方程组
-    SymVec f{{Parse("exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"), Parse("x1 * cos(x2) + x2 * sin(x1) - 0.5")}};
+    SymVec f{{"exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f, "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f}};
 
     // 求解，结果保存到ans
     VarsTable ans = Solve(f);
@@ -1552,7 +1552,7 @@ TEST(Solve, Case2) {
     Config::get().nonlinearMethod = NonlinearMethod::LM;
 
     // 结束时恢复设置
-    std::shared_ptr<void> defer(nullptr, [&](...) {
+    std::shared_ptr<void> defer(nullptr, [](auto) {
         Config::get().Reset();
     });
 

@@ -4,14 +4,18 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cctype>
 #include <cmath>
 #include <forward_list>
 #include <functional>
+#include <gmock/gmock.h>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <math.h>
 #include <memory>
+#include <pthread.h>
 #include <queue>
 #include <regex>
 #include <set>
@@ -19,8 +23,11 @@
 #include <stack>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <utility>
+#include <valarray>
 #include <vector>
 
 namespace tomsolver {
@@ -48,8 +55,7 @@ std::string GetErrorInfo(ErrorType err);
 
 class MathError : public std::exception {
 public:
-    MathError(ErrorType errorType, const std::string &extInfo)
-        : errorType(errorType), errInfo(GetErrorInfo(errorType) + ": \"" + extInfo + "\"") {}
+    MathError(ErrorType errorType, std::string_view extInfo = {});
 
     virtual const char *what() const noexcept override;
 
@@ -118,6 +124,12 @@ std::string GetErrorInfo(ErrorType err) {
         break;
     }
     return u8"GetErrorInfo: bug";
+}
+
+MathError::MathError(ErrorType errorType, std::string_view extInfo) : errorType(errorType) {
+    std::stringstream ss;
+    ss << GetErrorInfo(errorType) << ": \"" << extInfo << "\"";
+    errInfo = ss.str();
 }
 
 const char *MathError::what() const noexcept {
@@ -644,20 +656,21 @@ double Calc(MathOperator op, double v1, double v2) {
     bool isInvalid = (ret == std::numeric_limits<double>::infinity()) ||
                      (ret == -std::numeric_limits<double>::infinity()) || (ret != ret);
     if (isInvalid) {
-        std::string info;
-        info = "expression: \"";
+        // std::string info;
+        std::stringstream info;
+        info << "expression: \"";
         switch (GetOperatorNum(op)) {
         case 1:
-            info += MathOperatorToStr(op) + " " + ToString(v1);
+            info << MathOperatorToStr(op) << " " << ToString(v1);
             break;
         case 2:
-            info += ToString(v1) + " " + MathOperatorToStr(op) + " " + ToString(v2);
+            info << ToString(v1) << " " << MathOperatorToStr(op) << " " << ToString(v2);
             break;
         default:
             assert(0);
         }
-        info += "\"";
-        throw MathError(ErrorType::ERROR_INVALID_NUMBER, info);
+        info << "\"";
+        throw MathError(ErrorType::ERROR_INVALID_NUMBER, info.str());
     }
 
     return ret;
@@ -692,18 +705,23 @@ class Vec;
 
 class Mat {
 public:
-    explicit Mat(int row, int col) noexcept;
+    explicit Mat(int row, int col, double initValue = 0) noexcept;
 
-    explicit Mat(int row, int col, double initValue) noexcept;
+    Mat(std::initializer_list<std::initializer_list<double>> init) noexcept;
 
-    Mat(const std::vector<std::vector<double>> &init) noexcept;
-    Mat(std::vector<std::vector<double>> &&init) noexcept;
+    Mat(int row, int col, std::valarray<double> data) noexcept;
 
-    Mat(const std::initializer_list<std::initializer_list<double>> &init) noexcept;
+    Mat(const Mat &) = default;
+    Mat(Mat &&) = default;
+    Mat &operator=(const Mat &) = default;
+    Mat &operator=(Mat &&) = default;
 
-    std::vector<double> &operator[](std::size_t i) noexcept;
-
-    const std::vector<double> &operator[](std::size_t i) const noexcept;
+    std::slice_array<double> Row(int i, int offset = 0);
+    std::slice_array<double> Col(int j, int offset = 0);
+    auto Row(int i, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
+    auto Col(int j, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
+    const double &Value(int i, int j) const;
+    double &Value(int i, int j);
 
     bool operator==(double m) const noexcept;
     bool operator==(const Mat &b) const noexcept;
@@ -730,10 +748,11 @@ public:
     Vec ToVec() const;
 
     Mat &SwapRow(int i, int j) noexcept;
+    Mat &SwapCol(int i, int j) noexcept;
 
     std::string ToString() const noexcept;
 
-    void Resize(int newRows) noexcept;
+    void Resize(int newRows, int newCols) noexcept;
 
     Mat &Zero() noexcept;
 
@@ -765,7 +784,7 @@ public:
 protected:
     int rows;
     int cols;
-    std::vector<std::vector<double>> data;
+    std::valarray<double> data;
 
     friend Mat operator*(double k, const Mat &mat) noexcept;
     friend std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
@@ -803,83 +822,34 @@ double Det(const Mat &A, int n) noexcept;
 
 class Vec : public Mat {
 public:
-    explicit Vec(int rows) noexcept;
+    explicit Vec(int rows, double initValue = 0) noexcept;
 
-    explicit Vec(int rows, double initValue) noexcept;
+    Vec(std::initializer_list<double> init) noexcept;
 
-    Vec(const std::initializer_list<double> &init) noexcept;
+    Vec(std::valarray<double> data) noexcept;
 
     Mat &AsMat() noexcept;
 
     void Resize(int newRows) noexcept;
 
-    double &operator[](std::size_t i) noexcept {
-        return data[i][0];
-    }
+    double &operator[](std::size_t i) noexcept;
 
-    double operator[](std::size_t i) const noexcept {
-        return data[i][0];
-    }
+    double operator[](std::size_t i) const noexcept;
 
-    Vec operator+(const Vec &b) const noexcept {
-        assert(rows == b.rows);
-        assert(cols == 1 && b.cols == 1);
-        Vec ans(b);
-        for (int i = 0; i < rows; ++i) {
-            ans[i] = data[i][0] + b[i];
-        }
-        return ans;
-    }
+    Vec operator+(const Vec &b) const noexcept;
 
     // be negative
-    Vec operator-() noexcept {
-        Vec ans(*this);
-        for (auto &vec : ans.data)
-            vec[0] = -vec[0];
-        return ans;
-    }
+    Vec operator-() noexcept;
 
-    Vec operator-(const Vec &b) const noexcept {
-        assert(rows == b.rows);
-        Vec ans(b);
-        for (int i = 0; i < rows; ++i) {
-            ans[i] = data[i][0] - b[i];
-        }
-        return ans;
-    }
+    Vec operator-(const Vec &b) const noexcept;
 
-    Vec operator*(double m) const noexcept {
-        Vec ans = *this;
-        for (auto &vec : ans.data)
-            vec[0] *= m;
-        return ans;
-    }
+    Vec operator*(double m) const noexcept;
 
-    Vec operator*(const Vec &b) const noexcept {
-        assert(rows == b.rows);
-        Vec ans(b);
-        for (int i = 0; i < rows; ++i) {
-            ans[i] = data[i][0] * b[i];
-        }
-        return ans;
-    }
+    Vec operator*(const Vec &b) const noexcept;
 
-    Vec operator/(const Vec &b) const noexcept {
-        assert(rows == b.rows);
-        Vec ans(b);
-        for (int i = 0; i < rows; ++i) {
-            ans[i] = data[i][0] / b[i];
-        }
-        return ans;
-    }
+    Vec operator/(const Vec &b) const noexcept;
 
-    bool operator<(const Vec &b) noexcept {
-        assert(rows == b.rows);
-        for (int i = 0; i < rows; ++i)
-            if (data[i][0] >= b[i])
-                return false;
-        return true;
-    }
+    bool operator<(const Vec &b) noexcept;
 
     friend double Dot(const Vec &a, const Vec &b) noexcept;
     friend Vec operator*(double k, const Vec &V);
@@ -894,132 +864,100 @@ double Dot(const Vec &a, const Vec &b) noexcept;
 
 namespace tomsolver {
 
-Mat::Mat(int row, int col) noexcept
-    : rows(row), cols(col), data(std::vector<std::vector<double>>(row, std::vector<double>(col))) {
-    assert(row > 0);
-    assert(col > 0);
+Mat::Mat(int rows, int cols, double initValue) noexcept : rows(rows), cols(cols), data(initValue, rows * cols) {
+    assert(rows > 0);
+    assert(cols > 0);
 }
 
-Mat::Mat(int row, int col, double initValue) noexcept
-    : rows(row), cols(col), data(std::vector<std::vector<double>>(row, std::vector<double>(col, initValue))) {}
-
-Mat::Mat(const std::vector<std::vector<double>> &init) noexcept {
+Mat::Mat(std::initializer_list<std::initializer_list<double>> init) noexcept {
     rows = static_cast<int>(init.size());
     assert(rows > 0);
-    cols = static_cast<int>(init[0].size());
+    cols = static_cast<int>(std::max(init, [](auto lhs, auto rhs) {
+                                return lhs.size() < rhs.size();
+                            }).size());
     assert(cols > 0);
-#ifndef NDEBUG
-    for (auto &vec : init) {
-        assert(static_cast<int>(vec.size()) == cols);
+    data.resize(rows * cols);
+
+    auto i = 0;
+    for (auto values : init) {
+        Row(i++) = values;
     }
-#endif
-    data = init;
 }
 
-Mat::Mat(std::vector<std::vector<double>> &&init) noexcept
-    : rows(static_cast<int>(init.size())), cols(static_cast<int>(init.size() ? init[0].size() : 0)),
-      data(std::move(init)) {}
+Mat::Mat(int rows, int cols, std::valarray<double> data) noexcept : rows(rows), cols(cols), data(std::move(data)) {}
 
-Mat::Mat(const std::initializer_list<std::initializer_list<double>> &init) noexcept {
-    rows = static_cast<int>(init.size());
-    assert(rows > 0);
-    cols = static_cast<int>(init.begin()->size());
-    assert(cols > 0);
-#ifndef NDEBUG
-    for (auto &vec : init) {
-        assert(static_cast<int>(vec.size()) == cols);
-    }
-#endif
-    data = std::vector<std::vector<double>>(init.begin(), init.end());
+std::slice_array<double> Mat::Row(int i, int offset) {
+    return data[std::slice(cols * i + offset, cols - offset, 1)];
 }
 
-std::vector<double> &Mat::operator[](std::size_t i) noexcept {
-    return data[i];
+std::slice_array<double> Mat::Col(int j, int offset) {
+    return data[std::slice(j + offset * cols, rows - offset, cols)];
 }
 
-const std::vector<double> &Mat::operator[](std::size_t i) const noexcept {
-    return data[i];
+auto Mat::Row(int i, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
+    return data[std::slice(cols * i + offset, cols - offset, 1)];
+}
+
+auto Mat::Col(int j, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
+    return data[std::slice(j + offset * cols, rows - offset, cols)];
+}
+
+const double &Mat::Value(int i, int j) const {
+    return data[i * cols + j];
+}
+
+double &Mat::Value(int i, int j) {
+    return data[i * cols + j];
 }
 
 bool Mat::operator==(double m) const noexcept {
-    for (auto &vec : data)
-        for (auto &val : vec) {
-            if (std::abs(val - m) >= Config::get().epsilon)
-                return false;
-        }
-    return true;
+    return std::all_of(std::begin(data), std::end(data), [m](auto val) {
+        return std::abs(val - m) < Config::get().epsilon;
+    });
 }
 
 bool Mat::operator==(const Mat &b) const noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
-    for (int i = 0; i < rows; ++i)
-        for (int j = 0; j < cols; ++j)
-            if (std::abs(data[i][j] - b[i][j]) > Config::get().epsilon)
-                return false;
-    return true;
+    return std::all_of(std::begin(data), std::end(data), [iter = std::begin(b.data)](auto val) mutable {
+        return std::abs(val - *iter++) < Config::get().epsilon;
+    });
 }
 
 // be negative
 Mat Mat::operator-() noexcept {
-    Mat ans(*this);
-    for (auto &vec : ans.data)
-        for (auto &val : vec)
-            val = -val;
-    return ans;
+    return {rows, cols, -data};
 }
 
 Mat Mat::operator+(const Mat &b) const noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
-    Mat ans(b);
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            ans[i][j] = data[i][j] + b[i][j];
-        }
-    }
-    return ans;
+    return {rows, cols, data + b.data};
 }
 
 Mat &Mat::operator+=(const Mat &b) noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
-    for (int i = 0; i < rows; ++i)
-        for (int j = 0; j < cols; ++j)
-            data[i][j] += b[i][j];
+    data += b.data;
     return *this;
 }
 
 Mat Mat::operator-(const Mat &b) const noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
-    Mat ans(b);
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            ans[i][j] = data[i][j] - b[i][j];
-        }
-    }
-    return ans;
+    return {rows, cols, data - b.data};
 }
 
 Mat Mat::operator*(double m) const noexcept {
-    Mat ans = *this;
-    for (auto &vec : ans.data)
-        for (auto &val : vec)
-            val *= m;
-    return ans;
+    return {rows, cols, data * m};
 }
 
 Mat Mat::operator*(const Mat &b) const noexcept {
     assert(cols == b.rows);
     Mat ans(rows, b.cols);
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < b.cols; ++j) {
-            double sum = 0;
-            for (int k = 0; k < cols; ++k) {
-                sum += data[i][k] * b[k][j];
-            }
-            ans[i][j] = sum;
+    for (auto i = 0; i < rows; ++i) {
+        for (auto j = 0; j < b.cols; ++j) {
+            ans.Value(i, j) = (Row(i) * b.Col(j)).sum();
         }
     }
     return ans;
@@ -1045,267 +983,265 @@ Vec Mat::ToVec() const {
 }
 
 Mat &Mat::SwapRow(int i, int j) noexcept {
-    if (i == j)
+    if (i == j) {
         return *this;
+    }
     assert(i >= 0);
     assert(i < rows);
     assert(j >= 0);
     assert(j < rows);
 
-    std::swap(data[i], data[j]);
+    std::valarray temp = Row(i);
+    Row(i) = Row(j);
+    Row(j) = temp;
+
+    return *this;
+}
+
+Mat &Mat::SwapCol(int i, int j) noexcept {
+    if (i == j) {
+        return *this;
+    }
+    assert(i >= 0);
+    assert(i < cols);
+    assert(j >= 0);
+    assert(j < cols);
+
+    std::valarray t = Col(i);
+    Col(i) = Col(j);
+    Col(j) = t;
+
     return *this;
 }
 
 std::string Mat::ToString() const noexcept {
-    if (data.empty())
+    if (data.size() == 0) {
         return "[]";
-    std::string s;
-    s.reserve(256);
-
-    auto OutputRow = [&](int i) {
-        int j = 0;
-        for (; j < Cols() - 1; ++j) {
-            s += tomsolver::ToString(data[i][j]) + ", ";
-        }
-        s += tomsolver::ToString(data[i][j]);
-    };
-
-    s += "[";
-    OutputRow(0);
-    s += "\n";
-
-    int i = 1;
-    for (; i < Rows() - 1; ++i) {
-        s += " ";
-        OutputRow(i);
-        s += "\n";
     }
-    s += " ";
-    OutputRow(i);
-    s += "]";
-    return s;
+
+    std::stringstream ss;
+    ss << "[";
+
+    size_t i = 0;
+    for (auto val : data) {
+        ss << (i == 0 ? "" : " ") << tomsolver::ToString(val);
+        i++;
+        ss << (i % cols == 0 ? (i == data.size() ? "]" : "\n") : ", ");
+    }
+
+    return ss.str();
 }
 
-void Mat::Resize(int newRows) noexcept {
-    assert(newRows > 0);
-    if (newRows < rows)
-        data.resize(newRows);
-    else {
-        data.resize(newRows);
-        for (int i = rows; i < newRows; ++i)
-            data[i] = std::vector<double>(cols, 0);
-    }
+void Mat::Resize(int newRows, int newCols) noexcept {
+    assert(newRows > 0 && newCols > 0);
+    auto temp = std::move(data);
+    data.resize(newRows * newCols);
+    auto minRows = std::min<size_t>(rows, newRows);
+    auto minCols = std::min<size_t>(cols, newCols);
+    data[std::gslice(0, {minRows, minCols}, {static_cast<size_t>(newCols), 1})] =
+        temp[std::gslice(0, {minRows, minCols}, {static_cast<size_t>(cols), 1})];
     rows = newRows;
+    cols = newCols;
 }
 
 Mat &Mat::Zero() noexcept {
-    data = std::vector<std::vector<double>>(rows, std::vector<double>(cols, 0));
+    data = 0;
     return *this;
 }
 
 Mat &Mat::Ones() noexcept {
     assert(rows == cols);
     Zero();
-    for (int i = 0; i < rows; ++i)
-        data[i][i] = 1;
+    data[std::slice(0, rows, cols + 1)] = 1;
     return *this;
 }
 
 double Mat::Norm2() const noexcept {
-    double sum = 0;
-    for (auto &vec : data)
-        for (auto val : vec)
-            sum += val * val;
-    return sum;
+    return (data * data).sum();
 }
 
 double Mat::NormInfinity() const noexcept {
-    double ans = data[0][0];
-    for (auto &vec : data)
-        for (auto val : vec)
-            ans = std::max(ans, std::abs(val));
-    return ans;
+    return std::abs(data).max();
 }
 
 double Mat::NormNegInfinity() const noexcept {
-    double ans = data[0][0];
-    for (auto &vec : data)
-        for (auto val : vec)
-            ans = std::min(ans, std::abs(val));
-    return ans;
+    return std::abs(data).min();
 }
 
 double Mat::Min() const noexcept {
-    double ans = data[0][0];
-    for (auto &vec : data)
-        for (auto val : vec)
-            ans = std::min(ans, val);
-    return ans;
+    return data.min();
 }
 
 void Mat::SetValue(double value) noexcept {
-    data = std::vector<std::vector<double>>(rows, std::vector<double>(cols, value));
+    data = value;
 }
 
 bool Mat::PositiveDetermine() const noexcept {
     assert(rows == cols);
     for (int i = 1; i <= rows; ++i) {
-        double det = Det(*this, i);
-        if (det <= 0)
+        if (Det(*this, i) <= 0) {
             return false;
+        }
     }
     return true;
 }
 
 Mat Mat::Transpose() const noexcept {
     Mat ans(cols, rows);
-    for (int i = 0; i < rows; ++i)
-        for (int j = 0; j < cols; ++j) {
-            ans[j][i] = data[i][j];
-        }
+    for (auto i = 0; i < cols; i++) {
+        ans.Row(i) = Col(i);
+    }
     return ans;
 }
 
 Mat Mat::Inverse() const {
     assert(rows == cols);
-    const Mat &A = *this;
     int n = rows;
-    Mat ans(n, n);
-    double det = Det(A, n); // Determinant, 역행렬을 시킬 행렬의 행렬식을 구함
+    double det = Det(*this, n); // Determinant, 역행렬을 시킬 행렬의 행렬식을 구함
 
     if (std::abs(det) <= Config::get().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
     {
-        throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "");
+        throw MathError(ErrorType::ERROR_SINGULAR_MATRIX);
     }
 
     Mat adj(n, n); // 딸림행렬 선언
 
-    Adjoint(A, adj); // 딸림행렬 초기화
+    Adjoint(*this, adj); // 딸림행렬 초기화
 
-    for (int i = 0; i < n; i++)
-        for (int j = 0; j < n; j++)
-            ans[i][j] = adj[i][j] / det; // 각 행렬의 원소들을 조합해 값을 도출한다.
-    // 역행렬의 공식 -> 역행렬 = 1 / 행렬식 * 딸림행렬
-    // 역행렬[i][j]번째 원소 = 딸림행렬[i][j]번째 원소 / 행렬식
-
-    return ans;
+    return {n, n, adj.data / det};
 }
 
 Mat operator*(double k, const Mat &mat) noexcept {
     Mat ans(mat);
-    for (int i = 0; i < ans.rows; ++i)
-        for (int j = 0; j < ans.cols; ++j)
-            ans[i][j] *= k;
+    ans.data *= k;
     return ans;
 }
 
 Mat EachDivide(const Mat &a, const Mat &b) noexcept {
     assert(a.rows == b.rows);
     assert(a.cols == b.cols);
-    Mat ans(a);
-    for (int i = 0; i < a.rows; ++i)
-        for (int j = 0; j < a.cols; ++j) {
-            ans[i][j] /= b[i][j];
-        }
-    return ans;
+    return {a.rows, b.cols, b.data / b.data};
 }
 
 bool IsZero(const Mat &mat) noexcept {
-    for (auto &vec : mat.data)
-        for (auto d : vec)
-            if (d > Config::get().epsilon)
-                return false;
-    return true;
+    return std::all_of(std::begin(mat.data), std::end(mat.data), [](auto val) {
+        return std::abs(val) <= Config::get().epsilon;
+    });
 }
 
 bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
     assert(v1.rows == v2.rows && v1.cols == v2.cols);
-    for (int i = 0; i < v1.rows; ++i) {
-        for (int j = 0; j < v1.cols; ++j) {
-            if (v1[i][j] > v2[i][j])
-                return false;
-        }
-    }
-    return true;
+    return std::all_of(std::begin(v1.data), std::end(v1.data), [iter = std::begin(v2.data)](auto val) mutable {
+        return val < *iter++;
+    });
 }
 
 int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
-    double max = 0.0;
-    int index = rowStart;
-    for (int i = rowStart; i <= rowEnd; i++) {
-        if (std::abs(A[i][col]) > max) {
-            max = std::abs(A[i][col]);
-            index = i;
-        }
-    }
-    return index;
+    std::valarray temp = std::abs(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
+    return std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
 }
 
 void Adjoint(const Mat &A, Mat &adj) noexcept // 딸림행렬, 수반행렬
 {
     if (A.rows == 1) // 예외처리
     {
-        adj[0][0] = 1;
+        adj.Value(0, 0) = 1;
         return;
     }
 
-    int sign = 1;
-
-    Mat temp(A.rows, A.cols);
+    Mat cofactor(A.rows - 1, A.cols - 1);
 
     for (int i = 0; i < A.rows; i++) {
         for (int j = 0; j < A.cols; j++) {
-            GetCofactor(A, temp, i, j, A.rows); // 여인수 구하기, 단 i, j값으로 되기에 temp는 항상 바뀐다.
+            GetCofactor(A, cofactor, i, j, A.rows); // 여인수 구하기, 단 i, j값으로 되기에 temp는 항상 바뀐다.
 
-            sign = ((i + j) % 2 == 0) ? 1 : -1; // +, -, + 형식으로 되는데, 0,0 좌표면 +, 0,1좌표면 -, 이렇게 된다.
+            auto det = (Det(cofactor, A.rows - 1));
 
-            adj[j][i] = (sign) * (Det(temp, A.rows - 1)); // n - 1 X n - 1 은, 언제나 각 여인수 행렬 은 여인수를
-                                                          // 따오는 행렬의 크기 - 1 이기 때문이다.
+            if ((i + j) % 2 != 0) {
+                det = -det; // +, -, + 형식으로 되는데, 0,0 좌표면 +, 0,1좌표면 -, 이렇게 된다.
+            }
+
+            adj.Value(j, i) = det; // n - 1 X n - 1 은, 언제나 각 여인수 행렬 은
+                                   // 여인수를 따오는 행렬의 크기 - 1 이기 때문이다.
         }
     }
 }
 
-void GetCofactor(const Mat &A, Mat &temp, int p, int q,
+void GetCofactor(const Mat &A, Mat &cofactor, int p, int q,
                  int n) noexcept // 여인수를 구해다주는 함수!
 {
-    int i = 0, j = 0; // n - 1 X n - 1 행렬에 넣을 x, y좌표
+    /*
+         ┌───┄┄┄┄┄┄┄┄┬───┬┄┄┄┄┄┄┄┄───┐   size of region A = p * q
+    0 -> │           │   │           │                  B = p * (n - 1 - q)
+         ┆           ┆   ┆           ┆                  C = (n - 1 - p) * q
+         ┆     A     ┆   ┆     B     ┆                  D = (n - 1 - p) * (n - 1 - q)
+         ┆           ┆   ┆           ┆
+         ┆           ┆   ┆           ┆    left top of region
+         ├───┄┄┄┄┄┄┄┄┼───┼┄┄┄┄┄┄┄┄───┤   ╔════════╤════════════════╤══════════╗
+    p ─> │           │   │           │   ║ region │ origin matrix  │ cofactor ║
+         ├───┄┄┄┄┄┄┄┄┼───┼┄┄┄┄┄┄┄┄───┤   ╠════════╪════════════════╪══════════╣
+         ┆           ┆   ┆           ┆   ║ A      │ (0, 0)         │ (0, 0)   ║
+         ┆           ┆   ┆           ┆   ╟────────┼────────────────┼──────────╢
+         ┆     C     ┆   ┆     D     ┆   ║ B      │ (0, q + 1)     │ (0, q)   ║
+         ┆           ┆   ┆           ┆   ╟────────┼────────────────┼──────────╢
+         │           │   │           │   ║ C      │ (p + 1, 0)     │ (p, 0)   ║
+    n ─> └───┄┄┄┄┄┄┄┄┴───┴┄┄┄┄┄┄┄┄───┘   ╟────────┼────────────────┼──────────╢
+          ^            ^            ^    ║ D      │ (p + 1, q + 1) │ (p, q)   ║
+          0            q            n    ╚════════╧════════════════╧══════════╝
+    */
 
-    for (int row = 0; row < n; row++) {
-        for (int col = 0; col < n; col++) {
-            if (row != p && col != q) // 하나라도 안되면 안들어감! && 이기때문
-            {
-                temp[i][j++] = A[row][col]; // j++ <- 후처리로 따로 풀어보면, [i][j] 한 뒤, j++한거와 똑같음
+    auto newIndex = [n = n - 1](int p, int q) -> size_t {
+        return p * n + q;
+    };
+    auto index = [n = A.cols](int p, int q) -> size_t {
+        return p * n + q;
+    };
+    auto makeValarray = [](int p, int q) {
+        return std::valarray<size_t>{static_cast<size_t>(p), static_cast<size_t>(q)};
+    };
+    auto newStride = makeValarray(n - 1, 1);
+    auto stride = makeValarray(A.cols, 1);
 
-                if (j == n - 1) // 1차원 작게, 3차원이면 2차원 여인수 모음 행렬이 나오니까
-                {
-                    j = 0; // x좌표 초기화
-                    i++;   // y좌표 ++
-                }
-            }
+    std::array config = {
+        std::tuple{makeValarray(p, q), newIndex(0, 0), index(0, 0)},
+        std::tuple{makeValarray(p, n - 1 - q), newIndex(0, q), index(0, q + 1)},
+        std::tuple{makeValarray(n - 1 - p, q), newIndex(p, 0), index(p + 1, 0)},
+        std::tuple{makeValarray(n - 1 - p, n - 1 - q), newIndex(p, q), index(p + 1, q + 1)},
+    };
+
+    for (const auto &[size, newStart, start] : config) {
+        if (newStart < cofactor.data.size()) {
+            cofactor.data[std::gslice(newStart, size, newStride)] = A.data[std::gslice(start, size, stride)];
         }
     }
 }
 
 double Det(const Mat &A, int n) noexcept {
-    if (n == 0)
+    if (n == 0) {
         return 0;
+    }
 
-    if (n == 1)
-        return A[0][0];
+    if (n == 1) {
+        return A.Value(0, 0);
+    }
 
     if (n == 2) // 계산 압축
-        return ((A[0][0] * A[1][1]) - (A[1][0] * A[0][1]));
+    {
+        return A.Value(0, 0) * A.Value(1, 1) - A.Value(1, 0) * A.Value(0, 1);
+    }
 
-    Mat temp(A.rows - 1, A.cols - 1); // n X n 행렬의 여인수를 담을 임시 행렬
+    Mat cofactor(n - 1, n - 1); // n X n 행렬의 여인수를 담을 임시 행렬
 
     double D = 0; // D = 한 행렬의 Determinant값
 
     int sign = 1; // sign = +, -, +, -.... 형태로 지속되는 결과값에 영향을 주는 정수
 
     for (int f = 0; f < n; f++) {
-        GetCofactor(A, temp, 0, f, n); // 0으로 고정시킨 이유는, 수학 공식 상 Determinant (행렬식)은 n개의 열 중
-                                       // 아무거나 잡아도 결과값은 모두 일치하기 때문
-        D += sign * A[0][f] * Det(temp, n - 1); // 재귀 형식으로 돌아간다. f는 n X n 중 정수 n을 향해 간다.
+        GetCofactor(A, cofactor, 0, f, n); // 0으로 고정시킨 이유는, 수학 공식 상 Determinant (행렬식)은 n개의 열 중
+        // 아무거나 잡아도 결과값은 모두 일치하기 때문
+        auto det = Det(cofactor, n - 1);
+        auto v = A.Value(0, f);
+        D += sign * v * det; // 재귀 형식으로 돌아간다. f는 n X n 중 정수 n을 향해 간다.
 
         sign = -sign; // +, -, +, -... 형식으로 되기 때문에 반대로 만들어준다.
     }
@@ -1313,15 +1249,12 @@ double Det(const Mat &A, int n) noexcept {
     return D; // 마지막엔 n X n 행렬의 Determinant를 리턴해준다.
 }
 
-Vec::Vec(int rows) noexcept : Mat(rows, 1) {}
-
 Vec::Vec(int rows, double initValue) noexcept : Mat(rows, 1, initValue) {}
 
-Vec::Vec(const std::initializer_list<double> &init) noexcept : Vec(static_cast<int>(init.size())) {
-    data.resize(rows, std::vector<double>(1));
-    int i = 0;
-    for (auto v : init)
-        data[i++][0] = v;
+Vec::Vec(std::initializer_list<double> init) noexcept : Vec(std::valarray<double>{init}) {}
+
+Vec::Vec(std::valarray<double> init) noexcept : Vec(static_cast<int>(init.size())) {
+    data = std::move(init);
 }
 
 Mat &Vec::AsMat() noexcept {
@@ -1330,24 +1263,60 @@ Mat &Vec::AsMat() noexcept {
 
 void Vec::Resize(int newRows) noexcept {
     assert(newRows > 0);
-    data.resize(newRows, std::vector<double>(1));
-    rows = newRows;
+    Mat::Resize(newRows, 1);
+}
+
+double &Vec::operator[](std::size_t i) noexcept {
+    return data[i];
+}
+
+double Vec::operator[](std::size_t i) const noexcept {
+    return data[i];
+}
+
+Vec Vec::operator+(const Vec &b) const noexcept {
+    assert(rows == b.rows);
+    assert(cols == 1 && b.cols == 1);
+    return {data + b.data};
+}
+
+Vec Vec::operator-() noexcept {
+    return {-data};
+}
+
+Vec Vec::operator-(const Vec &b) const noexcept {
+    assert(rows == b.rows);
+    return {data - b.data};
+}
+
+Vec Vec::operator*(double m) const noexcept {
+    return {data * m};
+}
+
+Vec Vec::operator*(const Vec &b) const noexcept {
+    assert(rows == b.rows);
+    return {data * b.data};
+}
+
+Vec Vec::operator/(const Vec &b) const noexcept {
+    assert(rows == b.rows);
+    return {data / b.data};
+}
+
+bool Vec::operator<(const Vec &b) noexcept {
+    assert(rows == b.rows);
+    return std::all_of(std::begin(data), std::end(data), [iter = std::begin(b.data)](auto val) mutable {
+        return val < *iter++;
+    });
+}
+
+Vec operator*(double k, const Vec &v) {
+    return {v.data * k};
 }
 
 double Dot(const Vec &a, const Vec &b) noexcept {
     assert(a.rows == b.rows);
-    int n = a.rows;
-    double sum = 0;
-    for (int i = 0; i < n; ++i)
-        sum += a[i] * b[i];
-    return sum;
-}
-
-Vec operator*(double k, const Vec &v) {
-    Vec ans(v);
-    for (int i = 0; i < ans.rows; ++i)
-        ans[i] *= k;
-    return ans;
+    return (a.data * b.data).sum();
 }
 
 std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept {
@@ -1365,23 +1334,13 @@ namespace tomsolver {
  * @exception MathError 不定方程（设置Config::get().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
  *
  */
-Vec SolveLinear(const Mat &A, const Vec &b);
+Vec SolveLinear(Mat A, Vec b);
 
 } // namespace tomsolver
 
 namespace tomsolver {
 
-void SwapRow(Mat &A, Vec &b, int i, int j) {
-    if (i == j)
-        return;
-    std::swap(A[i], A[j]);
-    std::swap(b[i], b[j]);
-}
-
-Vec SolveLinear(const Mat &AA, const Vec &bb) {
-    Mat A(AA);
-    Vec b(bb);
-
+Vec SolveLinear(Mat A, Vec b) {
     int rows = A.Rows(); // 行数
     int cols = rows;     // 列数=未知数个数
 
@@ -1391,20 +1350,24 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
 
     Vec ret(rows);
 
-    if (rows > 0)
-        cols = static_cast<int>(A[0].size());
+    if (rows > 0) {
+        cols = A.Cols();
+    }
     if (cols != rows) // 不是方阵
     {
-        if (rows > cols)
-            throw MathError(ErrorType::ERROR_OVER_DETERMINED_EQUATIONS, ""); // 过定义方程组
-        else                                                                 // 不定方程组
+        if (rows > cols) {
+            // 过定义方程组
+            throw MathError(ErrorType::ERROR_OVER_DETERMINED_EQUATIONS);
+        } else {
+            // 不定方程组
             ret.Resize(cols);
+        }
     }
 
-    std::vector<decltype(rows)> TrueRowNumber(cols);
+    std::vector<int> TrueRowNumber(cols);
 
     // 列主元消元法
-    for (decltype(rows) y = 0, x = 0; y < rows && x < cols; y++, x++) {
+    for (auto y = 0, x = 0; y < rows && x < cols; y++, x++) {
         // if (A[i].size() != rows)
 
         // 从当前行(y)到最后一行(rows-1)中，找出x列最大的一行与y行交换
@@ -1412,11 +1375,12 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         A.SwapRow(y, maxAbsRowIndex);
         b.SwapRow(y, maxAbsRowIndex);
 
-        while (std::abs(A[y][x]) < Config::get().epsilon) // 如果当前值为0  x一直递增到非0
+        while (std::abs(A.Value(y, x)) < Config::get().epsilon) // 如果当前值为0  x一直递增到非0
         {
             x++;
-            if (x == cols)
+            if (x == cols) {
                 break;
+            }
 
             // 交换本行与最大行
             maxAbsRowIndex = GetMaxAbsRowIndex(A, y, rows - 1, x);
@@ -1431,33 +1395,32 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
         if (x == cols) // 本行全为0
         {
             RankA = y;
-            if (std::abs(b[y]) < Config::get().epsilon)
+            if (std::abs(b[y]) < Config::get().epsilon) {
                 RankAb = y;
+            }
 
-            if (RankA != RankAb) // 奇异，且系数矩阵及增广矩阵秩不相等->无解
-                throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "");
-            else
-                break; // 跳出for，得到特解
+            if (RankA != RankAb) {
+                // 奇异，且系数矩阵及增广矩阵秩不相等->无解
+                throw MathError(ErrorType::ERROR_SINGULAR_MATRIX);
+            } else {
+                // 跳出for，得到特解
+                break;
+            }
         }
 
         // 主对角线化为1
-        double m_num = A[y][x];
-        for (decltype(rows) j = y; j < cols; j++) // y行第j个->第cols个
-            A[y][j] /= m_num;
-        b[y] /= m_num;
+        auto ratio = A.Value(y, x);
+        // y行第j个->第cols个
+        std::valarray rowY = std::as_const(A).Row(y, x) / ratio;
+        A.Row(y, x) = rowY;
+        b[y] /= ratio;
 
         // 每行化为0
-        for (decltype(rows) row = y + 1; row < rows; row++) // 下1行->最后1行
+        for (auto row = y + 1; row < rows; row++) // 下1行->最后1行
         {
-            if (std::abs(A[row][x]) < Config::get().epsilon)
-                ;
-            else {
-                double mi = A[row][x];
-                for (auto col = x; col < cols; col++) // row行第x个->第cols个
-                {
-                    A[row][col] -= A[y][col] * mi;
-                }
-                b[row] -= b[y] * mi;
+            if (auto ratio = A.Value(row, x); std::abs(A.Value(row, x)) >= Config::get().epsilon) {
+                A.Row(row, x) -= rowY * ratio;
+                b[row] -= b[y] * ratio;
             }
         }
     }
@@ -1466,9 +1429,7 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
 
     // 若为不定方程组，空缺行全填0继续运算
     if (rows != cols) {
-        A.Resize(cols);                    // A改为cols行
-        for (auto i = rows; i < cols; i++) // A从rows行开始每行cols个数
-            A[i].resize(cols);
+        A.Resize(cols, cols);
         b.Resize(cols);
         rows = cols;
         bIndeterminateEquation = true;
@@ -1483,24 +1444,20 @@ Vec SolveLinear(const Mat &AA, const Vec &bb) {
     }
 
     // 后置换得到x
-    double sum_others = 0.0;
     for (int i = rows - 1; i >= 0; i--) // 最后1行->第1行
     {
-        sum_others = 0.0;
-        for (decltype(rows) j = i + 1; j < rows; j++) // 本列 后的元素乘以已知x 加总
-        {
-            sum_others += A[i][j] * ret[j];
-        }
-        ret[i] = b[i] - sum_others;
+        ret[i] = b[i] - (std::as_const(A).Row(i, i + 1) * std::as_const(ret).Col(0, i + 1)).sum();
     }
 
     if (RankA < cols && RankA == RankAb) {
         if (bIndeterminateEquation) {
-            if (!Config::get().allowIndeterminateEquation)
+            if (!Config::get().allowIndeterminateEquation) {
                 throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION,
-                                std::string("A = ") + AA.ToString() + "\nb = " + bb.ToString());
-        } else
-            throw MathError(ErrorType::ERROR_INFINITY_SOLUTIONS, "");
+                                "A = " + A.ToString() + "\nb = " + b.ToString());
+            }
+        } else {
+            throw MathError(ErrorType::ERROR_INFINITY_SOLUTIONS);
+        }
     }
 
     return ret;
@@ -1528,7 +1485,7 @@ public:
      * @param vars 变量数组
      * @param initValue 初值
      */
-    explicit VarsTable(const std::initializer_list<std::pair<std::string, double>> &initList);
+    explicit VarsTable(std::initializer_list<std::pair<std::string, double>> initList);
 
     /**
      * 新建变量表。
@@ -1593,28 +1550,22 @@ namespace tomsolver {
 VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
     : vars(vars), values(static_cast<int>(vars.size()), initValue) {
     for (auto &var : vars) {
-        table[var] = initValue;
+        table.try_emplace(var, initValue);
     }
     assert(vars.size() == table.size() && "vars is not unique");
 }
 
-VarsTable::VarsTable(const std::initializer_list<std::pair<std::string, double>> &initList)
-    : vars(initList.size()), values(static_cast<int>(initList.size())), table(initList.begin(), initList.end()) {
-    int i = 0;
-    for (auto &pr : initList) {
-        vars[i] = pr.first;
-        values[i] = pr.second;
-        ++i;
-    }
+VarsTable::VarsTable(std::initializer_list<std::pair<std::string, double>> initList)
+    : VarsTable({initList.begin(), initList.end()}) {
     assert(vars.size() == table.size() && "vars is not unique");
 }
 
 VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
     : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
     int i = 0;
-    for (auto &pr : table) {
-        vars[i] = pr.first;
-        values[i] = pr.second;
+    for (auto &[var, val] : table) {
+        vars[i] = var;
+        values[i] = val;
         ++i;
     }
 }
@@ -1660,22 +1611,12 @@ std::map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
 }
 
 bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
-    if (values.Rows() != rhs.values.Rows()) {
-        return false;
-    }
-
-    for (auto &pr : table) {
-        const std::string &varname = pr.first;
-        auto it = rhs.table.find(varname);
-        if (it == rhs.table.end()) {
-            return false;
-        }
-        double value = pr.second;
-        if (std::abs(it->second - value) > Config::get().epsilon) {
-            return false;
-        }
-    }
-    return true;
+    return values.Rows() == rhs.values.Rows() &&
+           std::equal(table.begin(), table.end(), rhs.table.begin(), [](const auto &lhs, const auto &rhs) {
+               auto &[lVar, lVal] = lhs;
+               auto &[rVar, rVal] = rhs;
+               return lVar == rVar && std::abs(lVal - rVal) <= Config::get().epsilon;
+           });
 }
 
 double VarsTable::operator[](const std::string &varname) const {
@@ -1687,8 +1628,8 @@ double VarsTable::operator[](const std::string &varname) const {
 }
 
 std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
-    for (auto &pr : table) {
-        out << pr.first << " = " << tomsolver::ToString(pr.second) << std::endl;
+    for (auto &[var, val] : table) {
+        out << var << " = " << tomsolver::ToString(val) << std::endl;
     }
     return out;
 }
@@ -1768,7 +1709,7 @@ private:
     MathOperator op = MathOperator::MATH_NULL;
     double value;
     std::string varname;
-    const NodeImpl *parent = nullptr;
+    NodeImpl *parent = nullptr;
     Node left, right;
     NodeImpl() = default;
 
@@ -1888,77 +1829,85 @@ Node Move(Node &rhs) noexcept;
 Node Num(double num) noexcept;
 
 /**
+ * 新建一个操作节点。
+ */
+Node Op(MathOperator op) noexcept;
+
+/**
  * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
  */
-bool VarNameIsLegal(const std::string &varname) noexcept;
+bool VarNameIsLegal(std::string_view varname) noexcept;
 
 /**
  * 新建一个变量节点。
  * @exception runtime_error 名字不合法
  */
-Node Var(const std::string &varname);
+Node Var(std::string_view varname);
+
+template <typename... T>
+using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node> operator+(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator+(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &operator+=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> &operator+=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node> operator-(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator-(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
-template <typename T1>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node> operator-(T1 &&n1) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T1>(n1));
-}
-
-template <typename T1>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node> operator+(T1 &&n1) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T1>(n1));
+template <typename T>
+SfinaeNode<T> operator-(T &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T>(n1));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &operator-=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> operator+(T &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T>(n1));
+}
+
+template <typename T>
+SfinaeNode<T> &operator-=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node> operator*(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator*(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &operator*=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> &operator*=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node> operator/(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator/(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &operator/=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> &operator/=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
     return n1;
 }
 
 template <typename T1, typename T2>
-std::enable_if_t<std::is_same<std::decay_t<T1>, Node>::value, Node> operator^(T1 &&n1, T2 &&n2) noexcept {
+SfinaeNode<T1, T2> operator^(T1 &&n1, T2 &&n2) noexcept {
     return internal::BinaryOperator(MathOperator::MATH_POWER, std::forward<T1>(n1), std::forward<T2>(n2));
 }
 
 template <typename T>
-std::enable_if_t<std::is_same<std::decay_t<T>, Node>::value, Node> &operator^=(Node &n1, T &&n2) noexcept {
+SfinaeNode<T> &operator^=(Node &n1, T &&n2) noexcept {
     n1 = internal::BinaryOperator(MathOperator::MATH_POWER, std::move(n1), std::forward<T>(n2));
     return n1;
 }
@@ -2471,15 +2420,15 @@ Node CloneRecursively(const Node &src) noexcept {
 
 // 前序遍历。非递归实现。
 Node CloneNonRecursively(const Node &src) noexcept {
-    std::stack<std::tuple<const NodeImpl &, const NodeImpl &, Node &>> stk;
+    std::stack<std::tuple<const NodeImpl &, NodeImpl &, Node &>> stk;
 
-    auto MakeNode = [](const NodeImpl &src, const NodeImpl *parent = nullptr) {
+    auto MakeNode = [](const NodeImpl &src, NodeImpl *parent = nullptr) {
         auto node = std::make_unique<NodeImpl>(src.type, src.op, src.value, src.varname);
         node->parent = parent;
         return node;
     };
 
-    auto EmplaceNode = [&stk](const Node &src, const NodeImpl &parent, Node &tgt) {
+    auto EmplaceNode = [&stk](const Node &src, NodeImpl &parent, Node &tgt) {
         if (src) {
             stk.emplace(*src, parent, tgt);
         }
@@ -2581,15 +2530,20 @@ Node Num(double num) noexcept {
     return std::make_unique<internal::NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
 }
 
-bool VarNameIsLegal(const std::string &varname) noexcept {
-    return std::regex_match(varname, std::regex{R"((?=\w)\D\w*)"});
+Node Op(MathOperator op) noexcept {
+    return std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
 }
 
-Node Var(const std::string &varname) {
+bool VarNameIsLegal(std::string_view varname) noexcept {
+    return std::regex_match(varname.begin(), varname.end(), std::regex{R"((?=\w)\D\w*)"});
+}
+
+Node Var(std::string_view varname) {
+    auto name = std::string{varname};
     if (!VarNameIsLegal(varname)) {
-        throw std::runtime_error("Illegal varname: " + varname);
+        throw std::runtime_error("Illegal varname: " + name);
     }
-    return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, varname);
+    return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, std::move(name));
 }
 
 } // namespace tomsolver
@@ -2682,7 +2636,7 @@ public:
     /**
      * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
      */
-    SymMat(const std::initializer_list<std::initializer_list<Node>> &lst) noexcept;
+    SymMat(std::initializer_list<std::initializer_list<Node>> init) noexcept;
 
     /**
      * 从数值矩阵构造符号矩阵
@@ -2748,14 +2702,14 @@ public:
      */
     bool operator==(const SymMat &rhs) const noexcept;
 
-    const std::vector<Node> &operator[](int row) const noexcept;
-
-    std::vector<Node> &operator[](int row) noexcept;
+    Node &Value(int i, int j) noexcept;
+    const Node &Value(int i, int j) const noexcept;
 
     std::string ToString() const noexcept;
 
 protected:
-    std::vector<std::vector<Node>> data;
+    int rows, cols;
+    std::unique_ptr<std::valarray<Node>> data;
 
     friend SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept;
 };
@@ -2770,7 +2724,7 @@ public:
     /**
      * 使用初始化列表构造。注意列表内的对象将被强行移动至Vec内部。
      */
-    SymVec(const std::initializer_list<Node> &lst) noexcept;
+    SymVec(std::initializer_list<Node> init) noexcept;
 
     /**
      * 如果rhs和自己的维数不匹配会触发assert。
@@ -2848,139 +2802,108 @@ namespace internal {
 
 class SubsFunctions {
 public:
-    static void SubsInner(Node &node, const std::map<std::string, Node> &dict) noexcept {
-        // 前序遍历。非递归实现。
+    // 前序遍历。非递归实现。
+    static Node SubsInner(Node node, const std::map<std::string, Node> &dict) noexcept {
 
-        std::stack<NodeImpl *> stk;
+        std::stack<std::tuple<NodeImpl &>> stk;
 
-        auto Replace = [&dict](Node &cur) -> bool {
+        auto Replace = [&dict](Node &cur) {
             if (cur->type != NodeType::VARIABLE) {
                 return false;
             }
-            const auto &itor = dict.find(cur->varname);
+
+            auto itor = dict.find(cur->varname);
             if (itor == dict.end()) {
                 return false;
             }
 
-            Node cloned = Clone(itor->second);
-            cloned->parent = cur->parent;
-            cur = std::move(cloned);
+            auto parent = cur->parent;
+            cur = Clone(itor->second);
+            cur->parent = parent;
+
             return true;
         };
 
-        if (Replace(node)) {
-            return;
-        }
+        if (!Replace(node)) {
+            auto TryReplace = [&stk, &Replace](Node &cur) {
+                if (cur && !Replace(cur)) {
+                    stk.emplace(*cur);
+                }
+            };
 
-        if (node->right) {
-            if (!Replace(node->right))
-                stk.push(node->right.get());
-        }
-        if (node->left) {
-            if (!Replace(node->left))
-                stk.push(node->left.get());
-        }
-        while (!stk.empty()) {
-            NodeImpl *f = stk.top();
-            stk.pop();
+            TryReplace(node->right);
+            TryReplace(node->left);
 
-            if (f->right) {
-                if (!Replace(f->right))
-                    stk.push(f->right.get());
-            }
-            if (f->left) {
-                if (!Replace(f->left))
-                    stk.push(f->left.get());
+            while (!stk.empty()) {
+                auto &[f] = stk.top();
+                stk.pop();
+                TryReplace(f.right);
+                TryReplace(f.left);
             }
         }
+
+#ifndef NDEBUG
+        node->CheckParent();
+#endif
+        return node;
     }
 };
 
 } // namespace internal
 
 Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), oldVar, newNode);
+    return Subs(Clone(node), oldVar, newNode);
 }
 
 Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
-    Node ret = std::move(node);
     std::map<std::string, Node> dict;
-    dict.insert({oldVar, Clone(newNode)});
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    dict.try_emplace(oldVar, Clone(newNode));
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), oldVars, newNodes);
+    return Subs(Clone(node), oldVars, newNodes);
 }
 
 Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
     assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
-    Node ret = std::move(node);
     std::map<std::string, Node> dict;
     for (size_t i = 0; i < oldVars.size(); ++i) {
-        dict.insert({oldVars[i], Clone(newNodes[i])});
+        dict.try_emplace(oldVars[i], Clone(newNodes[i]));
     }
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), dict);
+    return Subs(Clone(node), dict);
 }
 
 Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept {
-    Node ret = std::move(node);
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), varValues);
+    return Subs(Clone(node), varValues);
 }
 
 Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
-    Node ret = std::move(node);
     std::map<std::string, Node> dict;
-    for (auto &pr : varValues) {
-        dict.insert({pr.first, Num(pr.second)});
+    for (auto &[var, val] : varValues) {
+        dict.try_emplace(var, Num(val));
     }
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), varsTable);
+    return Subs(Clone(node), varsTable);
 }
 
 Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
-    Node ret = std::move(node);
     std::map<std::string, Node> dict;
-    for (const auto &pr : varsTable) {
-        dict.insert({pr.first, Num(pr.second)});
+    for (auto &[var, val] : varsTable) {
+        dict.try_emplace(var, Num(val));
     }
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 } // namespace tomsolver
@@ -2998,39 +2921,28 @@ namespace internal {
 class SimplifyFunctions {
 public:
     struct SimplifyNode {
-        NodeImpl *node;
+        NodeImpl &node;
         bool isLeftChild;
 
-        SimplifyNode(NodeImpl *node, bool isLeftChild) : node(node), isLeftChild(isLeftChild) {
-            if (node->parent) {
-                if (node->parent->left.get() == node) {
-                    if (!isLeftChild) {
-                        assert(0 && "inner bug");
-                    }
-                } else {
-                    if (isLeftChild) {
-                        assert(0 && "inner bug");
-                    }
-                }
-            }
-        }
+        SimplifyNode(NodeImpl &node) : node(node), isLeftChild(!node.parent || node.parent->left.get() == &node) {}
     };
 
+    // 对单节点n进行化简。
     static void SimplifySingleNode(std::unique_ptr<NodeImpl> &n) noexcept {
-        const NodeImpl *parent = n->parent;
-        // 对单节点n进行化简。
-
+        auto parent = n->parent;
+        switch (GetOperatorNum(n->op)) {
         // 对于1元运算符，且儿子是数字的，直接计算出来
-        if (GetOperatorNum(n->op) == 1 && n->left->type == NodeType::NUMBER) {
-            n->type = NodeType::NUMBER;
-            n->value = tomsolver::Calc(n->op, n->left->value, 0);
-            n->op = MathOperator::MATH_NULL;
-            n->left = nullptr;
-            return;
-        }
+        case 1:
+            if (n->left->type == NodeType::NUMBER) {
+                n->type = NodeType::NUMBER;
+                n->value = tomsolver::Calc(n->op, n->left->value, 0);
+                n->op = MathOperator::MATH_NULL;
+                n->left = nullptr;
+            }
+            break;
 
         // 对于2元运算符
-        if (GetOperatorNum(n->op) == 2) {
+        case 2:
             // 儿子是数字的，直接计算出来
             if (n->left->type == NodeType::NUMBER && n->right->type == NodeType::NUMBER) {
                 n->type = NodeType::NUMBER;
@@ -3047,7 +2959,7 @@ public:
             bool lChildIs1 = n->left->type == NodeType::NUMBER && n->left->value == 1.0;
             bool rChildIs1 = n->right->type == NodeType::NUMBER && n->right->value == 1.0;
 
-            //任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
+            // 任何数乘或被乘0、被0除、0的除0外的任何次方，等于0
             if ((n->op == MathOperator::MATH_MULTIPLY && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_DIVIDE && lChildIs0) || (n->op == MathOperator::MATH_POWER && lChildIs0)) {
                 n = Num(0);
@@ -3055,7 +2967,7 @@ public:
                 return;
             }
 
-            //任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
+            // 任何数加或被加0、被减0、乘或被乘1、被1除、开1次方，等于自身
             if ((n->op == MathOperator::MATH_ADD && (lChildIs0 || rChildIs0)) ||
                 (n->op == MathOperator::MATH_SUB && rChildIs0) ||
                 (n->op == MathOperator::MATH_MULTIPLY && (lChildIs1 || rChildIs1)) ||
@@ -3075,13 +2987,18 @@ public:
         }
     }
 
+    // 后序遍历。非递归实现。
     static void SimplifyWholeNode(Node &node) {
-        using SimplifyNode = internal::SimplifyFunctions::SimplifyNode;
-        // 后序遍历。非递归实现。
 
         // 借助一个栈，得到反向的后序遍历序列，结果保存在revertedPostOrder。除了root节点，root节点不保存在revertedPostOrder里，最后单独化简。
         std::stack<SimplifyNode> stk;
         std::deque<SimplifyNode> revertedPostOrder;
+
+        auto popNode = [&stk] {
+            auto node = std::move(stk.top());
+            stk.pop();
+            return node;
+        };
 
         // ==== Part I ====
 
@@ -3089,26 +3006,20 @@ public:
             return;
         }
 
-        stk.push(SimplifyNode(node.get(), true));
+        stk.push(SimplifyNode(*node.get()));
 
-        while (1) {
-            if (stk.empty()) {
-                break;
+        while (!stk.empty()) {
+            auto f = popNode();
+
+            if (f.node.left && f.node.left->type == NodeType::OPERATOR) {
+                stk.push(SimplifyNode(*f.node.left.get()));
             }
 
-            auto f = stk.top();
-            auto n = f.node;
-            stk.pop();
-
-            if (n->left && n->left->type == NodeType::OPERATOR) {
-                stk.push(SimplifyNode(n->left.get(), true));
+            if (f.node.right && f.node.right->type == NodeType::OPERATOR) {
+                stk.push(SimplifyNode(*f.node.right.get()));
             }
 
-            if (n->right && n->right->type == NodeType::OPERATOR) {
-                stk.push(SimplifyNode(n->right.get(), false));
-            }
-
-            revertedPostOrder.push_back(f);
+            revertedPostOrder.emplace_back(std::move(f));
         }
 
         // pop掉root，root最后单独处理
@@ -3116,13 +3027,7 @@ public:
 
         // ==== Part II ====
         std::for_each(revertedPostOrder.rbegin(), revertedPostOrder.rend(), [](SimplifyNode &snode) {
-            if (snode.isLeftChild) {
-                Node &n = const_cast<NodeImpl *>(snode.node->parent)->left;
-                SimplifyFunctions::SimplifySingleNode(n);
-            } else {
-                Node &n = const_cast<NodeImpl *>(snode.node->parent)->right;
-                SimplifyFunctions::SimplifySingleNode(n);
-            }
+            SimplifySingleNode(snode.isLeftChild ? snode.node.parent->left : snode.node.parent->right);
         });
 
         SimplifyFunctions::SimplifySingleNode(node);
@@ -3194,7 +3099,19 @@ protected:
 
 class SingleParseError : public ParseError {
 public:
-    SingleParseError(int line, int pos, const std::string &content, const std::string &errInfo);
+    template <typename... T>
+    SingleParseError(int line, int pos, std::string_view content, T &&...errInfo)
+        : line(line), pos(pos), content(content) {
+        std::stringstream ss;
+
+        ss << "[Parse Error] ";
+        (ss << ... << std::forward<T>(errInfo));
+        ss << " at(" << line << ", " << pos << "):\n"
+           << content << "\n"
+           << std::string(pos, ' ') << "^---- error position";
+
+        whatStr = ss.str();
+    }
 
     virtual const char *what() const noexcept override;
 
@@ -3203,11 +3120,10 @@ public:
     int GetPos() const noexcept;
 
 private:
-    int line;            // 行号
-    int pos;             // 第几个字符
-    std::string content; // 整行文本
-    std::string errInfo; // 报错信息
-    std::string whatStr; // 完整的错误信息
+    int line;                 // 行号
+    int pos;                  // 第几个字符
+    std::string_view content; // 整行文本
+    std::string whatStr;      // 完整的错误信息
 };
 
 class MultiParseError : public ParseError {
@@ -3224,13 +3140,13 @@ private:
 namespace internal {
 
 struct Token {
-    std::string s;                        // token内容
-    int line;                             // 行号
-    int pos;                              // 第几个字符
-    bool isBaseOperator;                  // 是否为基本运算符（单个字符的运算符以及左右括号）
-    Node node;                            // 节点
-    std::shared_ptr<std::string> content; // 整行文本
-    Token(int line, int pos, bool isBaseOperator, const std::string &s, const std::shared_ptr<std::string> &content)
+    std::string_view s;       // token内容
+    int line;                 // 行号
+    int pos;                  // 第几个字符
+    bool isBaseOperator;      // 是否为基本运算符（单个字符的运算符以及左右括号）
+    std::string_view content; // 整行文本
+    Node node;                // 节点
+    Token(int line, int pos, bool isBaseOperator, std::string_view s, std::string_view content)
         : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
 };
 
@@ -3240,7 +3156,7 @@ public:
      * 解析表达式字符串为in order记号流。其实就是做词法分析。
      * @exception ParseError
      */
-    static std::deque<Token> ParseToTokens(const std::string &expression);
+    static std::deque<Token> ParseToTokens(std::string_view expression);
 
     /**
      * 由in order序列得到post order序列。实质上是把记号流转化为逆波兰表达式。
@@ -3261,46 +3177,35 @@ public:
  * 把字符串解析为表达式。
  * @exception ParseError
  */
-Node Parse(const std::string &expression);
+Node Parse(std::string_view expression);
+
+Node operator""_f(const char *exp, size_t);
 
 } // namespace tomsolver
 
-using std::string;
-using std::to_string;
-
 namespace tomsolver {
 
-inline SingleParseError::SingleParseError(int line, int pos, const std::string &content, const std::string &errInfo)
-    : line(line), pos(pos), content(content), errInfo(errInfo) {
-    whatStr = "[Parse Error] " + errInfo + " at(" + to_string(line) + ", " + to_string(pos) + "):\n";
-    whatStr += content + "\n";
-    whatStr += string(pos, ' ') + "^---- error position";
-}
+namespace {
 
-const char *SingleParseError::what() const noexcept {
-    return whatStr.c_str();
-}
+constexpr auto fnv1a(std::string_view s) {
+    constexpr uint64_t offsetBasis = 14695981039346656037ul;
+    constexpr uint64_t prime = 1099511628211ul;
 
-int SingleParseError::GetLine() const noexcept {
-    return line;
-}
+    uint64_t hash = offsetBasis;
 
-int SingleParseError::GetPos() const noexcept {
-    return pos;
-}
-
-MultiParseError::MultiParseError(const std::vector<SingleParseError> &parseErrors) : parseErrors(parseErrors) {
-    for (auto &err : parseErrors) {
-        whatStr += std::string(err.what()) + "\n";
+    for (auto c : s) {
+        hash = (hash ^ c) * prime;
     }
+
+    return hash;
 }
 
-const char *MultiParseError::what() const noexcept {
-    return whatStr.c_str();
+constexpr auto operator""_fnv1a(const char *s, size_t) {
+    return fnv1a(s);
 }
 
 /* 是基本运算符()+-* /^&|% */
-bool IsBaseOperator(char c) noexcept {
+bool IsBasicOperator(char c) noexcept {
     switch (c) {
     case '(':
     case ')':
@@ -3318,16 +3223,16 @@ bool IsBaseOperator(char c) noexcept {
 }
 
 /*  */
-MathOperator BaseOperatorCharToEnum(char c) noexcept {
+MathOperator BaseOperatorCharToEnum(char c, bool unary) noexcept {
     switch (c) {
     case '(':
         return MathOperator::MATH_LEFT_PARENTHESIS;
     case ')':
         return MathOperator::MATH_RIGHT_PARENTHESIS;
     case '+':
-        return MathOperator::MATH_ADD;
+        return unary ? MathOperator::MATH_POSITIVE : MathOperator::MATH_ADD;
     case '-':
-        return MathOperator::MATH_SUB;
+        return unary ? MathOperator::MATH_NEGATIVE : MathOperator::MATH_SUB;
     case '*':
         return MathOperator::MATH_MULTIPLY;
     case '/':
@@ -3347,162 +3252,122 @@ MathOperator BaseOperatorCharToEnum(char c) noexcept {
     return MathOperator::MATH_NULL;
 }
 
-MathOperator Str2Function(const std::string &s) noexcept {
-    if (s == "sin") {
+MathOperator Str2Function(std::string_view s) noexcept {
+    switch (fnv1a(s)) {
+    case "sin"_fnv1a:
         return MathOperator::MATH_SIN;
-    }
-    if (s == "cos") {
+    case "cos"_fnv1a:
         return MathOperator::MATH_COS;
-    }
-    if (s == "tan") {
+    case "tan"_fnv1a:
         return MathOperator::MATH_TAN;
-    }
-    if (s == "arcsin") {
+    case "arcsin"_fnv1a:
         return MathOperator::MATH_ARCSIN;
-    }
-    if (s == "arccos") {
+    case "arccos"_fnv1a:
         return MathOperator::MATH_ARCCOS;
-    }
-    if (s == "arctan") {
+    case "arctan"_fnv1a:
         return MathOperator::MATH_ARCTAN;
-    }
-    if (s == "sqrt") {
+    case "sqrt"_fnv1a:
         return MathOperator::MATH_SQRT;
-    }
-    if (s == "log") {
+    case "log"_fnv1a:
         return MathOperator::MATH_LOG;
-    }
-    if (s == "log2") {
+    case "log2"_fnv1a:
         return MathOperator::MATH_LOG2;
-    }
-    if (s == "log10") {
+    case "log10"_fnv1a:
         return MathOperator::MATH_LOG10;
-    }
-    if (s == "exp") {
+    case "exp"_fnv1a:
         return MathOperator::MATH_EXP;
     }
     return MathOperator::MATH_NULL;
 }
 
-namespace internal {
+} // namespace
 
-// 粗切分：利用operator切分
-std::vector<Token> SplitRough(const std::string &expression) {
-    std::shared_ptr<std::string> content = std::make_shared<std::string>(expression);
-    std::vector<Token> ret;
-
-    int tempBeg = 0;
-    std::string temp;
-    for (int i = 0; i < static_cast<int>(expression.size()); ++i) {
-        char c = expression[i];
-
-        // 忽略tab (\t) whitespaces (\n, \v, \f, \r) space
-        if (isspace(c)) {
-            continue;
-        }
-
-        if (!IsBaseOperator(c)) {
-            temp.push_back(c);
-        } else {
-            if (!temp.empty()) {
-                ret.push_back(Token(0, tempBeg, false, temp, content));
-                tempBeg = i;
-
-                temp.clear();
-            }
-            ret.push_back(Token(0, tempBeg, true, std::string{c}, content));
-            tempBeg = i + 1;
-        }
-    }
-    if (!temp.empty()) {
-        ret.push_back(Token(0, tempBeg, false, temp, content));
-        temp.clear();
-    }
-
-    return ret;
+const char *SingleParseError::what() const noexcept {
+    return whatStr.c_str();
 }
 
-std::deque<Token> ParseFunctions::ParseToTokens(const std::string &expression) {
+int SingleParseError::GetLine() const noexcept {
+    return line;
+}
 
-    if (expression.empty()) {
-        throw SingleParseError(0, 0, "empty input", expression);
+int SingleParseError::GetPos() const noexcept {
+    return pos;
+}
+
+MultiParseError::MultiParseError(const std::vector<SingleParseError> &parseErrors) : parseErrors(parseErrors) {
+    std::stringstream ss;
+    std::transform(parseErrors.rbegin(), parseErrors.rend(), std::ostream_iterator<const char *>(ss, "\n"),
+                   [](const auto &err) {
+                       return err.what();
+                   });
+    whatStr = ss.str();
+}
+
+const char *MultiParseError::what() const noexcept {
+    return whatStr.c_str();
+}
+
+namespace internal {
+
+std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
+
+    if (content.empty()) {
+        throw SingleParseError(0, 0, "empty input", content);
     }
 
-    std::vector<Token> tokens = SplitRough(expression);
-
+    auto iter = content.begin(), s = iter;
     std::deque<Token> ret;
-    // 二次切分：切分出3类元素
-    for (size_t i = 0; i < tokens.size(); i++) {
-        Token token = std::move(tokens[i]);
-        auto &s = token.s;
-        if (token.isBaseOperator) // 识别出基本运算符（括号也在其中）
-        {
-            token.node = std::make_unique<NodeImpl>(NodeType::OPERATOR, BaseOperatorCharToEnum(s[0]), 0, "");
-            ret.push_back(std::move(token));
-            continue;
-        }
 
-        // 检验是否为浮点数
-        try {
-            std::size_t sz;
-            double d = std::stod(s, &sz);
-            if (sz != s.size()) {
-                throw std::invalid_argument("");
+    auto tryComfirmToken = [&ret, &iter, &s, &content] {
+        if (size_t size = std::distance(s, iter)) {
+            auto exp = std::string_view{s, size};
+            auto &token = ret.emplace_back(0, std::distance(content.begin(), s), false, exp, content);
+
+            // 检验是否为浮点数
+            try {
+                std::size_t sz;
+                auto expStr = std::string{exp};
+                auto d = std::stod(expStr, &sz);
+                if (sz == expStr.size()) {
+                    token.node = Num(d);
+                    return;
+                }
+            } catch (...) {}
+
+            if (auto op = Str2Function(exp); op != MathOperator::MATH_NULL) {
+                token.node = Op(op);
+                return;
             }
-            token.node = Num(d);
-            ret.push_back(std::move(token));
-            continue;
-        } catch (const std::exception &) {}
 
-        // 识别出函数
-        MathOperator op = Str2Function(s);
-        if (op != MathOperator::MATH_NULL) {
-            token.node = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
-            ret.push_back(std::move(token));
-            continue;
-        }
-
-        // 变量
-        // 非运算符、数字、函数
-        if (!VarNameIsLegal(s)) // 变量名首字符需为下划线或字母
-        {
-            throw SingleParseError(token.line, token.pos, expression, "Invalid variable name: \"" + s + "\"");
-        }
-
-        token.node = Var(s);
-        ret.push_back(std::move(token));
-    }
-    // 此时3类元素均已切分
-
-    // 识别取正运算符与取负运算符
-    size_t i = 0;
-    if (ret[0].node->op == MathOperator::MATH_ADD) {
-        ret[0].node->op = MathOperator::MATH_POSITIVE;
-        i++;
-    }
-    if (ret[0].node->op == MathOperator::MATH_SUB) {
-        ret[0].node->op = MathOperator::MATH_NEGATIVE;
-        i++;
-    }
-    for (; i < ret.size();) {
-        if (ret[i].node->type == NodeType::OPERATOR && ret[i].node->op != MathOperator::MATH_RIGHT_PARENTHESIS) {
-            if (i + 1 < ret.size())
-                i++;
-            else
-                break;
-            if (ret[i].node->op == MathOperator::MATH_ADD) {
-                ret[i].node->op = MathOperator::MATH_POSITIVE;
-                i++;
-                continue;
+            // 变量
+            // 非运算符、数字、函数
+            if (!VarNameIsLegal(exp)) // 变量名首字符需为下划线或字母
+            {
+                throw SingleParseError(token.line, token.pos, exp, "Invalid variable name: \"", exp, "\"");
             }
-            if (ret[i].node->op == MathOperator::MATH_SUB) {
-                ret[i].node->op = MathOperator::MATH_NEGATIVE;
-                i++;
-                continue;
-            }
-        } else
-            i++;
+
+            token.node = Var(exp);
+        }
+    };
+
+    while (iter != content.end()) {
+        if (IsBasicOperator(*iter)) {
+            tryComfirmToken();
+            auto unaryOp = ret.empty() || (ret.back().node->type == NodeType::OPERATOR &&
+                                           ret.back().node->op != MathOperator::MATH_RIGHT_PARENTHESIS);
+            ret.emplace_back(0, std::distance(content.begin(), iter), true, std::string_view{iter, 1}, content).node =
+                Op(BaseOperatorCharToEnum(*iter, unaryOp));
+            s = ++iter;
+        } else if (isspace(*iter)) {
+            // 忽略tab (\t) whitespaces (\n, \v, \f, \r) space
+            tryComfirmToken();
+            s = ++iter;
+        } else {
+            ++iter;
+        }
     }
+
+    tryComfirmToken();
 
     return ret;
 }
@@ -3510,102 +3375,88 @@ std::deque<Token> ParseFunctions::ParseToTokens(const std::string &expression) {
 std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder) {
     std::vector<Token> postOrder;
     int parenthesisBalance = 0;
-    std::stack<Token> temp;
-    while (inOrder.size() > 0) {
-        Token &f = inOrder.front();
+    std::stack<Token> tokenStack;
 
+    auto popToken = [&tokenStack] {
+        auto r = std::move(tokenStack.top());
+        tokenStack.pop();
+        return r;
+    };
+
+    while (!inOrder.empty()) {
+        auto f = std::move(inOrder.front());
+        inOrder.pop_front();
+
+        switch (f.node->type) {
         // 数字直接入栈
-        if (f.node->type == NodeType::NUMBER || f.node->type == NodeType::VARIABLE) {
-            postOrder.push_back(std::move(f));
-            inOrder.pop_front();
+        case NodeType::NUMBER:
+        case NodeType::VARIABLE:
+            postOrder.emplace_back(std::move(f));
             continue;
-        }
+        default:
+            break;
+        };
 
-        //(左括号直接入栈
-        if (f.node->op == MathOperator::MATH_LEFT_PARENTHESIS) {
-            temp.push(std::move(f));
-            inOrder.pop_front();
+        switch (f.node->op) {
+        case MathOperator::MATH_LEFT_PARENTHESIS:
             parenthesisBalance++;
-            continue;
-        }
+            break;
 
-        if (f.node->op == MathOperator::MATH_RIGHT_PARENTHESIS) //)出现右括号
-        {
-            parenthesisBalance--;
+        case MathOperator::MATH_POSITIVE:
+        case MathOperator::MATH_NEGATIVE:
+            break;
 
-            // 括号balance<0，说明括号不匹配
-            if (parenthesisBalance < 0) {
-                throw SingleParseError(f.line, f.pos, *f.content, "Parenthesis not match: \"" + f.s + "\"");
+        case MathOperator::MATH_RIGHT_PARENTHESIS:
+            if (parenthesisBalance == 0) {
+                throw SingleParseError(f.line, f.pos, f.content, "Parenthesis not match: \"", f.s, "\"");
             }
+            for (auto token = popToken(); token.node->op != MathOperator::MATH_LEFT_PARENTHESIS; token = popToken()) {
+                postOrder.emplace_back(std::move(token));
+            }
+            if (!tokenStack.empty() && IsFunction(tokenStack.top().node->op)) {
+                postOrder.emplace_back(popToken());
+            }
+            while (!tokenStack.empty() && (tokenStack.top().node->op == MathOperator::MATH_POSITIVE ||
+                                           tokenStack.top().node->op == MathOperator::MATH_NEGATIVE)) {
+                postOrder.emplace_back(popToken());
+            }
+            continue;
 
-            // pop至左括号
-            while (temp.size() > 0) {
-                if (temp.top().node->op == MathOperator::MATH_LEFT_PARENTHESIS) //(
-                {
-                    temp.pop(); // 扔掉左括号
-                    break;
-                } else {
-                    postOrder.push_back(std::move(temp.top())); // 入队
-                    temp.pop();
+        default:
+            // 不是括号也不是正负号
+            if (!tokenStack.empty()) {
+                auto compare =
+                    IsLeft2Right(tokenStack.top().node->op)
+                        ? std::function{[cmp = std::less_equal<>{}, rank = Rank(f.node->op)](
+                                            const Token &token) { // 左结合，则挤出高优先级及同优先级符号
+                              return cmp(rank, Rank(token.node->op));
+                          }}
+                        : std::function{[cmp = std::less<>{}, rank = Rank(f.node->op)](
+                                            const Token &token) { // 右结合，则挤出高优先级，但不挤出同优先级符号
+                              return cmp(rank, Rank(token.node->op));
+                          }};
+
+                while (!tokenStack.empty() && compare(tokenStack.top())) {
+                    postOrder.push_back(std::move(tokenStack.top())); // 符号进入post队列
+                    tokenStack.pop();
                 }
             }
-
-            // 取出函数
-            if (temp.size() > 0 && IsFunction(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top()));
-                temp.pop();
-            }
-
-            // pop所有取正取负
-            while (temp.size() > 0) {
-                if (temp.top().node->op == MathOperator::MATH_POSITIVE ||
-                    temp.top().node->op == MathOperator::MATH_NEGATIVE) {
-                    postOrder.push_back(std::move(temp.top()));
-                    temp.pop();
-                } else
-                    break;
-            }
-            inOrder.pop_front(); // 扔掉右括号
-            continue;
+            break;
         }
 
-        // f不是括号
-        if (f.node->op == MathOperator::MATH_POSITIVE || f.node->op == MathOperator::MATH_NEGATIVE) {
-            temp.push(std::move(f));
-            inOrder.pop_front();
-            continue;
-        }
-
-        // 不是括号也不是正负号
-        if (temp.size() > 0 && IsLeft2Right(temp.top().node->op) == true) // 左结合
-            // 临时栈有内容，且新进符号优先级低，则挤出高优先级及同优先级符号
-            while (temp.size() > 0 && Rank(f.node->op) <= Rank(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
-                temp.pop();
-            }
-        else
-            // 右结合
-            // 临时栈有内容，且新进符号优先级低，则挤出高优先级，但不挤出同优先级符号（因为右结合）
-            while (temp.size() > 0 && Rank(f.node->op) < Rank(temp.top().node->op)) {
-                postOrder.push_back(std::move(temp.top())); // 符号进入post队列
-                temp.pop();
-            };
-
-        temp.push(std::move(f)); // 高优先级已全部挤出，当前符号入栈
-        inOrder.pop_front();
+        tokenStack.push(std::move(f)); // 高优先级已全部挤出，当前符号入栈
     }
 
     // 剩下的元素全部入栈
-    while (temp.size() > 0) {
-        Token token = std::move(temp.top());
-        temp.pop();
+    while (!tokenStack.empty()) {
+        auto token = popToken();
 
         // 退栈时出现左括号，说明没有找到与之匹配的右括号
         if (token.node->op == MathOperator::MATH_LEFT_PARENTHESIS) {
-            throw SingleParseError(token.line, token.pos, *token.content, "Parenthesis not match: \"" + token.s + "\"");
+            throw SingleParseError(token.line, token.pos, token.content, "Parenthesis not match: \"", token.s, "\"");
         }
 
-        postOrder.push_back(std::move(token));
+        postOrder.emplace_back(std::move(token));
     }
 
     return postOrder;
@@ -3613,79 +3464,85 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
 
 // 将PostOrder建立为树，并进行表达式有效性检验（确保二元及一元运算符、函数均有操作数）
 Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
-    std::stack<Token> tempStack;
+    std::stack<Token> tokenStack;
+    auto pushToken = [&tokenStack](Token &token) {
+        tokenStack.emplace(std::move(token));
+    };
+    auto popNode = [&tokenStack] {
+        auto node = std::move(tokenStack.top().node);
+        tokenStack.pop();
+        return node;
+    };
     // 逐个识别PostOrder序列，构建表达式树
     for (auto &token : postOrder) {
         switch (token.node->type) {
-        case NodeType::NUMBER:
-        case NodeType::VARIABLE:
-            tempStack.push(std::move(token));
-            break;
         case NodeType::OPERATOR:
             if (GetOperatorNum(token.node->op) == 2) {
-                if (tempStack.empty()) {
-                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+                if (tokenStack.empty()) {
+                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION};
                 }
 
-                tempStack.top().node->parent = token.node.get();
-                token.node->right = std::move(tempStack.top().node);
-                tempStack.pop();
+                tokenStack.top().node->parent = token.node.get();
+                token.node->right = popNode();
 
-                if (tempStack.empty()) {
-                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+                if (tokenStack.empty()) {
+                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION};
                 }
 
-                tempStack.top().node->parent = token.node.get();
-                token.node->left = std::move(tempStack.top().node);
-                tempStack.pop();
+                tokenStack.top().node->parent = token.node.get();
+                token.node->left = popNode();
 
-                tempStack.push(std::move(token));
+                pushToken(token);
                 continue;
             }
 
             // 一元运算符
             assert(GetOperatorNum(token.node->op) == 1);
 
-            if (tempStack.empty()) {
-                throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+            if (tokenStack.empty()) {
+                throw MathError{ErrorType::ERROR_WRONG_EXPRESSION};
             }
 
-            tempStack.top().node->parent = token.node.get();
-            token.node->left = std::move(tempStack.top().node);
-            tempStack.pop();
-
-            tempStack.push(std::move(token));
+            tokenStack.top().node->parent = token.node.get();
+            token.node->left = popNode();
 
             break;
+
+        default:
+            break;
         }
+
+        pushToken(token);
     }
 
     // 如果现在临时栈里面有超过1个元素，那么除了栈顶，其他的都代表出错
-    if (tempStack.size() > 1) {
+    if (tokenStack.size() > 1) {
         // 扔掉最顶上的，构造到一半的表达式
-        tempStack.pop();
+        tokenStack.pop();
 
         std::vector<SingleParseError> errors;
-        while (!tempStack.empty()) {
-            Token &token = tempStack.top();
-            errors.push_back(
-                SingleParseError(token.line, token.pos, *token.content, "Parse Error at: \"" + token.s + "\""));
-            tempStack.pop();
+        while (!tokenStack.empty()) {
+            Token &token = tokenStack.top();
+            errors.emplace_back(token.line, token.pos, token.content, "Parse Error at: \"", token.s, "\"");
+            tokenStack.pop();
         }
-        std::reverse(errors.begin(), errors.end());
         throw MultiParseError(errors);
     }
 
-    return std::move(tempStack.top().node);
+    return popNode();
 }
 
 } // namespace internal
 
-Node Parse(const std::string &expression) {
-    std::deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens(expression);
+Node Parse(std::string_view expression) {
+    auto tokens = internal::ParseFunctions::ParseToTokens(expression);
     auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
     auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
     return node;
+}
+
+Node operator""_f(const char *exp, size_t) {
+    return Parse(exp);
 }
 
 } // namespace tomsolver
@@ -3860,8 +3717,9 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
             cout << "F = " << F << endl;
         }
 
-        if (F == 0) // F值为0，满足方程组求根条件
-            goto success;
+        if (F == 0) { // F值为0，满足方程组求根条件
+            break;
+        }
 
         Vec FNew(n);   // 下一轮F
         Vec deltaq(n); // Δq
@@ -3928,8 +3786,9 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
                 mu *= 10.0; // 扩大λ，使模型倾向梯度下降方向
             }
 
-            if (it++ == Config::get().maxIterations)
-                goto overIterate;
+            if (it++ == Config::get().maxIterations) {
+                throw runtime_error("迭代次数超出限制");
+            }
         }
 
         q += deltaq; // 应用Δq，更新q值
@@ -3938,22 +3797,20 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
         F = FNew; // 更新F
 
-        if (it++ == Config::get().maxIterations)
-            goto overIterate;
+        if (it++ == Config::get().maxIterations) {
+            throw runtime_error("迭代次数超出限制");
+        }
 
         if (Config::get().logLevel >= LogLevel::TRACE) {
             cout << std::string(20, '=') << endl;
         }
     }
 
-success:
     if (Config::get().logLevel >= LogLevel::TRACE) {
         cout << "success" << endl;
     }
-    return table;
 
-overIterate:
-    throw runtime_error("迭代次数超出限制");
+    return table;
 }
 
 VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
@@ -3983,56 +3840,39 @@ namespace internal {
 class DiffFunctions {
 public:
     struct DiffNode {
-        NodeImpl *node;
-        bool isLeftChild;
+        NodeImpl &node;
+        const bool isLeftChild;
 
-        DiffNode(NodeImpl *node, bool isLeftChild) : node(node), isLeftChild(isLeftChild) {
-            if (node->parent) {
-                if (node->parent->left.get() == node) {
-                    if (!isLeftChild) {
-                        assert(0 && "inner bug");
-                    }
-                } else {
-                    if (isLeftChild) {
-                        assert(0 && "inner bug");
-                    }
-                }
-            }
-        }
+        DiffNode(NodeImpl &node) : node(node), isLeftChild(node.parent && node.parent->left.get() == &node) {}
     };
 
-    static void DiffOnce(std::unique_ptr<NodeImpl> &root, const std::string &varname) {
+    static void DiffOnce(Node &root, const std::string &varname) {
         std::queue<DiffNode> q;
 
         if (root->type == NodeType::OPERATOR) {
             DiffOnceOperator(root, q);
         } else {
-            q.push(DiffNode(root.get(), true));
+            q.emplace(*root);
         }
 
         while (!q.empty()) {
-            DiffNode f = q.front();
+            auto &[node, isLeftChild] = q.front();
             q.pop();
 
-            switch (f.node->type) {
+            switch (node.type) {
             case NodeType::VARIABLE:
-                f.node->type = NodeType::NUMBER;
-                if (f.node->varname == varname) {
-                    f.node->value = 1;
-                } else {
-                    f.node->value = 0;
-                }
-                f.node->varname = "";
+                node.type = NodeType::NUMBER;
+                node.value = node.varname == varname ? 1 : 0;
+                node.varname = "";
                 break;
+
             case NodeType::NUMBER:
-                f.node->value = 0;
+                node.value = 0;
                 break;
+
             case NodeType::OPERATOR: {
-                if (f.isLeftChild) {
-                    DiffOnceOperator(const_cast<NodeImpl *>(f.node->parent)->left, q);
-                } else {
-                    DiffOnceOperator(const_cast<NodeImpl *>(f.node->parent)->right, q);
-                }
+                auto &child = isLeftChild ? node.parent->left : node.parent->right;
+                DiffOnceOperator(child, q);
                 break;
             }
             default:
@@ -4041,13 +3881,13 @@ public:
         }
     }
 
-    static void DiffOnceOperator(std::unique_ptr<NodeImpl> &node, std::queue<DiffNode> &q) {
+    static void DiffOnceOperator(Node &node, std::queue<DiffNode> &q) {
         auto parent = node->parent;
 
         // 调用前提：node是1元操作符
         // 如果node的成员是数字，那么整个node变为数字节点，value=0，且返回true
         // 例如： sin(1)' = 0
-        auto CullNumberMember = [&]() -> bool {
+        auto CullNumberMember = [&node]() -> bool {
             assert(GetOperatorNum(node->op) == 1);
             assert(node->left);
             if (node->left->type == NodeType::NUMBER) {
@@ -4063,7 +3903,7 @@ public:
         // 调用前提：node是2元操作符
         // 如果node的成员是数字，那么整个node变为数字节点，value=0，且返回true
         // 例如： (2*3)' = 0
-        auto CullNumberMemberBinary = [&]() -> bool {
+        auto CullNumberMemberBinary = [&node]() -> bool {
             assert(GetOperatorNum(node->op) == 2);
             assert(node->left && node->right);
             if (node->left->type == NodeType::NUMBER && node->right->type == NodeType::NUMBER) {
@@ -4084,7 +3924,7 @@ public:
         }
         case MathOperator::MATH_POSITIVE:
         case MathOperator::MATH_NEGATIVE: {
-            q.push(DiffNode(node->left.get(), true));
+            q.emplace(*node->left);
             return;
         }
 
@@ -4096,8 +3936,8 @@ public:
 
             // sin(u)' = cos(u) * u'
             node->op = MathOperator::MATH_COS;
-            Node u2 = Clone(node->left);
-            q.push(DiffNode(u2.get(), false));
+            auto u2 = Clone(node->left);
+            q.emplace(*u2);
             node = Move(node) * Move(u2);
             node->parent = parent;
             break;
@@ -4109,8 +3949,8 @@ public:
 
             // cos(u)' = -sin(u) * u'
             node->op = MathOperator::MATH_SIN;
-            Node u2 = Clone(node->left);
-            q.push(DiffNode(u2.get(), false));
+            auto u2 = Clone(node->left);
+            q.emplace(*u2);
             node = -Move(node) * Move(u2);
             node->parent = parent;
             break;
@@ -4122,9 +3962,9 @@ public:
 
             // tan'u = 1/(cos(u)^2) * u'
             node->op = MathOperator::MATH_COS;
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = Num(1) / (Move(node) ^ Num(2)) * Move(u2);
             node->parent = parent;
             return;
@@ -4135,9 +3975,9 @@ public:
             }
 
             // asin'u = 1/sqrt(1-u^2) * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / sqrt(Num(1) - (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
@@ -4148,9 +3988,9 @@ public:
             }
 
             // acos'u = -1/sqrt(1-u^2) * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(-1) / sqrt(Num(1) - (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
@@ -4161,9 +4001,9 @@ public:
             }
 
             // atan'u = 1/(1+u^2) * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / (Num(1) + (Move(u) ^ Num(2)))) * Move(u2);
             node->parent = parent;
             return;
@@ -4174,9 +4014,9 @@ public:
             }
 
             // sqrt(u)' = 1/(2*sqrt(u)) * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = Num(1) / (Num(2) * Move(node)) * Move(u2);
             node->parent = parent;
             return;
@@ -4187,9 +4027,9 @@ public:
             }
 
             // ln(u)' = 1/u * u'
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / Move(u)) * Move(u2);
             node->parent = parent;
             return;
@@ -4200,10 +4040,10 @@ public:
             }
 
             // loga(u)' = 1/(u * ln(a)) * u'
-            double a = 2.0;
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto a = 2.0;
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / (Move(u) * Num(std::log(a)))) * Move(u2);
             node->parent = parent;
             return;
@@ -4214,10 +4054,10 @@ public:
             }
 
             // loga(u)' = 1/(u * ln(a)) * u'
-            double a = 10.0;
-            Node &u = node->left;
-            Node u2 = Clone(u);
-            q.push(DiffNode(u2.get(), false));
+            auto a = 10.0;
+            auto &u = node->left;
+            auto u2 = Clone(u);
+            q.emplace(*u2);
             node = (Num(1) / (Move(u) * Num(std::log(a)))) * Move(u2);
             node->parent = parent;
             return;
@@ -4232,8 +4072,8 @@ public:
                 return;
 
             // (e^u)' = e^u * u'
-            Node u2 = Clone(node->left);
-            q.push(DiffNode(u2.get(), false));
+            auto u2 = Clone(node->left);
+            q.emplace(*u2);
             node = Move(node) * Move(u2);
             node->parent = parent;
             break;
@@ -4247,22 +4087,20 @@ public:
             }
             // (u + v)' = u' + v'
             if (node->left) {
-                q.push(DiffNode(node->left.get(), true));
+                q.emplace(*node->left);
             }
             if (node->right) {
-                q.push(DiffNode(node->right.get(), false));
+                q.emplace(*node->right);
             }
             return;
         case MathOperator::MATH_MULTIPLY: {
-            bool leftIsNumber = node->left->type == NodeType::NUMBER;
-            bool rightIsNumber = node->right->type == NodeType::NUMBER;
             // 两个操作数中有一个是数字
-            if (leftIsNumber) {
-                q.push(DiffNode(node->right.get(), false));
+            if (node->left->type == NodeType::NUMBER) {
+                q.emplace(*node->right);
                 return;
             }
-            if (rightIsNumber) {
-                q.push(DiffNode(node->left.get(), true));
+            if (node->right->type == NodeType::NUMBER) {
+                q.emplace(*node->left);
                 return;
             }
 
@@ -4271,23 +4109,23 @@ public:
             }
 
             // (u*v)' = u' * v + u * v'
-            Node &u = node->left;
-            Node &v = node->right;
-            q.push(DiffNode(u.get(), true));
-            Node u2 = Clone(u);
-            Node v2 = Clone(v);
-            q.push(DiffNode(v2.get(), false));
+            auto &u = node->left;
+            auto &v = node->right;
+            q.emplace(*u);
+            auto u2 = Clone(u);
+            auto v2 = Clone(v);
+            q.emplace(*v2);
             node = Move(node) + Move(u2) * Move(v2);
             node->parent = parent;
             return;
         }
         case MathOperator::MATH_DIVIDE: {
-            // bool leftIsNumber = node->left->type == NodeType::NUMBER;
-            bool rightIsNumber = node->right->type == NodeType::NUMBER;
+            // auto leftIsNumber = node->left->type == NodeType::NUMBER;
+            auto rightIsNumber = node->right->type == NodeType::NUMBER;
 
             // f(x)/number = f'(x)/number
             if (rightIsNumber) {
-                q.push(DiffNode(node->left.get(), true));
+                q.emplace(*node->left);
                 return;
             }
 
@@ -4296,13 +4134,13 @@ public:
             }
 
             // (u/v)' = (u'v - uv')/(v^2)
-            Node &u = node->left;
-            Node &v = node->right;
-            Node u2 = Clone(u);
-            Node v2 = Clone(v);
-            Node v3 = Clone(v);
-            q.push(DiffNode(u.get(), true));
-            q.push(DiffNode(v2.get(), false));
+            auto &u = node->left;
+            auto &v = node->right;
+            auto u2 = Clone(u);
+            auto v2 = Clone(v);
+            auto v3 = Clone(v);
+            q.emplace(*u);
+            q.emplace(*v2);
             node = (Move(u) * Move(v) - Move(u2) * Move(v2)) / (Move(v3) ^ Num(2));
             node->parent = parent;
             return;
@@ -4313,16 +4151,16 @@ public:
                 return;
             }
 
-            bool lChildIsNumber = node->left->type == NodeType::NUMBER;
-            bool rChildIsNumber = node->right->type == NodeType::NUMBER;
+            auto lChildIsNumber = node->left->type == NodeType::NUMBER;
+            auto rChildIsNumber = node->right->type == NodeType::NUMBER;
 
             // (u^a)' = a*u^(a-1) * u'
             if (rChildIsNumber) {
-                Node &a = node->right;
-                double aValue = a->value;
-                Node &u = node->left;
-                Node u2 = Clone(u);
-                q.push(DiffNode(u2.get(), false));
+                auto &a = node->right;
+                auto aValue = a->value;
+                auto &u = node->left;
+                auto u2 = Clone(u);
+                q.emplace(*u2);
                 node = std::move(a) * (std::move(u) ^ Num(aValue - 1)) * std::move(u2);
                 node->parent = parent;
                 return;
@@ -4330,11 +4168,11 @@ public:
 
             // (a^x)' = a^x * ln(a)  when a>0 and a!=1
             if (lChildIsNumber) {
-                Node &a = node->left;
-                double aValue = a->value;
-                Node &u = node->right;
-                Node u2 = Clone(u);
-                q.push(DiffNode(u2.get(), false));
+                auto &a = node->left;
+                auto aValue = a->value;
+                auto &u = node->right;
+                auto u2 = Clone(u);
+                q.emplace(*u2);
                 node = (std::move(a) ^ std::move(u)) * log(Num(aValue)) * std::move(u2);
                 node->parent = parent;
                 return;
@@ -4342,10 +4180,10 @@ public:
 
             // (u^v)' = ( e^(v*ln(u)) )' = e^(v*ln(u)) * (v*ln(u))' = u^v * (v*ln(u))'
             // 左右都不是数字
-            Node &u = node->left;
-            Node &v = node->right;
-            Node vln_u = Clone(v) * log(Clone(u));
-            q.push(DiffNode(vln_u.get(), false));
+            auto &u = node->left;
+            auto &v = node->right;
+            auto vln_u = Clone(v) * log(Clone(u));
+            q.emplace(*vln_u);
             node = Move(node) * std::move(vln_u);
             node->parent = parent;
             return;
@@ -4377,18 +4215,18 @@ public:
 } // namespace internal
 
 Node Diff(const Node &node, const std::string &varname, int i) {
-    Node node2 = Clone(node);
+    auto node2 = Clone(node);
     return Diff(std::move(node2), varname, i);
 }
 
 Node Diff(Node &&node, const std::string &varname, int i) {
     assert(i > 0);
-    Node n = std::move(node);
+    auto n = std::move(node);
     while (i--) {
         internal::DiffFunctions::DiffOnce(n, varname);
     }
 #ifndef NDEBUG
-    std::string s = n->ToString();
+    auto s = n->ToString();
     n->CheckParent();
 #endif
     Simplify(n);
@@ -4402,223 +4240,181 @@ Node Diff(Node &&node, const std::string &varname, int i) {
 
 namespace tomsolver {
 
-namespace internal {} // namespace internal
+using DataType = std::valarray<Node>;
 
-SymMat::SymMat(int rows, int cols) noexcept {
+SymMat::SymMat(int rows, int cols) noexcept : rows(rows), cols(cols) {
     assert(rows > 0 && cols > 0);
-    data.resize(rows);
-    for (auto &row : data) {
-        row.resize(cols);
-    }
+    data.reset(new DataType(rows * cols));
 }
 
-SymMat::SymMat(const std::initializer_list<std::initializer_list<Node>> &lst) noexcept
-    : SymMat(static_cast<int>(lst.size()), static_cast<int>(lst.begin()->size())) {
-    for (auto it1 = lst.begin(); it1 != lst.end(); ++it1) {
-        std::size_t i = it1 - lst.begin();
-        for (auto it2 = it1->begin(); it2 != it1->end(); ++it2) {
-            std::size_t j = it2 - it1->begin();
-            auto &node = const_cast<Node &>(*it2);
-            data[i][j] = std::move(node);
+SymMat::SymMat(std::initializer_list<std::initializer_list<Node>> init) noexcept {
+    rows = static_cast<int>(init.size());
+    cols = static_cast<int>(std::max(init, [](auto lhs, auto rhs) {
+                                return lhs.size() < rhs.size();
+                            }).size());
+    data.reset(new DataType(rows * cols));
+
+    auto i = 0;
+    for (auto val : init) {
+        auto j = 0;
+        for (auto &node : val) {
+            (*data)[i * cols + j++] = std::move(const_cast<Node &>(node));
         }
+        i++;
     }
 }
 
 SymMat::SymMat(const Mat &rhs) noexcept : SymMat(rhs.Rows(), rhs.Cols()) {
-    for (int i = 0; i < rhs.Rows(); ++i) {
-        for (int j = 0; j < rhs.Cols(); ++j) {
-            data[i][j] = Num(rhs[i][j]);
-        }
-    }
+    std::generate(std::begin(*data), std::end(*data), [p = std::addressof(rhs.Value(0, 0))]() mutable {
+        return Num(*p++);
+    });
 }
 
 SymMat SymMat::Clone() const noexcept {
     SymMat ret(Rows(), Cols());
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            ret.data[i][j] = tomsolver::Clone(data[i][j]);
-        }
-    }
+    std::generate(std::begin(*ret.data), std::end(*ret.data), [iter = std::begin(*data)]() mutable {
+        return tomsolver::Clone(*iter++);
+    });
     return ret;
 }
 
 bool SymMat::Empty() const noexcept {
-    return data.empty();
+    return data->size() == 0;
 }
 
 int SymMat::Rows() const noexcept {
-    return static_cast<int>(data.size());
+    return rows;
 }
 
 int SymMat::Cols() const noexcept {
-    if (Rows()) {
-        return static_cast<int>(data[0].size());
-    }
-    return 0;
+    return cols;
 }
 
 SymVec SymMat::ToSymVec() const {
-    assert(Rows() > 0);
-    if (Cols() != 1) {
+    assert(rows > 0);
+    if (cols != 1) {
         throw std::runtime_error("SymMat::ToSymVec fail. rows is not one");
     }
-    SymVec v(Rows());
-    for (int j = 0; j < Rows(); ++j) {
-        v.data[j][0] = tomsolver::Clone(data[j][0]);
-    }
-    return v;
+    return ToSymVecOneByOne();
 }
 
 SymVec SymMat::ToSymVecOneByOne() const noexcept {
-    SymVec ans(Rows() * Cols());
-    int index = 0;
-    for (auto &row : data) {
-        for (auto &node : row) {
-            ans[index++] = tomsolver::Clone(node);
-        }
-    }
-    return ans;
+    SymVec v(rows * cols);
+    std::generate(std::begin(*v.data), std::end(*v.data), [iter = std::begin(*data)]() mutable {
+        return tomsolver::Clone(*iter++);
+    });
+    return v;
 }
 
 Mat SymMat::ToMat() const {
-    std::vector<std::vector<double>> arr(Rows(), std::vector<double>(Cols()));
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            if (data[i][j]->type != NodeType::NUMBER) {
-                throw std::runtime_error("ToMat error: node is not number");
-            }
-            arr[i][j] = data[i][j]->value;
+    std::valarray<double> newData(data->size());
+    std::generate(std::begin(newData), std::end(newData), [iter = std::begin(*data)]() mutable {
+        if ((**iter).type != NodeType::NUMBER) {
+            throw std::runtime_error("ToMat error: node is not number");
         }
-    }
-    return Mat(std::move(arr));
+        return (**iter++).value;
+    });
+    return {rows, cols, newData};
 }
 
 SymMat &SymMat::Calc() {
-    for (auto &row : data) {
-        for (auto &node : row) {
-            node->Calc();
-        }
+    for (auto &node : *data) {
+        node->Calc();
     }
     return *this;
 }
 
 SymMat &SymMat::Subs(const std::map<std::string, double> &varValues) noexcept {
-    for (auto &row : data) {
-        for (auto &node : row) {
-            node = tomsolver::Subs(std::move(node), varValues);
-        }
+    for (auto &node : *data) {
+        node = tomsolver::Subs(std::move(node), varValues);
     }
     return *this;
 }
 
 SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
-    for (auto &row : data) {
-        for (auto &node : row) {
-            node = tomsolver::Subs(std::move(node), varsTable);
-        }
+    for (auto &node : *data) {
+        node = tomsolver::Subs(std::move(node), varsTable);
     }
     return *this;
 }
 
 std::set<std::string> SymMat::GetAllVarNames() const noexcept {
     std::set<std::string> ret;
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            auto varNames = data[i][j]->GetAllVarNames();
-            ret.insert(varNames.begin(), varNames.end());
-        }
+    for (auto &node : *data) {
+        ret.merge(node->GetAllVarNames());
     }
     return ret;
 }
 
 SymMat SymMat::operator-(const SymMat &rhs) const noexcept {
-    assert(rhs.Rows() == Rows() && rhs.Cols() == Cols());
-    SymMat ret(Rows(), Cols());
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            ret.data[i][j] = tomsolver::Clone(data[i][j]) - tomsolver::Clone(rhs.data[i][j]);
-        }
-    }
+    assert(rhs.rows == rows && rhs.cols == cols);
+    SymMat ret(rows, cols);
+    std::generate(std::begin(*ret.data), std::end(*ret.data),
+                  [lhsIter = std::begin(*data), rhsIter = std::begin(*rhs.data)]() mutable {
+                      return *lhsIter++ - *rhsIter++;
+                  });
     return ret;
 }
 
 SymMat SymMat::operator*(const SymMat &rhs) const {
-    if (Cols() != rhs.Rows()) {
-        throw MathError(ErrorType::SIZE_NOT_MATCH, "");
+    if (cols != rhs.rows) {
+        throw MathError(ErrorType::SIZE_NOT_MATCH);
     }
-    SymMat ans(Rows(), rhs.Cols());
+
+    SymMat ans(rows, rhs.cols);
     for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < rhs.Cols(); ++j) {
-            Node sum = data[i][0] * rhs[0][j];
-            for (int k = 1; k < Cols(); ++k) {
-                sum += data[i][k] * rhs[k][j];
+        for (int j = 0; j < rhs.cols; ++j) {
+            auto sum = Value(i, 0) * rhs.Value(0, j);
+            for (int k = 1; k < cols; ++k) {
+                sum += Value(i, k) * rhs.Value(k, j);
             }
-            ans[i][j] = Move(sum);
+            ans.Value(i, j) = Move(sum);
         }
     }
     return ans;
 }
 
 bool SymMat::operator==(const SymMat &rhs) const noexcept {
-    if (rhs.Rows() != Rows() || rhs.Cols() != Cols()) {
+    if (rhs.rows != rows || rhs.cols != cols) {
         return false;
     }
-    for (int i = 0; i < Rows(); ++i) {
-        for (int j = 0; j < Cols(); ++j) {
-            if (!data[i][j]->Equal(rhs.data[i][j])) {
-                return false;
-            }
-        }
-    }
-    return true;
+    return std::equal(std::begin(*data), std::end(*data), std::begin(*rhs.data), [](auto &node1, auto &node2) {
+        return node1->Equal(node2);
+    });
 }
 
-const std::vector<Node> &SymMat::operator[](int row) const noexcept {
-    assert(row < Rows());
-    return data[row];
+Node &SymMat::Value(int i, int j) noexcept {
+    return (*data)[i * cols + j];
 }
 
-std::vector<Node> &SymMat::operator[](int row) noexcept {
-    assert(row < Rows());
-    return data[row];
+const Node &SymMat::Value(int i, int j) const noexcept {
+    return (*data)[i * cols + j];
 }
 
 std::string SymMat::ToString() const noexcept {
-    if (Empty())
+    if (data->size() == 0) {
         return "[]";
-    std::string s;
-    s.reserve(256);
-
-    auto OutputRow = [&](int i) {
-        int j = 0;
-        for (; j < Cols() - 1; ++j) {
-            s += data[i][j]->ToString() + ", ";
-        }
-        s += data[i][j]->ToString();
-    };
-
-    s += "[";
-    OutputRow(0);
-    s += "\n";
-
-    int i = 1;
-    for (; i < Rows() - 1; ++i) {
-        s += " ";
-        OutputRow(i);
-        s += "\n";
     }
-    s += " ";
-    OutputRow(i);
-    s += "]";
-    return s;
+
+    std::stringstream ss;
+    ss << "[";
+
+    size_t i = 0;
+    for (auto &node : *data) {
+        ss << (i == 0 ? "" : " ") << node->ToString();
+        i++;
+        ss << (i % cols == 0 ? (i == data->size() ? "]" : "\n") : ", ");
+    }
+
+    return ss.str();
 }
 
 SymVec::SymVec(int rows) noexcept : SymMat(rows, 1) {}
 
-SymVec::SymVec(const std::initializer_list<Node> &lst) noexcept : SymMat(static_cast<int>(lst.size()), 1) {
-    for (auto it = lst.begin(); it != lst.end(); ++it) {
-        auto &node = const_cast<Node &>(*it);
-        data[it - lst.begin()][0] = std::move(node);
+SymVec::SymVec(std::initializer_list<Node> init) noexcept : SymMat(static_cast<int>(init.size()), 1) {
+    auto i = 0;
+    for (auto &node : init) {
+        (*data)[i++] = std::move(const_cast<Node &>(node));
     }
 }
 
@@ -4627,22 +4423,25 @@ SymVec SymVec::operator-(const SymVec &rhs) const noexcept {
 }
 
 Node &SymVec::operator[](std::size_t index) noexcept {
-    return data[index][0];
+    return (*data)[index];
 }
 
 const Node &SymVec::operator[](std::size_t index) const noexcept {
-    return data[index][0];
+    return (*data)[index];
 }
 
 SymMat Jacobian(const SymMat &equations, const std::vector<std::string> &vars) noexcept {
-    int rows = equations.Rows();
+    int rows = equations.rows;
     int cols = static_cast<int>(vars.size());
     SymMat ja(rows, cols);
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            ja.data[i][j] = Diff(equations.data[i][0], vars[j]);
-        }
-    }
+    std::generate(std::begin(*ja.data), std::end(*ja.data),
+                  [iter = std::begin(*equations.data), &vars, i = size_t{0}]() mutable {
+                      if (i == vars.size()) {
+                          i = 0;
+                          iter++;
+                      }
+                      return Diff(*iter, vars[i++]);
+                  });
     return ja;
 }
 
