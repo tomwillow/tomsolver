@@ -3,9 +3,9 @@
 #include "error_type.h"
 #include "mat.h"
 
-#include <vector>
-#include <map>
 #include <iostream>
+#include <map>
+#include <vector>
 
 namespace tomsolver {
 
@@ -27,7 +27,7 @@ public:
      * @param vars 变量数组
      * @param initValue 初值
      */
-    explicit VarsTable(const std::initializer_list<std::pair<std::string, double>> &initList);
+    explicit VarsTable(std::initializer_list<std::pair<std::string, double>> initList);
 
     /**
      * 新建变量表。

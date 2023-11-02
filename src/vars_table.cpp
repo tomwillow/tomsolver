@@ -2,6 +2,7 @@
 
 #include "config.h"
 
+#include <algorithm>
 #include <cassert>
 
 namespace tomsolver {
@@ -9,28 +10,22 @@ namespace tomsolver {
 VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
     : vars(vars), values(static_cast<int>(vars.size()), initValue) {
     for (auto &var : vars) {
-        table[var] = initValue;
+        table.try_emplace(var, initValue);
     }
     assert(vars.size() == table.size() && "vars is not unique");
 }
 
-VarsTable::VarsTable(const std::initializer_list<std::pair<std::string, double>> &initList)
-    : vars(initList.size()), values(static_cast<int>(initList.size())), table(initList.begin(), initList.end()) {
-    int i = 0;
-    for (auto &pr : initList) {
-        vars[i] = pr.first;
-        values[i] = pr.second;
-        ++i;
-    }
+VarsTable::VarsTable(std::initializer_list<std::pair<std::string, double>> initList)
+    : VarsTable({initList.begin(), initList.end()}) {
     assert(vars.size() == table.size() && "vars is not unique");
 }
 
 VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
     : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
     int i = 0;
-    for (auto &pr : table) {
-        vars[i] = pr.first;
-        values[i] = pr.second;
+    for (auto &[var, val] : table) {
+        vars[i] = var;
+        values[i] = val;
         ++i;
     }
 }
@@ -76,22 +71,12 @@ std::map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
 }
 
 bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
-    if (values.Rows() != rhs.values.Rows()) {
-        return false;
-    }
-
-    for (auto &pr : table) {
-        const std::string &varname = pr.first;
-        auto it = rhs.table.find(varname);
-        if (it == rhs.table.end()) {
-            return false;
-        }
-        double value = pr.second;
-        if (std::abs(it->second - value) > Config::get().epsilon) {
-            return false;
-        }
-    }
-    return true;
+    return values.Rows() == rhs.values.Rows() &&
+           std::equal(table.begin(), table.end(), rhs.table.begin(), [](const auto &lhs, const auto &rhs) {
+               auto &[lVar, lVal] = lhs;
+               auto &[rVar, rVal] = rhs;
+               return lVar == rVar && std::abs(lVal - rVal) <= Config::get().epsilon;
+           });
 }
 
 double VarsTable::operator[](const std::string &varname) const {
@@ -103,8 +88,8 @@ double VarsTable::operator[](const std::string &varname) const {
 }
 
 std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
-    for (auto &pr : table) {
-        out << pr.first << " = " << tomsolver::ToString(pr.second) << std::endl;
+    for (auto &[var, val] : table) {
+        out << var << " = " << tomsolver::ToString(val) << std::endl;
     }
     return out;
 }
