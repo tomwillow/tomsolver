@@ -3,11 +3,11 @@
 #include "config.h"
 #include "math_operator.h"
 #include "node.h"
-#include "gmock/gmock.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <functional>
+#include <gmock/gmock.h>
 #include <iterator>
 #include <sstream>
 #include <string>
