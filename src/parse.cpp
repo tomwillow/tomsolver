@@ -310,14 +310,14 @@ Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
         case NodeType::OPERATOR:
             if (GetOperatorNum(token.node->op) == 2) {
                 if (tokenStack.empty()) {
-                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION};
                 }
 
                 tokenStack.top().node->parent = token.node.get();
                 token.node->right = popNode();
 
                 if (tokenStack.empty()) {
-                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+                    throw MathError{ErrorType::ERROR_WRONG_EXPRESSION};
                 }
 
                 tokenStack.top().node->parent = token.node.get();
@@ -331,7 +331,7 @@ Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
             assert(GetOperatorNum(token.node->op) == 1);
 
             if (tokenStack.empty()) {
-                throw MathError{ErrorType::ERROR_WRONG_EXPRESSION, ""};
+                throw MathError{ErrorType::ERROR_WRONG_EXPRESSION};
             }
 
             tokenStack.top().node->parent = token.node.get();

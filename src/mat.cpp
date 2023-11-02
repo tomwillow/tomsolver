@@ -252,7 +252,7 @@ Mat Mat::Inverse() const {
 
     if (std::abs(det) <= Config::get().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
     {
-        throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "");
+        throw MathError(ErrorType::ERROR_SINGULAR_MATRIX);
     }
 
     Mat adj(n, n); // 딸림행렬 선언
