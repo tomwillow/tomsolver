@@ -1,7 +1,7 @@
-#include "nonlinear.h"
 #include "config.h"
 #include "functions.h"
 #include "linear.h"
+#include "nonlinear.h"
 #include "parse.h"
 
 #include "memory_leak_detection.h"
@@ -105,16 +105,18 @@ TEST(SolveBase, IndeterminateEquation) {
 
     std::setlocale(LC_ALL, ".UTF8");
 
-    Node f1 = "cos(x1) + cos(x1-x2) + cos(x1-x2-x3) - 1"_f;
-    Node f2 = "sin(x1) + sin(x1-x2) + sin(x1-x2-x3) + 2"_f;
-
-    SymVec f{Move(f1), Move(f2)};
+    SymVec f = {
+        "cos(x1) + cos(x1-x2) + cos(x1-x2-x3) - 1"_f,
+        "sin(x1) + sin(x1-x2) + sin(x1-x2-x3) + 2"_f,
+    };
 
     // 不定方程，应该抛出异常
     try {
         VarsTable got = Solve(f);
         FAIL();
-    } catch (const MathError &e) { cout << e.what() << endl; }
+    } catch (const MathError &e) {
+        cout << e.what() << endl;
+    }
 
     // 设置为允许不定方程
     Config::get().allowIndeterminateEquation = true;
