@@ -1,6 +1,8 @@
 #include "subs.h"
+#include "node.h"
 
 #include <map>
+#include <tuple>
 
 namespace tomsolver {
 
@@ -8,139 +10,108 @@ namespace internal {
 
 class SubsFunctions {
 public:
-    static void SubsInner(Node &node, const std::map<std::string, Node> &dict) noexcept {
-        // 前序遍历。非递归实现。
+    // 前序遍历。非递归实现。
+    static Node SubsInner(Node node, const std::map<std::string, Node> &dict) noexcept {
 
-        std::stack<NodeImpl *> stk;
+        std::stack<std::tuple<NodeImpl &>> stk;
 
-        auto Replace = [&dict](Node &cur) -> bool {
+        auto Replace = [&dict](Node &cur) {
             if (cur->type != NodeType::VARIABLE) {
                 return false;
             }
-            const auto &itor = dict.find(cur->varname);
+
+            auto itor = dict.find(cur->varname);
             if (itor == dict.end()) {
                 return false;
             }
 
-            Node cloned = Clone(itor->second);
-            cloned->parent = cur->parent;
-            cur = std::move(cloned);
+            auto parent = cur->parent;
+            cur = Clone(itor->second);
+            cur->parent = parent;
+
             return true;
         };
 
-        if (Replace(node)) {
-            return;
-        }
+        if (!Replace(node)) {
+            auto TryReplace = [&stk, &Replace](Node &cur) {
+                if (cur && !Replace(cur)) {
+                    stk.emplace(*cur);
+                }
+            };
 
-        if (node->right) {
-            if (!Replace(node->right))
-                stk.push(node->right.get());
-        }
-        if (node->left) {
-            if (!Replace(node->left))
-                stk.push(node->left.get());
-        }
-        while (!stk.empty()) {
-            NodeImpl *f = stk.top();
-            stk.pop();
+            TryReplace(node->right);
+            TryReplace(node->left);
 
-            if (f->right) {
-                if (!Replace(f->right))
-                    stk.push(f->right.get());
-            }
-            if (f->left) {
-                if (!Replace(f->left))
-                    stk.push(f->left.get());
+            while (!stk.empty()) {
+                auto &[f] = stk.top();
+                stk.pop();
+                TryReplace(f.right);
+                TryReplace(f.left);
             }
         }
+
+#ifndef NDEBUG
+        node->CheckParent();
+#endif
+        return node;
     }
 };
 
 } // namespace internal
 
 Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), oldVar, newNode);
+    return Subs(Clone(node), oldVar, newNode);
 }
 
 Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
-    Node ret = std::move(node);
     std::map<std::string, Node> dict;
-    dict.insert({oldVar, Clone(newNode)});
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    dict.try_emplace(oldVar, Clone(newNode));
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 Node Subs(const Node &node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), oldVars, newNodes);
+    return Subs(Clone(node), oldVars, newNodes);
 }
 
 Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &newNodes) noexcept {
     assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
-    Node ret = std::move(node);
     std::map<std::string, Node> dict;
     for (size_t i = 0; i < oldVars.size(); ++i) {
-        dict.insert({oldVars[i], Clone(newNodes[i])});
+        dict.try_emplace(oldVars[i], Clone(newNodes[i]));
     }
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 Node Subs(const Node &node, const std::map<std::string, Node> &dict) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), dict);
+    return Subs(Clone(node), dict);
 }
 
 Node Subs(Node &&node, const std::map<std::string, Node> &dict) noexcept {
-    Node ret = std::move(node);
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 Node Subs(const Node &node, const std::map<std::string, double> &varValues) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), varValues);
+    return Subs(Clone(node), varValues);
 }
 
 Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
-    Node ret = std::move(node);
     std::map<std::string, Node> dict;
-    for (auto &pr : varValues) {
-        dict.insert({pr.first, Num(pr.second)});
+    for (auto &[var, val] : varValues) {
+        dict.try_emplace(var, Num(val));
     }
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
-    Node node2 = Clone(node);
-    return Subs(std::move(node2), varsTable);
+    return Subs(Clone(node), varsTable);
 }
 
 Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
-    Node ret = std::move(node);
     std::map<std::string, Node> dict;
-    for (const auto &pr : varsTable) {
-        dict.insert({pr.first, Num(pr.second)});
+    for (auto &[var, val] : varsTable) {
+        dict.try_emplace(var, Num(val));
     }
-    internal::SubsFunctions::SubsInner(ret, dict);
-#ifndef NDEBUG
-    ret->CheckParent();
-#endif
-    return ret;
+    return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
 } // namespace tomsolver
