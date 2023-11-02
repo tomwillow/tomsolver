@@ -522,15 +522,15 @@ Node CloneRecursively(const Node &src) noexcept {
 
 // 前序遍历。非递归实现。
 Node CloneNonRecursively(const Node &src) noexcept {
-    std::stack<std::tuple<const NodeImpl &, const NodeImpl &, Node &>> stk;
+    std::stack<std::tuple<const NodeImpl &, NodeImpl &, Node &>> stk;
 
-    auto MakeNode = [](const NodeImpl &src, const NodeImpl *parent = nullptr) {
+    auto MakeNode = [](const NodeImpl &src, NodeImpl *parent = nullptr) {
         auto node = std::make_unique<NodeImpl>(src.type, src.op, src.value, src.varname);
         node->parent = parent;
         return node;
     };
 
-    auto EmplaceNode = [&stk](const Node &src, const NodeImpl &parent, Node &tgt) {
+    auto EmplaceNode = [&stk](const Node &src, NodeImpl &parent, Node &tgt) {
         if (src) {
             stk.emplace(*src, parent, tgt);
         }
@@ -641,7 +641,7 @@ bool VarNameIsLegal(std::string_view varname) noexcept {
 }
 
 Node Var(std::string_view varname) {
-    auto name =  std::string{varname};
+    auto name = std::string{varname};
     if (!VarNameIsLegal(varname)) {
         throw std::runtime_error("Illegal varname: " + name);
     }

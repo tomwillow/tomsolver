@@ -44,7 +44,7 @@ public:
 
             case NodeType::OPERATOR: {
                 auto &child = isLeftChild ? node.parent->left : node.parent->right;
-                DiffOnceOperator(const_cast<Node &>(child), q);
+                DiffOnceOperator(child, q);
                 break;
             }
             default:
