@@ -9,6 +9,7 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -205,15 +206,20 @@ Node Move(Node &rhs) noexcept;
 Node Num(double num) noexcept;
 
 /**
+ * 新建一个操作节点。
+ */
+Node Op(MathOperator op) noexcept;
+
+/**
  * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
  */
-bool VarNameIsLegal(const std::string &varname) noexcept;
+bool VarNameIsLegal(std::string_view varname) noexcept;
 
 /**
  * 新建一个变量节点。
  * @exception runtime_error 名字不合法
  */
-Node Var(const std::string &varname);
+Node Var(std::string_view varname);
 
 template <typename... T>
 using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;

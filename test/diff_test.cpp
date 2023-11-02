@@ -345,7 +345,7 @@ TEST(Diff, Combine2) {
     MemoryLeakDetection mld;
 
     {
-        Node n = Parse("sin(x)/log(x*y)");
+        Node n = "sin(x)/log(x*y)"_f;
         Node dn = Diff(n, "y");
         dn->CheckParent();
         cout << dn->ToString() << endl;
