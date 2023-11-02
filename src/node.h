@@ -206,9 +206,9 @@ Node Move(Node &rhs) noexcept;
 Node Num(double num) noexcept;
 
 /**
- * 新建一个操作节点。
+ * 新建一个函数节点。
  */
-Node Op(MathOperator op) noexcept;
+Node Op(MathOperator op);
 
 /**
  * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）

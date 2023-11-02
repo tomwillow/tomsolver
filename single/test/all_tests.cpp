@@ -728,6 +728,13 @@ TEST(Node, Var) {
 
     expr->CheckParent();
 }
+TEST(Node, Op) {
+    MemoryLeakDetection mld;
+
+    ASSERT_ANY_THROW(Op(MathOperator::MATH_NULL));
+
+    ASSERT_NO_THROW(Op(MathOperator::MATH_ADD));
+}
 TEST(Node, Clone) {
     MemoryLeakDetection mld;
 

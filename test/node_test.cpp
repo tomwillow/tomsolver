@@ -1,3 +1,5 @@
+#include "math_operator.h"
+#include "node.h"
 #include "tomsolver.h"
 
 #include "memory_leak_detection.h"
@@ -69,6 +71,14 @@ TEST(Node, Var) {
     ASSERT_EQ(expr->ToString(), "a-1");
 
     expr->CheckParent();
+}
+
+TEST(Node, Op) {
+    MemoryLeakDetection mld;
+
+    ASSERT_ANY_THROW(Op(MathOperator::MATH_NULL));
+
+    ASSERT_NO_THROW(Op(MathOperator::MATH_ADD));
 }
 
 TEST(Node, Clone) {
