@@ -117,7 +117,8 @@ $ cmake --build . --target INSTALL
 * **scripts**: 用于生成single下面的单文件头文件和单文件测试
 
 ### 例子
-* **example/solve**: 解非线性方程的例子
+* **example/solve**: 解非线性方程的例子，演示基本用法和怎么设置统一的初值
+* **example/solve2**: 解非线性方程的例子，演示怎么切换解法和怎么替换方程中的已知量
 * **example/diff_machine**: 求导器，输入一行表达式，输出这个表达式的求导结果
 
 # 开发计划

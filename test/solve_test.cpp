@@ -178,3 +178,31 @@ TEST(Solve, Case2) {
 
     ASSERT_EQ(ans, expected);
 }
+
+TEST(Solve, Case3) {
+    MemoryLeakDetection mld;
+
+    std::setlocale(LC_ALL, ".UTF8");
+
+    Config::Get().nonlinearMethod = NonlinearMethod::LM;
+
+    // 结束时恢复设置
+    std::shared_ptr<void> defer(nullptr, [&](...) {
+        Config::Get().Reset();
+    });
+
+    SymVec f{
+        Parse("a/(b^2)-c/(d^2)"),
+        Parse("129.56108*b-(a/(b^2)+1/a-2*b/(a^2))"),
+        Parse("129.56108*d-(d/(c^2)-c/(d^2)-1/a)"),
+        Parse("5*exp(1)-7-(2/3*pi*a^2*b+((sqrt(3)*c^2)/(3*sqrt(c^2/3+d^2))+a-c)^2*pi*d^2/(c^2/3+d^2))"),
+    };
+
+    f.Subs(VarsTable{{"pi", PI}});
+
+    cout << f << endl;
+
+    auto ans = Solve(f);
+
+    cout << ans << endl;
+}

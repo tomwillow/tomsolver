@@ -118,7 +118,8 @@ Then add the include directory and link to the library file.
 * **scripts**: used to generate single-file header files and single-file tests under single
 
 ### examples
-* **example/solve**: Example of solving nonlinear equations
+* **example/solve**: Example of solving nonlinear equations, demonstrating basic usage and how to set a unified initial value
+* **example/solve2**: Example of solving nonlinear equations, demonstrating how to switch solution methods and replace known quantities in the equation
 * **example/diff_machine**: Derivator, input a line of expression and output the derivation result of this expression
 
 # Development Plan
