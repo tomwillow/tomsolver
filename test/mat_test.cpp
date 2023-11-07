@@ -1,3 +1,4 @@
+#include "error_type.h"
 #include "mat.h"
 
 #include "memory_leak_detection.h"
@@ -42,7 +43,9 @@ TEST(Mat, Inverse) {
         try {
             auto inv = A.Inverse();
             FAIL();
-        } catch (const MathError &e) { cout << "[Expected]" << e.what() << endl; }
+        } catch (const MathError &e) {
+            cout << "[Expected]" << e.what() << endl;
+        }
     }
 }
 

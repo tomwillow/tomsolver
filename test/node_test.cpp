@@ -1,6 +1,7 @@
+#include "error_type.h"
+#include "functions.h"
 #include "math_operator.h"
 #include "node.h"
-#include "tomsolver.h"
 
 #include "memory_leak_detection.h"
 

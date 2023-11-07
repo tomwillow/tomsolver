@@ -22,8 +22,6 @@ Original Inverse(), Adjoint(), GetCofactor(), Det() is from https://github.com/t
 
 #pragma once
 
-#include "error_type.h"
-
 #include <cassert>
 #include <iostream>
 #include <utility>

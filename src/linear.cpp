@@ -77,18 +77,18 @@ Vec SolveLinear(Mat A, Vec b) {
         }
 
         // 主对角线化为1
-        auto ratio = A.Value(y, x);
+        auto ratioY = A.Value(y, x);
         // y行第j个->第cols个
-        std::valarray rowY = std::as_const(A).Row(y, x) / ratio;
+        std::valarray rowY = std::as_const(A).Row(y, x) / ratioY;
         A.Row(y, x) = rowY;
-        b[y] /= ratio;
+        b[y] /= ratioY;
 
         // 每行化为0
         for (auto row = y + 1; row < rows; row++) // 下1行->最后1行
         {
-            if (auto ratio = A.Value(row, x); std::abs(A.Value(row, x)) >= Config::get().epsilon) {
-                A.Row(row, x) -= rowY * ratio;
-                b[row] -= b[y] * ratio;
+            if (auto ratioRow = A.Value(row, x); std::abs(ratioRow) >= Config::get().epsilon) {
+                A.Row(row, x) -= rowY * ratioRow;
+                b[row] -= b[y] * ratioRow;
             }
         }
     }
