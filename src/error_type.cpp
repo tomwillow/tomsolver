@@ -1,6 +1,7 @@
 #include "error_type.h"
 
 #include <cassert>
+#include <sstream>
 
 namespace tomsolver {
 

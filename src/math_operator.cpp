@@ -1,9 +1,10 @@
 #include "math_operator.h"
-#include "config.h"
 
-#include <limits>
+#include "config.h"
+#include "error_type.h"
 #include <cassert>
 #include <cmath>
+#include <limits>
 #include <sstream>
 
 namespace tomsolver {

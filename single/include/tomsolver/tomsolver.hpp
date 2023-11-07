@@ -8,7 +8,6 @@
 #include <cmath>
 #include <forward_list>
 #include <functional>
-#include <gmock/gmock.h>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -29,6 +28,94 @@
 #include <utility>
 #include <valarray>
 #include <vector>
+
+namespace tomsolver {
+
+constexpr double PI = M_PI;
+
+template <typename T>
+inline T radians(T &&t) noexcept {
+    return std::forward<T>(t) / 180.0 * PI;
+}
+
+template <typename T>
+inline T degrees(T &&t) noexcept {
+    return std::forward<T>(t) * 180.0 / PI;
+}
+
+enum class MathOperator {
+    MATH_NULL,
+    // 一元
+    MATH_POSITIVE,
+    MATH_NEGATIVE,
+
+    // 函数
+    MATH_SIN,
+    MATH_COS,
+    MATH_TAN,
+    MATH_ARCSIN,
+    MATH_ARCCOS,
+    MATH_ARCTAN,
+    MATH_SQRT,
+    MATH_LOG,
+    MATH_LOG2,
+    MATH_LOG10,
+    MATH_EXP,
+
+    // 二元
+    MATH_ADD,
+    MATH_SUB,
+    MATH_MULTIPLY,
+    MATH_DIVIDE,
+    MATH_POWER,
+    MATH_AND,
+    MATH_OR,
+    MATH_MOD,
+
+    MATH_LEFT_PARENTHESIS,
+    MATH_RIGHT_PARENTHESIS
+};
+
+/**
+ * 操作符转std::string
+ */
+inline std::string MathOperatorToStr(MathOperator op);
+
+/**
+ * 取得操作数的数量。
+ */
+inline int GetOperatorNum(MathOperator op) noexcept;
+
+/**
+* 返回运算符的优先级
+
+*/
+inline int Rank(MathOperator op) noexcept;
+
+/**
+ * 返回运算符结合性
+ */
+inline bool IsLeft2Right(MathOperator eOperator) noexcept;
+
+/**
+ * 返回是否满足交换律
+ */
+inline bool InAssociativeLaws(MathOperator eOperator) noexcept;
+
+/**
+ * 返回是否是函数
+ */
+inline bool IsFunction(MathOperator op) noexcept;
+
+/**
+ * 是整数 且 为偶数
+ * FIXME: 超出long long范围的处理
+ */
+inline bool IsIntAndEven(double n) noexcept;
+
+inline double Calc(MathOperator op, double v1, double v2);
+
+} // namespace tomsolver
 
 namespace tomsolver {
 
@@ -229,89 +316,916 @@ inline void Config::Reset() noexcept {
 
 namespace tomsolver {
 
-constexpr double PI = M_PI;
+enum class NodeType { NUMBER, OPERATOR, VARIABLE };
 
-template <typename T>
-inline T radians(T &&t) noexcept {
-    return std::forward<T>(t) / 180.0 * PI;
+// 前置声明
+namespace internal {
+struct NodeImpl;
 }
+class SymMat;
 
-template <typename T>
-inline T degrees(T &&t) noexcept {
-    return std::forward<T>(t) * 180.0 / PI;
-}
+/**
+ * 表达式节点。
+ */
+using Node = std::unique_ptr<internal::NodeImpl>;
 
-enum class MathOperator {
-    MATH_NULL,
-    // 一元
-    MATH_POSITIVE,
-    MATH_NEGATIVE,
+namespace internal {
 
-    // 函数
-    MATH_SIN,
-    MATH_COS,
-    MATH_TAN,
-    MATH_ARCSIN,
-    MATH_ARCCOS,
-    MATH_ARCTAN,
-    MATH_SQRT,
-    MATH_LOG,
-    MATH_LOG2,
-    MATH_LOG10,
-    MATH_EXP,
+/**
+ * 单个节点的实现。通常应该以std::unique_ptr包裹。
+ */
+struct NodeImpl {
 
-    // 二元
-    MATH_ADD,
-    MATH_SUB,
-    MATH_MULTIPLY,
-    MATH_DIVIDE,
-    MATH_POWER,
-    MATH_AND,
-    MATH_OR,
-    MATH_MOD,
+    NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
+        : type(type), op(op), value(value), varname(varname), parent(nullptr) {}
 
-    MATH_LEFT_PARENTHESIS,
-    MATH_RIGHT_PARENTHESIS
+    NodeImpl(const NodeImpl &rhs) noexcept;
+    NodeImpl &operator=(const NodeImpl &rhs) noexcept;
+
+    NodeImpl(NodeImpl &&rhs) noexcept;
+    NodeImpl &operator=(NodeImpl &&rhs) noexcept;
+
+    ~NodeImpl();
+
+    bool Equal(const Node &rhs) const noexcept;
+
+    /**
+     * 把整个节点以中序遍历的顺序输出为字符串。
+     * 例如：
+     *      Node n = (Var("a") + Num(1)) * Var("b");
+     *   则
+     *      n->ToString() == "(a+1.000000)*b"
+     */
+    std::string ToString() const noexcept;
+
+    /**
+     * 计算出整个表达式的数值。不改变自身。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
+     */
+    double Vpa() const;
+
+    /**
+     * 计算出整个表达式的数值。不改变自身。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
+     */
+    NodeImpl &Calc();
+
+    /**
+     * 返回表达式内出现的所有变量名。
+     */
+    std::set<std::string> GetAllVarNames() const noexcept;
+
+    /**
+     * 检查整个节点数的parent指针是否正确。
+     */
+    void CheckParent() const noexcept;
+
+private:
+    NodeType type = NodeType::NUMBER;
+    MathOperator op = MathOperator::MATH_NULL;
+    double value;
+    std::string varname;
+    NodeImpl *parent = nullptr;
+    Node left, right;
+    NodeImpl() = default;
+
+    /**
+     * 本节点如果是OPERATOR，检查操作数数量和left, right指针是否匹配。
+     */
+    void CheckOperatorNum() const noexcept;
+
+    /**
+     * 节点转string。仅限本节点，不含子节点。
+     */
+    std::string NodeToStr() const noexcept;
+
+    void ToStringRecursively(std::stringstream &output) const noexcept;
+
+    void ToStringNonRecursively(std::stringstream &output) const noexcept;
+
+    /**
+     * 计算表达式数值。递归实现。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 不符合定义域, 除0等情况。
+     */
+    double VpaRecursively() const;
+
+    /**
+     * 计算表达式数值。非递归实现。
+     * 性能弱于递归实现。但不会导致栈溢出。
+     * 根据benchmark，生成一组含4000个随机四则运算节点的表达式，生成1000次，Release下测试耗时3000ms。递归实现耗时2500ms。
+     * 粗略计算，即 1333 ops/ms。
+     * @exception runtime_error 如果有变量存在，则无法计算
+     * @exception MathError 不符合定义域, 除0等情况。
+     */
+    double VpaNonRecursively() const;
+
+    /**
+     * 释放整个节点树，除了自己。
+     * 实际是二叉树的非递归后序遍历。
+     */
+    void Release() noexcept;
+
+    friend Node Operator(MathOperator op, Node left, Node right) noexcept;
+
+    friend Node CloneRecursively(const Node &rhs) noexcept;
+    friend Node CloneNonRecursively(const Node &rhs) noexcept;
+
+    friend void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept;
+    friend void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept;
+
+    friend std::ostream &operator<<(std::ostream &out, const Node &n) noexcept;
+
+    template <typename T>
+    friend Node UnaryOperator(MathOperator op, T &&n) noexcept;
+
+    template <typename T1, typename T2>
+    friend Node BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
+
+    friend class tomsolver::SymMat;
+    friend class SimplifyFunctions;
+    friend class DiffFunctions;
+    friend class SubsFunctions;
+    friend class ParseFunctions;
 };
 
+inline Node CloneRecursively(const Node &rhs) noexcept;
+
+inline Node CloneNonRecursively(const Node &rhs) noexcept;
+
 /**
- * 操作符转std::string
+ * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
+ * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
  */
-inline std::string MathOperatorToStr(MathOperator op);
+inline void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept;
 
 /**
- * 取得操作数的数量。
+ * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
+ * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
  */
-inline int GetOperatorNum(MathOperator op) noexcept;
+inline void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept;
 
 /**
-* 返回运算符的优先级
-
-*/
-inline int Rank(MathOperator op) noexcept;
-
-/**
- * 返回运算符结合性
+ * 重载std::ostream的<<操作符以输出一个Node节点。
  */
-inline bool IsLeft2Right(MathOperator eOperator) noexcept;
+inline std::ostream &operator<<(std::ostream &out, const Node &n) noexcept;
+
+template <typename T>
+inline Node UnaryOperator(MathOperator op, T &&n) noexcept {
+    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
+    CopyOrMoveTo(ret.get(), ret->left, std::forward<T>(n));
+    return ret;
+}
+
+template <typename T1, typename T2>
+inline Node BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
+    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
+    CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
+    CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
+    return ret;
+}
 
 /**
- * 返回是否满足交换律
+ * 新建一个运算符节点。
  */
-inline bool InAssociativeLaws(MathOperator eOperator) noexcept;
+inline Node Operator(MathOperator op, Node left = nullptr, Node right = nullptr) noexcept;
+
+} // namespace internal
+
+inline Node Clone(const Node &rhs) noexcept;
 
 /**
- * 返回是否是函数
+ * 对节点进行移动。等同于std::move。
  */
-inline bool IsFunction(MathOperator op) noexcept;
+inline Node Move(Node &rhs) noexcept;
 
 /**
- * 是整数 且 为偶数
- * FIXME: 超出long long范围的处理
+ * 新建一个数值节点。
  */
-inline bool IsIntAndEven(double n) noexcept;
+inline Node Num(double num) noexcept;
 
-inline double Calc(MathOperator op, double v1, double v2);
+/**
+ * 新建一个函数节点。
+ */
+inline Node Op(MathOperator op);
+
+/**
+ * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
+ */
+inline bool VarNameIsLegal(std::string_view varname) noexcept;
+
+/**
+ * 新建一个变量节点。
+ * @exception runtime_error 名字不合法
+ */
+inline Node Var(std::string_view varname);
+
+template <typename... T>
+using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;
+
+template <typename T1, typename T2>
+inline SfinaeNode<T1, T2> operator+(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+inline SfinaeNode<T> &operator+=(Node &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
+template <typename T1, typename T2>
+inline SfinaeNode<T1, T2> operator-(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+inline SfinaeNode<T> operator-(T &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T>(n1));
+}
+
+template <typename T>
+inline SfinaeNode<T> operator+(T &&n1) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T>(n1));
+}
+
+template <typename T>
+inline SfinaeNode<T> &operator-=(Node &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
+template <typename T1, typename T2>
+inline SfinaeNode<T1, T2> operator*(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+inline SfinaeNode<T> &operator*=(Node &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
+template <typename T1, typename T2>
+inline SfinaeNode<T1, T2> operator/(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+inline SfinaeNode<T> &operator/=(Node &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
+template <typename T1, typename T2>
+inline SfinaeNode<T1, T2> operator^(T1 &&n1, T2 &&n2) noexcept {
+    return internal::BinaryOperator(MathOperator::MATH_POWER, std::forward<T1>(n1), std::forward<T2>(n2));
+}
+
+template <typename T>
+inline SfinaeNode<T> &operator^=(Node &n1, T &&n2) noexcept {
+    n1 = internal::BinaryOperator(MathOperator::MATH_POWER, std::move(n1), std::forward<T>(n2));
+    return n1;
+}
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+namespace internal {
+
+inline NodeImpl::NodeImpl(const NodeImpl &rhs) noexcept {
+    *this = rhs;
+}
+
+inline NodeImpl &NodeImpl::operator=(const NodeImpl &rhs) noexcept {
+    type = rhs.type;
+    op = rhs.op;
+    value = rhs.value;
+    varname = rhs.varname;
+    parent = rhs.parent;
+    if (rhs.left) {
+        left = Clone(rhs.left);
+        left->parent = this;
+    } else {
+        left = nullptr;
+    }
+    if (rhs.right) {
+        right = Clone(rhs.right);
+        right->parent = this;
+    } else {
+        right = nullptr;
+    }
+    return *this;
+}
+
+inline NodeImpl::NodeImpl(NodeImpl &&rhs) noexcept {
+    *this = std::move(rhs);
+}
+
+inline NodeImpl &NodeImpl::operator=(NodeImpl &&rhs) noexcept {
+    type = std::exchange(rhs.type, {});
+    op = std::exchange(rhs.op, {});
+    value = std::exchange(rhs.value, {});
+    varname = std::exchange(rhs.varname, {});
+    parent = std::exchange(rhs.parent, {});
+    left = std::exchange(rhs.left, {});
+    if (left) {
+        left->parent = this;
+    }
+    right = std::exchange(rhs.right, {});
+    if (right) {
+        right->parent = this;
+    }
+
+    return *this;
+}
+
+inline NodeImpl::~NodeImpl() {
+    Release();
+}
+
+// 前序遍历。非递归实现。
+inline bool NodeImpl::Equal(const Node &rhs) const noexcept {
+    if (this == rhs.get()) {
+        return true;
+    }
+
+    std::stack<std::tuple<const NodeImpl &, const NodeImpl &>> stk;
+
+    auto tie = [](const NodeImpl &node) {
+        return std::tie(node.type, node.op, node.value, node.varname);
+    };
+
+    auto IsSame = [&tie](const NodeImpl &lhs, const NodeImpl &rhs) {
+        return tie(lhs) == tie(rhs);
+    };
+
+    auto CheckChildren = [&stk](const Node &lhs, const Node &rhs) {
+        // ╔═════╦═════╦════════╦═════════╗
+        // ║ lhs ║ rhs ║ return ║ emplace ║
+        // ╠═════╬═════╬════════╬═════════╣
+        // ║ T   ║ T   ║ T      ║ T       ║
+        // ╟─────╫─────╫────────╫─────────╢
+        // ║ T   ║ F   ║ F      ║ F       ║
+        // ╟─────╫─────╫────────╫─────────╢
+        // ║ F   ║ T   ║ F      ║ F       ║
+        // ╟─────╫─────╫────────╫─────────╢
+        // ║ F   ║ F   ║ T      ║ F       ║
+        // ╚═════╩═════╩════════╩═════════╝
+        if (!lhs ^ !rhs) {
+            return false;
+        }
+
+        if (lhs && rhs) {
+            stk.emplace(*lhs, *rhs);
+        }
+
+        return true;
+    };
+
+    auto CheckNode = [&IsSame, &CheckChildren](const NodeImpl &lhs, const NodeImpl &rhs) {
+        return IsSame(lhs, rhs) && CheckChildren(lhs.left, rhs.left) && CheckChildren(lhs.right, rhs.right);
+    };
+
+    if (!CheckNode(*this, *rhs)) {
+        return false;
+    }
+
+    while (!stk.empty()) {
+        const auto &[lhs, rhs] = stk.top();
+        stk.pop();
+
+        // 检查
+        if (!CheckNode(lhs, rhs)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+inline std::string NodeImpl::ToString() const noexcept {
+    std::stringstream ss;
+    ToStringNonRecursively(ss);
+    return ss.str();
+}
+
+inline double NodeImpl::Vpa() const {
+    return VpaNonRecursively();
+}
+
+inline NodeImpl &NodeImpl::Calc() {
+    auto d = Vpa();
+    *this = {};
+    value = d;
+
+    return *this;
+}
+
+// 前序遍历。非递归实现。
+inline void NodeImpl::CheckParent() const noexcept {
+    std::stack<std::tuple<const NodeImpl &>> stk;
+
+    auto EmplaceNode = [&stk](const Node &node) {
+        if (node) {
+            stk.emplace(*node);
+        }
+    };
+    auto TryEmplaceChildren = [&EmplaceNode](const NodeImpl &node) {
+        node.CheckOperatorNum();
+        EmplaceNode(node.left);
+        EmplaceNode(node.right);
+    };
+
+    TryEmplaceChildren(*this);
+
+    while (!stk.empty()) {
+        const auto &[f] = stk.top();
+        stk.pop();
+
+#ifndef NDEBUG
+        // 检查
+        assert(f.parent);
+        bool isLeftChild = f.parent->left.get() == &f;
+        bool isRightChild = f.parent->right.get() == &f;
+        assert(isLeftChild || isRightChild);
+#endif
+
+        TryEmplaceChildren(f);
+    }
+}
+
+inline void NodeImpl::CheckOperatorNum() const noexcept {
+    if (type != NodeType::OPERATOR) {
+        return;
+    }
+
+    switch (GetOperatorNum(op)) {
+    case 1:
+        assert(!right);
+        break;
+    case 2:
+        assert(right);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+
+    assert(left);
+}
+
+inline std::string NodeImpl::NodeToStr() const noexcept {
+    switch (type) {
+    case NodeType::NUMBER:
+        return tomsolver::ToString(value);
+    case NodeType::VARIABLE:
+        return varname;
+    case NodeType::OPERATOR:
+        return MathOperatorToStr(op);
+    }
+    assert(0 && "unexpected NodeType. maybe this is a bug.");
+    return "";
+}
+
+// 中序遍历。递归实现。
+inline void NodeImpl::ToStringRecursively(std::stringstream &output) const noexcept {
+    switch (type) {
+    case NodeType::NUMBER:
+        // 如果当前节点是数值且小于0，且前面是-运算符，那么加括号
+        if (value < 0 && parent && parent->right.get() == this && parent->op == MathOperator::MATH_SUB) {
+            output << "(" << NodeToStr() << ")";
+        } else {
+            output << NodeToStr();
+        }
+        return;
+    case NodeType::VARIABLE:
+        output << NodeToStr();
+        return;
+    case NodeType::OPERATOR:
+        // pass
+        break;
+    }
+
+    auto hasParenthesis = false;
+    auto operatorNum = GetOperatorNum(op);
+    if (operatorNum == 1) // 一元运算符：函数和取负
+    {
+        if (op == MathOperator::MATH_POSITIVE || op == MathOperator::MATH_NEGATIVE) {
+            output << "(" << NodeToStr();
+        } else {
+            output << NodeToStr() << "(";
+        }
+        hasParenthesis = true;
+    } else {
+        // 非一元运算符才输出，即一元运算符的输出顺序已改变
+        if (type == NodeType::OPERATOR && parent) { // 本级为运算符
+            if ((GetOperatorNum(parent->op) == 2 && // 父运算符存在，为二元，
+                 (Rank(parent->op) > Rank(op)       // 父级优先级高于本级->加括号
+
+                  || ( // 两级优先级相等
+                         Rank(parent->op) == Rank(op) &&
+                         (
+                             // 本级为父级的右子树 且父级不满足结合律->加括号
+                             (InAssociativeLaws(parent->op) == false && this == parent->right.get()) ||
+                             // 两级都是右结合
+                             (InAssociativeLaws(parent->op) == false && IsLeft2Right(op) == false)))))
+
+                //||
+
+                ////父运算符存在，为除号，且本级为分子，则添加括号
+                //(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
+            ) {
+                output << "(";
+                hasParenthesis = true;
+            }
+        }
+    }
+
+    if (left) // 左遍历
+    {
+        left->ToStringRecursively(output);
+    }
+
+    if (operatorNum != 1) // 非一元运算符才输出，即一元运算符的输出顺序已改变
+    {
+        output << NodeToStr();
+    }
+
+    if (right) // 右遍历
+    {
+        right->ToStringRecursively(output);
+    }
+
+    // 回到本级时补齐右括号，包住前面的东西
+    if (hasParenthesis) {
+        output << ")";
+    }
+}
+
+// 中序遍历。非递归实现。
+inline void NodeImpl::ToStringNonRecursively(std::stringstream &output) const noexcept {
+    std::stack<std::tuple<const NodeImpl &>> stk;
+
+    NodeImpl rightParenthesis(NodeType::OPERATOR, MathOperator::MATH_RIGHT_PARENTHESIS, 0, "");
+
+    auto AddLeftLine = [&stk, &output, &rightParenthesis](const NodeImpl *cur) {
+        while (cur) {
+            if (cur->type != NodeType::OPERATOR) {
+                stk.emplace(*cur);
+                cur = cur->left.get();
+                continue;
+            }
+
+            // 一元运算符的特殊处理：
+            //      例如sin: 直接输出 "sin(" ，并且把一个右括号入栈。让退栈时这个右括号能包裹住现在的子树。
+            //      如果是+/-: 直接输出 "+"/"-"，如果+/-的操作数是operator，那么处理方式和sin这类一样；
+            //                                  如果+/-的操作数是number/variable，那么不加括号。
+            if (GetOperatorNum(cur->op) == 1) {
+                if ((cur->op == MathOperator::MATH_POSITIVE || cur->op == MathOperator::MATH_NEGATIVE) &&
+                    (cur->left->type != NodeType::OPERATOR)) {
+                    output << cur->NodeToStr();
+                    cur = cur->left.get();
+                    continue;
+                }
+                output << cur->NodeToStr() << "(";
+
+                // not push this op
+
+                // push ')'
+                stk.emplace(rightParenthesis);
+
+                cur = cur->left.get();
+                continue;
+            }
+
+            // 二元运算符的特殊处理：
+            if (cur->parent) {
+                if ((GetOperatorNum(cur->parent->op) == 2 && // 父运算符存在，为二元，
+                     (Rank(cur->parent->op) > Rank(cur->op)  // 父级优先级高于本级->加括号
+
+                      || ( // 两级优先级相等
+                             Rank(cur->parent->op) == Rank(cur->op) &&
+                             (
+                                 // 本级为父级的右子树 且父级不满足结合律->加括号
+                                 (InAssociativeLaws(cur->parent->op) == false && cur == cur->parent->right.get()) ||
+                                 // 两级都是右结合
+                                 (InAssociativeLaws(cur->parent->op) == false && IsLeft2Right(cur->op) == false)))))
+
+                    //||
+
+                    ////父运算符存在，为除号，且本级为分子，则添加括号
+                    //(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
+                ) {
+                    output << "(";
+
+                    // push ')'
+                    stk.emplace(rightParenthesis);
+
+                    stk.emplace(*cur);
+                    cur = cur->left.get();
+                    continue;
+                }
+            }
+
+            stk.emplace(*cur);
+            cur = cur->left.get();
+        }
+    };
+
+    AddLeftLine(this);
+
+    while (!stk.empty()) {
+        const auto &[cur] = stk.top();
+        stk.pop();
+
+        // output
+
+        // 负数的特殊处理
+        // 如果当前节点是数值且小于0，且前面是-运算符，那么加括号
+        if (cur.type == NodeType::NUMBER && cur.value < 0 && cur.parent && cur.parent->right.get() == &cur &&
+            cur.parent->op == MathOperator::MATH_SUB) {
+            output << "(" << cur.NodeToStr() << ")";
+        } else {
+            output << cur.NodeToStr();
+        }
+
+        if (cur.right) {
+            AddLeftLine(cur.right.get());
+            continue;
+        }
+    }
+}
+
+// 后序遍历。递归实现。
+inline double NodeImpl::VpaRecursively() const {
+
+    auto vpa = [](const Node &node) {
+        return node ? node->Vpa() : 0;
+    };
+
+    switch (type) {
+    case NodeType::NUMBER:
+        return value;
+
+    case NodeType::VARIABLE:
+        throw std::runtime_error("has variable. can not calculate to be a number");
+
+    case NodeType::OPERATOR:
+        assert((GetOperatorNum(op) == 1 && left && right == nullptr) || (GetOperatorNum(op) == 2 && left && right));
+        return tomsolver::Calc(op, vpa(left), vpa(right));
+    }
+
+    throw std::runtime_error("unsupported node type");
+}
+
+// 后序遍历。非递归实现。
+inline double NodeImpl::VpaNonRecursively() const {
+
+    std::stack<std::tuple<const NodeImpl &>> stk;
+    std::forward_list<std::tuple<const NodeImpl &>> revertedPostOrder;
+
+    // ==== Part I ====
+
+    // 借助一个栈，得到反向的后序遍历序列，结果保存在revertedPostOrder
+    stk.emplace(*this);
+
+    while (!stk.empty()) {
+        const auto &[node] = stk.top();
+        stk.pop();
+
+        if (node.left) {
+            stk.emplace(*node.left);
+        }
+
+        if (node.right) {
+            stk.emplace(*node.right);
+        }
+
+        revertedPostOrder.emplace_front(node);
+    }
+
+    // ==== Part II ====
+    // revertedPostOrder的反向序列是一组逆波兰表达式，根据这组逆波兰表达式可以计算出表达式的值
+    // calcStk是用来计算值的临时栈，计算完成后calcStk的size应该为1
+    std::stack<double> calcStk;
+    // for (auto it = revertedPostOrder.rbegin(); it != revertedPostOrder.rend(); ++it) {
+    for (const auto &[node] : revertedPostOrder) {
+        switch (node.type) {
+        case NodeType::NUMBER:
+            calcStk.emplace(node.value);
+            break;
+
+        case NodeType::OPERATOR: {
+            auto r = std::numeric_limits<double>::quiet_NaN();
+
+            switch (GetOperatorNum(node.op)) {
+            case 1:
+                break;
+            case 2:
+                r = calcStk.top();
+                calcStk.pop();
+                break;
+            default:
+                assert(0 && "[VpaNonRecursively] unsupported operator num");
+                break;
+            }
+
+            auto &l = calcStk.top();
+            l = tomsolver::Calc(node.op, l, r);
+            break;
+        }
+
+        default:
+            throw std::runtime_error("wrong");
+            break;
+        }
+    }
+
+    assert(calcStk.size() == 1);
+
+    return calcStk.top();
+}
+
+// 后序遍历。因为要在左右儿子都没有的情况下删除节点。
+inline void NodeImpl::Release() noexcept {
+    std::stack<Node> stk;
+
+    auto emplaceNode = [&stk](Node node) {
+        if (node) {
+            stk.emplace(std::move(node));
+        }
+    };
+
+    auto emplaceChildren = [&emplaceNode](NodeImpl &node) {
+        emplaceNode(std::move(node.left));
+        emplaceNode(std::move(node.right));
+    };
+
+    emplaceChildren(*this);
+
+    while (!stk.empty()) {
+        auto node = std::move(stk.top());
+        stk.pop();
+
+        emplaceChildren(*node);
+
+        assert(!node->left && !node->right);
+
+        // 这里如果把node填入vector，最后翻转。得到的序列就是后序遍历。
+
+        // 这里node会被自动释放。
+    }
+}
+
+inline Node CloneRecursively(const Node &src) noexcept {
+    auto ret = std::make_unique<NodeImpl>(src->type, src->op, src->value, src->varname);
+    auto Copy = [ret = ret.get()](Node &tgt, const Node &src) {
+        if (src) {
+            tgt = Clone(src);
+            tgt->parent = ret;
+        }
+    };
+
+    Copy(ret->left, src->left);
+    Copy(ret->right, src->right);
+
+    return ret;
+}
+
+// 前序遍历。非递归实现。
+inline Node CloneNonRecursively(const Node &src) noexcept {
+    std::stack<std::tuple<const NodeImpl &, NodeImpl &, Node &>> stk;
+
+    auto MakeNode = [](const NodeImpl &src, NodeImpl *parent = nullptr) {
+        auto node = std::make_unique<NodeImpl>(src.type, src.op, src.value, src.varname);
+        node->parent = parent;
+        return node;
+    };
+
+    auto EmplaceNode = [&stk](const Node &src, NodeImpl &parent, Node &tgt) {
+        if (src) {
+            stk.emplace(*src, parent, tgt);
+        }
+    };
+
+    auto EmplaceChildren = [&EmplaceNode](const NodeImpl &src, Node &tgt) {
+        EmplaceNode(src.left, *tgt, tgt->left);
+        EmplaceNode(src.right, *tgt, tgt->right);
+    };
+
+    auto ret = MakeNode(*src);
+    EmplaceChildren(*src, ret);
+
+    while (!stk.empty()) {
+        const auto &[src, parent, tgt] = stk.top();
+        stk.pop();
+
+        tgt = MakeNode(src, &parent);
+        EmplaceChildren(src, tgt);
+    }
+
+    return ret;
+}
+
+inline void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept {
+    n1->parent = parent;
+    child = std::move(n1);
+}
+
+inline void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept {
+    auto n1Clone = std::make_unique<NodeImpl>(*n1);
+    n1Clone->parent = parent;
+    child = std::move(n1Clone);
+}
+
+inline std::ostream &operator<<(std::ostream &out, const Node &n) noexcept {
+    out << n->ToString();
+    return out;
+}
+
+inline Node Operator(MathOperator op, Node left, Node right) noexcept {
+    auto ret = std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
+
+    auto SetChild = [ret = ret.get()](Node &tgt, Node src) {
+        if (src) {
+            src->parent = ret;
+            tgt = std::move(src);
+        }
+    };
+
+    SetChild(ret->left, std::move(left));
+    SetChild(ret->right, std::move(right));
+
+    return ret;
+}
+
+// 前序遍历。非递归实现。
+inline std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
+    std::set<std::string> ret;
+
+    std::stack<std::tuple<const NodeImpl &>> stk;
+
+    auto EmplaceNode = [&stk](const Node &node) {
+        if (node) {
+            stk.emplace(*node);
+        }
+    };
+
+    auto EmplaceChild = [&ret, &EmplaceNode](const NodeImpl &node) {
+        if (node.type == NodeType::VARIABLE) {
+            ret.emplace(node.varname);
+        }
+        EmplaceNode(node.left);
+        EmplaceNode(node.right);
+    };
+
+    EmplaceChild(*this);
+
+    while (!stk.empty()) {
+        const auto &[node] = stk.top();
+        stk.pop();
+        EmplaceChild(node);
+    }
+
+    return ret;
+}
+
+} // namespace internal
+
+inline Node Clone(const Node &rhs) noexcept {
+    return internal::CloneNonRecursively(rhs);
+}
+
+inline Node Move(Node &rhs) noexcept {
+    return std::move(rhs);
+}
+
+inline Node Num(double num) noexcept {
+    return std::make_unique<internal::NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
+}
+
+inline Node Op(MathOperator op) {
+    if (op == MathOperator::MATH_NULL) {
+        throw std::runtime_error("Illegal MathOperator: MATH_NULL");
+    }
+    return std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
+}
+
+inline bool VarNameIsLegal(std::string_view varname) noexcept {
+    return std::regex_match(varname.begin(), varname.end(), std::regex{R"((?=\w)\D\w*)"});
+}
+
+inline Node Var(std::string_view varname) {
+    auto name = std::string{varname};
+    if (!VarNameIsLegal(varname)) {
+        throw std::runtime_error("Illegal varname: " + name);
+    }
+    return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, std::move(name));
+}
 
 } // namespace tomsolver
 
@@ -1471,6 +2385,81 @@ inline Vec SolveLinear(Mat A, Vec b) {
 
 namespace tomsolver {
 
+template <typename T>
+inline Node sin(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_SIN, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node cos(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_COS, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node tan(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_TAN, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node asin(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_ARCSIN, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node acos(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_ARCCOS, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node atan(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_ARCTAN, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node sqrt(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_SQRT, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node log(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_LOG, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node log2(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_LOG2, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node log10(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_LOG10, std::forward<T>(n));
+}
+
+template <typename T>
+inline Node exp(T &&n) noexcept {
+    return internal::UnaryOperator(MathOperator::MATH_EXP, std::forward<T>(n));
+}
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+/**
+ * node对varname求导。在node包含多个变量时，是对varname求偏导。
+ * @exception runtime_error 如果表达式内包含AND(&) OR(|) MOD(%)这类不能求导的运算符，则抛出异常
+ */
+inline Node Diff(const Node &node, const std::string &varname, int i = 1);
+
+/**
+ * node对varname求导。在node包含多个变量时，是对varname求偏导。
+ * @exception runtime_error 如果表达式内包含AND(&) OR(|) MOD(%)这类不能求导的运算符，则抛出异常
+ */
+inline Node Diff(Node &&node, const std::string &varname, int i = 1);
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
 /**
  * 变量表。
  * 内部保存了多个变量名及其数值的对应关系。
@@ -1637,996 +2626,6 @@ inline std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexc
     }
     return out;
 }
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-enum class NodeType { NUMBER, OPERATOR, VARIABLE };
-
-// 前置声明
-namespace internal {
-struct NodeImpl;
-}
-class SymMat;
-
-/**
- * 表达式节点。
- */
-using Node = std::unique_ptr<internal::NodeImpl>;
-
-namespace internal {
-
-/**
- * 单个节点的实现。通常应该以std::unique_ptr包裹。
- */
-struct NodeImpl {
-
-    NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
-        : type(type), op(op), value(value), varname(varname), parent(nullptr) {}
-
-    NodeImpl(const NodeImpl &rhs) noexcept;
-    NodeImpl &operator=(const NodeImpl &rhs) noexcept;
-
-    NodeImpl(NodeImpl &&rhs) noexcept;
-    NodeImpl &operator=(NodeImpl &&rhs) noexcept;
-
-    ~NodeImpl();
-
-    bool Equal(const Node &rhs) const noexcept;
-
-    /**
-     * 把整个节点以中序遍历的顺序输出为字符串。
-     * 例如：
-     *      Node n = (Var("a") + Num(1)) * Var("b");
-     *   则
-     *      n->ToString() == "(a+1.000000)*b"
-     */
-    std::string ToString() const noexcept;
-
-    /**
-     * 计算出整个表达式的数值。不改变自身。
-     * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
-     */
-    double Vpa() const;
-
-    /**
-     * 计算出整个表达式的数值。不改变自身。
-     * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 出现浮点数无效值(inf, -inf, nan)
-     */
-    NodeImpl &Calc();
-
-    /**
-     * 返回表达式内出现的所有变量名。
-     */
-    std::set<std::string> GetAllVarNames() const noexcept;
-
-    /**
-     * 检查整个节点数的parent指针是否正确。
-     */
-    void CheckParent() const noexcept;
-
-private:
-    NodeType type = NodeType::NUMBER;
-    MathOperator op = MathOperator::MATH_NULL;
-    double value;
-    std::string varname;
-    NodeImpl *parent = nullptr;
-    Node left, right;
-    NodeImpl() = default;
-
-    /**
-     * 本节点如果是OPERATOR，检查操作数数量和left, right指针是否匹配。
-     */
-    void CheckOperatorNum() const noexcept;
-
-    /**
-     * 节点转string。仅限本节点，不含子节点。
-     */
-    std::string NodeToStr() const noexcept;
-
-    void ToStringRecursively(std::stringstream &output) const noexcept;
-
-    void ToStringNonRecursively(std::stringstream &output) const noexcept;
-
-    /**
-     * 计算表达式数值。递归实现。
-     * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 不符合定义域, 除0等情况。
-     */
-    double VpaRecursively() const;
-
-    /**
-     * 计算表达式数值。非递归实现。
-     * 性能弱于递归实现。但不会导致栈溢出。
-     * 根据benchmark，生成一组含4000个随机四则运算节点的表达式，生成1000次，Release下测试耗时3000ms。递归实现耗时2500ms。
-     * 粗略计算，即 1333 ops/ms。
-     * @exception runtime_error 如果有变量存在，则无法计算
-     * @exception MathError 不符合定义域, 除0等情况。
-     */
-    double VpaNonRecursively() const;
-
-    /**
-     * 释放整个节点树，除了自己。
-     * 实际是二叉树的非递归后序遍历。
-     */
-    void Release() noexcept;
-
-    friend Node Operator(MathOperator op, Node left, Node right) noexcept;
-
-    friend Node CloneRecursively(const Node &rhs) noexcept;
-    friend Node CloneNonRecursively(const Node &rhs) noexcept;
-
-    friend void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept;
-    friend void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept;
-
-    friend std::ostream &operator<<(std::ostream &out, const Node &n) noexcept;
-
-    template <typename T>
-    friend Node UnaryOperator(MathOperator op, T &&n) noexcept;
-
-    template <typename T1, typename T2>
-    friend Node BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept;
-
-    friend class tomsolver::SymMat;
-    friend class SimplifyFunctions;
-    friend class DiffFunctions;
-    friend class SubsFunctions;
-    friend class ParseFunctions;
-};
-
-inline Node CloneRecursively(const Node &rhs) noexcept;
-
-inline Node CloneNonRecursively(const Node &rhs) noexcept;
-
-/**
- * 对于一个节点n和另一个节点n1，把n1移动到作为n的子节点。
- * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
- */
-inline void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept;
-
-/**
- * 对于一个节点n和另一个节点n1，把n1整个拷贝一份，把拷贝的副本设为n的子节点。
- * 用法：CopyOrMoveTo(n->parent, n->left, std::forward<T>(n1));
- */
-inline void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept;
-
-/**
- * 重载std::ostream的<<操作符以输出一个Node节点。
- */
-inline std::ostream &operator<<(std::ostream &out, const Node &n) noexcept;
-
-template <typename T>
-inline Node UnaryOperator(MathOperator op, T &&n) noexcept {
-    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
-    CopyOrMoveTo(ret.get(), ret->left, std::forward<T>(n));
-    return ret;
-}
-
-template <typename T1, typename T2>
-inline Node BinaryOperator(MathOperator op, T1 &&n1, T2 &&n2) noexcept {
-    auto ret = std::make_unique<NodeImpl>(NodeType::OPERATOR, op, 0, "");
-    CopyOrMoveTo(ret.get(), ret->left, std::forward<T1>(n1));
-    CopyOrMoveTo(ret.get(), ret->right, std::forward<T2>(n2));
-    return ret;
-}
-
-/**
- * 新建一个运算符节点。
- */
-inline Node Operator(MathOperator op, Node left = nullptr, Node right = nullptr) noexcept;
-
-} // namespace internal
-
-inline Node Clone(const Node &rhs) noexcept;
-
-/**
- * 对节点进行移动。等同于std::move。
- */
-inline Node Move(Node &rhs) noexcept;
-
-/**
- * 新建一个数值节点。
- */
-inline Node Num(double num) noexcept;
-
-/**
- * 新建一个函数节点。
- */
-inline Node Op(MathOperator op);
-
-/**
- * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
- */
-inline bool VarNameIsLegal(std::string_view varname) noexcept;
-
-/**
- * 新建一个变量节点。
- * @exception runtime_error 名字不合法
- */
-inline Node Var(std::string_view varname);
-
-template <typename... T>
-using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;
-
-template <typename T1, typename T2>
-inline SfinaeNode<T1, T2> operator+(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_ADD, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T>
-inline SfinaeNode<T> &operator+=(Node &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_ADD, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-template <typename T1, typename T2>
-inline SfinaeNode<T1, T2> operator-(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_SUB, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T>
-inline SfinaeNode<T> operator-(T &&n1) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_NEGATIVE, std::forward<T>(n1));
-}
-
-template <typename T>
-inline SfinaeNode<T> operator+(T &&n1) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_POSITIVE, std::forward<T>(n1));
-}
-
-template <typename T>
-inline SfinaeNode<T> &operator-=(Node &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_SUB, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-template <typename T1, typename T2>
-inline SfinaeNode<T1, T2> operator*(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T>
-inline SfinaeNode<T> &operator*=(Node &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_MULTIPLY, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-template <typename T1, typename T2>
-inline SfinaeNode<T1, T2> operator/(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T>
-inline SfinaeNode<T> &operator/=(Node &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_DIVIDE, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-template <typename T1, typename T2>
-inline SfinaeNode<T1, T2> operator^(T1 &&n1, T2 &&n2) noexcept {
-    return internal::BinaryOperator(MathOperator::MATH_POWER, std::forward<T1>(n1), std::forward<T2>(n2));
-}
-
-template <typename T>
-inline SfinaeNode<T> &operator^=(Node &n1, T &&n2) noexcept {
-    n1 = internal::BinaryOperator(MathOperator::MATH_POWER, std::move(n1), std::forward<T>(n2));
-    return n1;
-}
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-namespace internal {
-
-inline NodeImpl::NodeImpl(const NodeImpl &rhs) noexcept {
-    *this = rhs;
-}
-
-inline NodeImpl &NodeImpl::operator=(const NodeImpl &rhs) noexcept {
-    type = rhs.type;
-    op = rhs.op;
-    value = rhs.value;
-    varname = rhs.varname;
-    parent = rhs.parent;
-    if (rhs.left) {
-        left = Clone(rhs.left);
-        left->parent = this;
-    } else {
-        left = nullptr;
-    }
-    if (rhs.right) {
-        right = Clone(rhs.right);
-        right->parent = this;
-    } else {
-        right = nullptr;
-    }
-    return *this;
-}
-
-inline NodeImpl::NodeImpl(NodeImpl &&rhs) noexcept {
-    *this = std::move(rhs);
-}
-
-inline NodeImpl &NodeImpl::operator=(NodeImpl &&rhs) noexcept {
-    type = std::exchange(rhs.type, {});
-    op = std::exchange(rhs.op, {});
-    value = std::exchange(rhs.value, {});
-    varname = std::exchange(rhs.varname, {});
-    parent = std::exchange(rhs.parent, {});
-    left = std::exchange(rhs.left, {});
-    if (left) {
-        left->parent = this;
-    }
-    right = std::exchange(rhs.right, {});
-    if (right) {
-        right->parent = this;
-    }
-
-    return *this;
-}
-
-inline NodeImpl::~NodeImpl() {
-    Release();
-}
-
-// 前序遍历。非递归实现。
-inline bool NodeImpl::Equal(const Node &rhs) const noexcept {
-    if (this == rhs.get()) {
-        return true;
-    }
-
-    std::stack<std::tuple<const NodeImpl &, const NodeImpl &>> stk;
-
-    auto tie = [](const NodeImpl &node) {
-        return std::tie(node.type, node.op, node.value, node.varname);
-    };
-
-    auto IsSame = [&tie](const NodeImpl &lhs, const NodeImpl &rhs) {
-        return tie(lhs) == tie(rhs);
-    };
-
-    auto CheckChildren = [&stk](const Node &lhs, const Node &rhs) {
-        // ╔═════╦═════╦════════╦═════════╗
-        // ║ lhs ║ rhs ║ return ║ emplace ║
-        // ╠═════╬═════╬════════╬═════════╣
-        // ║ T   ║ T   ║ T      ║ T       ║
-        // ╟─────╫─────╫────────╫─────────╢
-        // ║ T   ║ F   ║ F      ║ F       ║
-        // ╟─────╫─────╫────────╫─────────╢
-        // ║ F   ║ T   ║ F      ║ F       ║
-        // ╟─────╫─────╫────────╫─────────╢
-        // ║ F   ║ F   ║ T      ║ F       ║
-        // ╚═════╩═════╩════════╩═════════╝
-        if (!lhs ^ !rhs) {
-            return false;
-        }
-
-        if (lhs && rhs) {
-            stk.emplace(*lhs, *rhs);
-        }
-
-        return true;
-    };
-
-    auto CheckNode = [&IsSame, &CheckChildren](const NodeImpl &lhs, const NodeImpl &rhs) {
-        return IsSame(lhs, rhs) && CheckChildren(lhs.left, rhs.left) && CheckChildren(lhs.right, rhs.right);
-    };
-
-    if (!CheckNode(*this, *rhs)) {
-        return false;
-    }
-
-    while (!stk.empty()) {
-        const auto &[lhs, rhs] = stk.top();
-        stk.pop();
-
-        // 检查
-        if (!CheckNode(lhs, rhs)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-inline std::string NodeImpl::ToString() const noexcept {
-    std::stringstream ss;
-    ToStringNonRecursively(ss);
-    return ss.str();
-}
-
-inline double NodeImpl::Vpa() const {
-    return VpaNonRecursively();
-}
-
-inline NodeImpl &NodeImpl::Calc() {
-    auto d = Vpa();
-    *this = {};
-    value = d;
-
-    return *this;
-}
-
-// 前序遍历。非递归实现。
-inline void NodeImpl::CheckParent() const noexcept {
-    std::stack<std::tuple<const NodeImpl &>> stk;
-
-    auto EmplaceNode = [&stk](const Node &node) {
-        if (node) {
-            stk.emplace(*node);
-        }
-    };
-    auto TryEmplaceChildren = [&EmplaceNode](const NodeImpl &node) {
-        node.CheckOperatorNum();
-        EmplaceNode(node.left);
-        EmplaceNode(node.right);
-    };
-
-    TryEmplaceChildren(*this);
-
-    while (!stk.empty()) {
-        const auto &[f] = stk.top();
-        stk.pop();
-
-#ifndef NDEBUG
-        // 检查
-        assert(f.parent);
-        bool isLeftChild = f.parent->left.get() == &f;
-        bool isRightChild = f.parent->right.get() == &f;
-        assert(isLeftChild || isRightChild);
-#endif
-
-        TryEmplaceChildren(f);
-    }
-}
-
-inline void NodeImpl::CheckOperatorNum() const noexcept {
-    if (type != NodeType::OPERATOR) {
-        return;
-    }
-
-    switch (GetOperatorNum(op)) {
-    case 1:
-        assert(!right);
-        break;
-    case 2:
-        assert(right);
-        break;
-    default:
-        assert(0);
-        break;
-    }
-
-    assert(left);
-}
-
-inline std::string NodeImpl::NodeToStr() const noexcept {
-    switch (type) {
-    case NodeType::NUMBER:
-        return tomsolver::ToString(value);
-    case NodeType::VARIABLE:
-        return varname;
-    case NodeType::OPERATOR:
-        return MathOperatorToStr(op);
-    }
-    assert(0 && "unexpected NodeType. maybe this is a bug.");
-    return "";
-}
-
-// 中序遍历。递归实现。
-inline void NodeImpl::ToStringRecursively(std::stringstream &output) const noexcept {
-    switch (type) {
-    case NodeType::NUMBER:
-        // 如果当前节点是数值且小于0，且前面是-运算符，那么加括号
-        if (value < 0 && parent && parent->right.get() == this && parent->op == MathOperator::MATH_SUB) {
-            output << "(" << NodeToStr() << ")";
-        } else {
-            output << NodeToStr();
-        }
-        return;
-    case NodeType::VARIABLE:
-        output << NodeToStr();
-        return;
-    case NodeType::OPERATOR:
-        // pass
-        break;
-    }
-
-    auto hasParenthesis = false;
-    auto operatorNum = GetOperatorNum(op);
-    if (operatorNum == 1) // 一元运算符：函数和取负
-    {
-        if (op == MathOperator::MATH_POSITIVE || op == MathOperator::MATH_NEGATIVE) {
-            output << "(" << NodeToStr();
-        } else {
-            output << NodeToStr() << "(";
-        }
-        hasParenthesis = true;
-    } else {
-        // 非一元运算符才输出，即一元运算符的输出顺序已改变
-        if (type == NodeType::OPERATOR && parent) { // 本级为运算符
-            if ((GetOperatorNum(parent->op) == 2 && // 父运算符存在，为二元，
-                 (Rank(parent->op) > Rank(op)       // 父级优先级高于本级->加括号
-
-                  || ( // 两级优先级相等
-                         Rank(parent->op) == Rank(op) &&
-                         (
-                             // 本级为父级的右子树 且父级不满足结合律->加括号
-                             (InAssociativeLaws(parent->op) == false && this == parent->right.get()) ||
-                             // 两级都是右结合
-                             (InAssociativeLaws(parent->op) == false && IsLeft2Right(op) == false)))))
-
-                //||
-
-                ////父运算符存在，为除号，且本级为分子，则添加括号
-                //(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
-            ) {
-                output << "(";
-                hasParenthesis = true;
-            }
-        }
-    }
-
-    if (left) // 左遍历
-    {
-        left->ToStringRecursively(output);
-    }
-
-    if (operatorNum != 1) // 非一元运算符才输出，即一元运算符的输出顺序已改变
-    {
-        output << NodeToStr();
-    }
-
-    if (right) // 右遍历
-    {
-        right->ToStringRecursively(output);
-    }
-
-    // 回到本级时补齐右括号，包住前面的东西
-    if (hasParenthesis) {
-        output << ")";
-    }
-}
-
-// 中序遍历。非递归实现。
-inline void NodeImpl::ToStringNonRecursively(std::stringstream &output) const noexcept {
-    std::stack<std::tuple<const NodeImpl &>> stk;
-
-    NodeImpl rightParenthesis(NodeType::OPERATOR, MathOperator::MATH_RIGHT_PARENTHESIS, 0, "");
-
-    auto AddLeftLine = [&stk, &output, &rightParenthesis](const NodeImpl *cur) {
-        while (cur) {
-            if (cur->type != NodeType::OPERATOR) {
-                stk.emplace(*cur);
-                cur = cur->left.get();
-                continue;
-            }
-
-            // 一元运算符的特殊处理：
-            //      例如sin: 直接输出 "sin(" ，并且把一个右括号入栈。让退栈时这个右括号能包裹住现在的子树。
-            //      如果是+/-: 直接输出 "+"/"-"，如果+/-的操作数是operator，那么处理方式和sin这类一样；
-            //                                  如果+/-的操作数是number/variable，那么不加括号。
-            if (GetOperatorNum(cur->op) == 1) {
-                if ((cur->op == MathOperator::MATH_POSITIVE || cur->op == MathOperator::MATH_NEGATIVE) &&
-                    (cur->left->type != NodeType::OPERATOR)) {
-                    output << cur->NodeToStr();
-                    cur = cur->left.get();
-                    continue;
-                }
-                output << cur->NodeToStr() << "(";
-
-                // not push this op
-
-                // push ')'
-                stk.emplace(rightParenthesis);
-
-                cur = cur->left.get();
-                continue;
-            }
-
-            // 二元运算符的特殊处理：
-            if (cur->parent) {
-                if ((GetOperatorNum(cur->parent->op) == 2 && // 父运算符存在，为二元，
-                     (Rank(cur->parent->op) > Rank(cur->op)  // 父级优先级高于本级->加括号
-
-                      || ( // 两级优先级相等
-                             Rank(cur->parent->op) == Rank(cur->op) &&
-                             (
-                                 // 本级为父级的右子树 且父级不满足结合律->加括号
-                                 (InAssociativeLaws(cur->parent->op) == false && cur == cur->parent->right.get()) ||
-                                 // 两级都是右结合
-                                 (InAssociativeLaws(cur->parent->op) == false && IsLeft2Right(cur->op) == false)))))
-
-                    //||
-
-                    ////父运算符存在，为除号，且本级为分子，则添加括号
-                    //(now->parent->eOperator == MATH_DIVIDE && now == now->parent->right)
-                ) {
-                    output << "(";
-
-                    // push ')'
-                    stk.emplace(rightParenthesis);
-
-                    stk.emplace(*cur);
-                    cur = cur->left.get();
-                    continue;
-                }
-            }
-
-            stk.emplace(*cur);
-            cur = cur->left.get();
-        }
-    };
-
-    AddLeftLine(this);
-
-    while (!stk.empty()) {
-        const auto &[cur] = stk.top();
-        stk.pop();
-
-        // output
-
-        // 负数的特殊处理
-        // 如果当前节点是数值且小于0，且前面是-运算符，那么加括号
-        if (cur.type == NodeType::NUMBER && cur.value < 0 && cur.parent && cur.parent->right.get() == &cur &&
-            cur.parent->op == MathOperator::MATH_SUB) {
-            output << "(" << cur.NodeToStr() << ")";
-        } else {
-            output << cur.NodeToStr();
-        }
-
-        if (cur.right) {
-            AddLeftLine(cur.right.get());
-            continue;
-        }
-    }
-}
-
-// 后序遍历。递归实现。
-inline double NodeImpl::VpaRecursively() const {
-
-    auto vpa = [](const Node &node) {
-        return node ? node->Vpa() : 0;
-    };
-
-    switch (type) {
-    case NodeType::NUMBER:
-        return value;
-
-    case NodeType::VARIABLE:
-        throw std::runtime_error("has variable. can not calculate to be a number");
-
-    case NodeType::OPERATOR:
-        assert((GetOperatorNum(op) == 1 && left && right == nullptr) || (GetOperatorNum(op) == 2 && left && right));
-        return tomsolver::Calc(op, vpa(left), vpa(right));
-    }
-
-    throw std::runtime_error("unsupported node type");
-}
-
-// 后序遍历。非递归实现。
-inline double NodeImpl::VpaNonRecursively() const {
-
-    std::stack<std::tuple<const NodeImpl &>> stk;
-    std::forward_list<std::tuple<const NodeImpl &>> revertedPostOrder;
-
-    // ==== Part I ====
-
-    // 借助一个栈，得到反向的后序遍历序列，结果保存在revertedPostOrder
-    stk.emplace(*this);
-
-    while (!stk.empty()) {
-        const auto &[node] = stk.top();
-        stk.pop();
-
-        if (node.left) {
-            stk.emplace(*node.left);
-        }
-
-        if (node.right) {
-            stk.emplace(*node.right);
-        }
-
-        revertedPostOrder.emplace_front(node);
-    }
-
-    // ==== Part II ====
-    // revertedPostOrder的反向序列是一组逆波兰表达式，根据这组逆波兰表达式可以计算出表达式的值
-    // calcStk是用来计算值的临时栈，计算完成后calcStk的size应该为1
-    std::stack<double> calcStk;
-    // for (auto it = revertedPostOrder.rbegin(); it != revertedPostOrder.rend(); ++it) {
-    for (const auto &[node] : revertedPostOrder) {
-        switch (node.type) {
-        case NodeType::NUMBER:
-            calcStk.emplace(node.value);
-            break;
-
-        case NodeType::OPERATOR: {
-            auto r = std::numeric_limits<double>::quiet_NaN();
-
-            switch (GetOperatorNum(node.op)) {
-            case 1:
-                break;
-            case 2:
-                r = calcStk.top();
-                calcStk.pop();
-                break;
-            default:
-                assert(0 && "[VpaNonRecursively] unsupported operator num");
-                break;
-            }
-
-            auto &l = calcStk.top();
-            l = tomsolver::Calc(node.op, l, r);
-            break;
-        }
-
-        default:
-            throw std::runtime_error("wrong");
-            break;
-        }
-    }
-
-    assert(calcStk.size() == 1);
-
-    return calcStk.top();
-}
-
-// 后序遍历。因为要在左右儿子都没有的情况下删除节点。
-inline void NodeImpl::Release() noexcept {
-    std::stack<Node> stk;
-
-    auto emplaceNode = [&stk](Node node) {
-        if (node) {
-            stk.emplace(std::move(node));
-        }
-    };
-
-    auto emplaceChildren = [&emplaceNode](NodeImpl &node) {
-        emplaceNode(std::move(node.left));
-        emplaceNode(std::move(node.right));
-    };
-
-    emplaceChildren(*this);
-
-    while (!stk.empty()) {
-        auto node = std::move(stk.top());
-        stk.pop();
-
-        emplaceChildren(*node);
-
-        assert(!node->left && !node->right);
-
-        // 这里如果把node填入vector，最后翻转。得到的序列就是后序遍历。
-
-        // 这里node会被自动释放。
-    }
-}
-
-inline Node CloneRecursively(const Node &src) noexcept {
-    auto ret = std::make_unique<NodeImpl>(src->type, src->op, src->value, src->varname);
-    auto Copy = [ret = ret.get()](Node &tgt, const Node &src) {
-        if (src) {
-            tgt = Clone(src);
-            tgt->parent = ret;
-        }
-    };
-
-    Copy(ret->left, src->left);
-    Copy(ret->right, src->right);
-
-    return ret;
-}
-
-// 前序遍历。非递归实现。
-inline Node CloneNonRecursively(const Node &src) noexcept {
-    std::stack<std::tuple<const NodeImpl &, NodeImpl &, Node &>> stk;
-
-    auto MakeNode = [](const NodeImpl &src, NodeImpl *parent = nullptr) {
-        auto node = std::make_unique<NodeImpl>(src.type, src.op, src.value, src.varname);
-        node->parent = parent;
-        return node;
-    };
-
-    auto EmplaceNode = [&stk](const Node &src, NodeImpl &parent, Node &tgt) {
-        if (src) {
-            stk.emplace(*src, parent, tgt);
-        }
-    };
-
-    auto EmplaceChildren = [&EmplaceNode](const NodeImpl &src, Node &tgt) {
-        EmplaceNode(src.left, *tgt, tgt->left);
-        EmplaceNode(src.right, *tgt, tgt->right);
-    };
-
-    auto ret = MakeNode(*src);
-    EmplaceChildren(*src, ret);
-
-    while (!stk.empty()) {
-        const auto &[src, parent, tgt] = stk.top();
-        stk.pop();
-
-        tgt = MakeNode(src, &parent);
-        EmplaceChildren(src, tgt);
-    }
-
-    return ret;
-}
-
-inline void CopyOrMoveTo(NodeImpl *parent, Node &child, Node &&n1) noexcept {
-    n1->parent = parent;
-    child = std::move(n1);
-}
-
-inline void CopyOrMoveTo(NodeImpl *parent, Node &child, const Node &n1) noexcept {
-    auto n1Clone = std::make_unique<NodeImpl>(*n1);
-    n1Clone->parent = parent;
-    child = std::move(n1Clone);
-}
-
-inline std::ostream &operator<<(std::ostream &out, const Node &n) noexcept {
-    out << n->ToString();
-    return out;
-}
-
-inline Node Operator(MathOperator op, Node left, Node right) noexcept {
-    auto ret = std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
-
-    auto SetChild = [ret = ret.get()](Node &tgt, Node src) {
-        if (src) {
-            src->parent = ret;
-            tgt = std::move(src);
-        }
-    };
-
-    SetChild(ret->left, std::move(left));
-    SetChild(ret->right, std::move(right));
-
-    return ret;
-}
-
-// 前序遍历。非递归实现。
-inline std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
-    std::set<std::string> ret;
-
-    std::stack<std::tuple<const NodeImpl &>> stk;
-
-    auto EmplaceNode = [&stk](const Node &node) {
-        if (node) {
-            stk.emplace(*node);
-        }
-    };
-
-    auto EmplaceChild = [&ret, &EmplaceNode](const NodeImpl &node) {
-        if (node.type == NodeType::VARIABLE) {
-            ret.emplace(node.varname);
-        }
-        EmplaceNode(node.left);
-        EmplaceNode(node.right);
-    };
-
-    EmplaceChild(*this);
-
-    while (!stk.empty()) {
-        const auto &[node] = stk.top();
-        stk.pop();
-        EmplaceChild(node);
-    }
-
-    return ret;
-}
-
-} // namespace internal
-
-inline Node Clone(const Node &rhs) noexcept {
-    return internal::CloneNonRecursively(rhs);
-}
-
-inline Node Move(Node &rhs) noexcept {
-    return std::move(rhs);
-}
-
-inline Node Num(double num) noexcept {
-    return std::make_unique<internal::NodeImpl>(NodeType::NUMBER, MathOperator::MATH_NULL, num, "");
-}
-
-inline Node Op(MathOperator op) {
-    if (op == MathOperator::MATH_NULL) {
-        throw std::runtime_error("Illegal MathOperator: MATH_NULL");
-    }
-    return std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
-}
-
-inline bool VarNameIsLegal(std::string_view varname) noexcept {
-    return std::regex_match(varname.begin(), varname.end(), std::regex{R"((?=\w)\D\w*)"});
-}
-
-inline Node Var(std::string_view varname) {
-    auto name = std::string{varname};
-    if (!VarNameIsLegal(varname)) {
-        throw std::runtime_error("Illegal varname: " + name);
-    }
-    return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, std::move(name));
-}
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-template <typename T>
-inline Node sin(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_SIN, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node cos(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_COS, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node tan(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_TAN, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node asin(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_ARCSIN, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node acos(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_ARCCOS, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node atan(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_ARCTAN, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node sqrt(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_SQRT, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node log(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_LOG, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node log2(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_LOG2, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node log10(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_LOG10, std::forward<T>(n));
-}
-
-template <typename T>
-inline Node exp(T &&n) noexcept {
-    return internal::UnaryOperator(MathOperator::MATH_EXP, std::forward<T>(n));
-}
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-/**
- * node对varname求导。在node包含多个变量时，是对varname求偏导。
- * @exception runtime_error 如果表达式内包含AND(&) OR(|) MOD(%)这类不能求导的运算符，则抛出异常
- */
-inline Node Diff(const Node &node, const std::string &varname, int i = 1);
-
-/**
- * node对varname求导。在node包含多个变量时，是对varname求偏导。
- * @exception runtime_error 如果表达式内包含AND(&) OR(|) MOD(%)这类不能求导的运算符，则抛出异常
- */
-inline Node Diff(Node &&node, const std::string &varname, int i = 1);
 
 } // namespace tomsolver
 
