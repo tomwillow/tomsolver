@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <array>
+#include <cstdio>
 #include <regex>
 
 namespace tomsolver {
@@ -24,7 +25,11 @@ std::string ToString(double value) noexcept {
 
     auto &[fmt, re] = strategy[getStrategyIdx()];
 
+#ifdef WIN32
+    sprintf_s(buf, fmt, value);
+#else
     sprintf(buf, fmt, value);
+#endif
     return std::regex_replace(buf, re, "");
 }
 

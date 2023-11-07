@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cctype>
 #include <cmath>
+#include <cstdio>
 #include <forward_list>
 #include <functional>
 #include <iostream>
@@ -14,7 +15,6 @@
 #include <map>
 #include <math.h>
 #include <memory>
-#include <pthread.h>
 #include <queue>
 #include <regex>
 #include <set>
@@ -114,6 +114,203 @@ inline bool IsFunction(MathOperator op) noexcept;
 inline bool IsIntAndEven(double n) noexcept;
 
 inline double Calc(MathOperator op, double v1, double v2);
+
+} // namespace tomsolver
+/*
+
+inline Original Inverse(), Adjoint(), GetCofactor(), Det() is from https://github.com/taehwan642:
+
+///////////////////////////////////////////
+    MADE BY TAE HWAN KIM, SHIN JAE HO
+    김태환, 신재호 제작
+    If you see this documents, you can learn & understand Faster.
+    밑에 자료들을 보시면, 더욱 빠르게 배우고 이해하실 수 있으실겁니다.
+    https://www.wikihow.com/Find-the-Inverse-of-a-3x3-Matrix
+    https://www.wikihow.com/Find-the-Determinant-of-a-3X3-Matrix
+    LAST UPDATE 2020 - 03 - 30
+    마지막 업데이트 2020 - 03 - 30
+    This is my Github Profile. You can use this source whenever you want.
+    제 깃허브 페이지입니다. 언제든지 이 소스를 가져다 쓰셔도 됩니다.
+    https://github.com/taehwan642
+    Thanks :)
+    감사합니다 :)
+///////////////////////////////////////////
+
+*/
+
+namespace tomsolver {
+
+class Vec;
+
+class Mat {
+public:
+    explicit Mat(int row, int col, double initValue = 0) noexcept;
+
+    Mat(std::initializer_list<std::initializer_list<double>> init) noexcept;
+
+    Mat(int row, int col, std::valarray<double> data) noexcept;
+
+    Mat(const Mat &) = default;
+    Mat(Mat &&) = default;
+    Mat &operator=(const Mat &) = default;
+    Mat &operator=(Mat &&) = default;
+
+    std::slice_array<double> Row(int i, int offset = 0);
+    std::slice_array<double> Col(int j, int offset = 0);
+    auto Row(int i, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
+    auto Col(int j, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
+    const double &Value(int i, int j) const;
+    double &Value(int i, int j);
+
+    bool operator==(double m) const noexcept;
+    bool operator==(const Mat &b) const noexcept;
+
+    // be negative
+    Mat operator-() noexcept;
+
+    Mat operator+(const Mat &b) const noexcept;
+    Mat &operator+=(const Mat &b) noexcept;
+
+    Mat operator-(const Mat &b) const noexcept;
+
+    Mat operator*(double m) const noexcept;
+    Mat operator*(const Mat &b) const noexcept;
+
+    int Rows() const noexcept;
+
+    int Cols() const noexcept;
+
+    /**
+     * 输出Vec。如果列数不为1，抛出异常。
+     * @exception runtime_error 列数不为1
+     */
+    Vec ToVec() const;
+
+    Mat &SwapRow(int i, int j) noexcept;
+    Mat &SwapCol(int i, int j) noexcept;
+
+    std::string ToString() const noexcept;
+
+    void Resize(int newRows, int newCols) noexcept;
+
+    Mat &Zero() noexcept;
+
+    Mat &Ones() noexcept;
+
+    double Norm2() const noexcept;
+
+    double NormInfinity() const noexcept;
+
+    double NormNegInfinity() const noexcept;
+
+    double Min() const noexcept;
+
+    void SetValue(double value) noexcept;
+
+    /**
+     * 返回矩阵是否正定。
+     */
+    bool PositiveDetermine() const noexcept;
+
+    Mat Transpose() const noexcept;
+
+    /**
+     * 计算逆矩阵。
+     * @exception MathError 如果是奇异矩阵，抛出异常
+     */
+    Mat Inverse() const;
+
+protected:
+    int rows;
+    int cols;
+    std::valarray<double> data;
+
+    friend Mat operator*(double k, const Mat &mat) noexcept;
+    friend std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
+    friend Mat EachDivide(const Mat &a, const Mat &b) noexcept;
+    friend bool IsZero(const Mat &mat) noexcept;
+    friend bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
+    friend void GetCofactor(const Mat &A, Mat &temp, int p, int q, int n) noexcept;
+    friend void Adjoint(const Mat &A, Mat &adj) noexcept;
+    friend double Det(const Mat &A, int n) noexcept;
+};
+
+inline Mat operator*(double k, const Mat &mat) noexcept;
+
+inline std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
+
+inline Mat EachDivide(const Mat &a, const Mat &b) noexcept;
+
+inline bool IsZero(const Mat &mat) noexcept;
+
+inline bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
+
+inline int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept;
+
+/**
+ * 伴随矩阵。
+ */
+inline void Adjoint(const Mat &A, Mat &adj) noexcept;
+
+inline void GetCofactor(const Mat &A, Mat &temp, int p, int q, int n) noexcept;
+
+/**
+ * 计算矩阵的行列式值。
+ */
+inline double Det(const Mat &A, int n) noexcept;
+
+class Vec : public Mat {
+public:
+    explicit Vec(int rows, double initValue = 0) noexcept;
+
+    Vec(std::initializer_list<double> init) noexcept;
+
+    Vec(std::valarray<double> data) noexcept;
+
+    Mat &AsMat() noexcept;
+
+    void Resize(int newRows) noexcept;
+
+    double &operator[](std::size_t i) noexcept;
+
+    double operator[](std::size_t i) const noexcept;
+
+    Vec operator+(const Vec &b) const noexcept;
+
+    // be negative
+    Vec operator-() noexcept;
+
+    Vec operator-(const Vec &b) const noexcept;
+
+    Vec operator*(double m) const noexcept;
+
+    Vec operator*(const Vec &b) const noexcept;
+
+    Vec operator/(const Vec &b) const noexcept;
+
+    bool operator<(const Vec &b) noexcept;
+
+    friend double Dot(const Vec &a, const Vec &b) noexcept;
+    friend Vec operator*(double k, const Vec &V);
+};
+
+/**
+ * 向量点乘。
+ */
+inline double Dot(const Vec &a, const Vec &b) noexcept;
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+/**
+ * 求解线性方程组Ax = b。传入矩阵A，向量b，返回向量x。
+ * @exception MathError 奇异矩阵
+ * @exception MathError 矛盾方程组
+ * @exception MathError 不定方程（设置Config::get().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
+ *
+ */
+inline Vec SolveLinear(Mat A, Vec b);
 
 } // namespace tomsolver
 
@@ -304,12 +501,187 @@ inline std::string ToString(double value) noexcept {
 
     auto &[fmt, re] = strategy[getStrategyIdx()];
 
+#ifdef WIN32
+    sprintf_s(buf, fmt, value);
+#else
     sprintf(buf, fmt, value);
+#endif
     return std::regex_replace(buf, re, "");
 }
 
 inline void Config::Reset() noexcept {
     *this = {};
+}
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+/**
+ * 变量表。
+ * 内部保存了多个变量名及其数值的对应关系。
+ */
+class VarsTable {
+public:
+    /**
+     * 新建变量表。
+     * @param vars 变量数组
+     * @param initValue 初值
+     */
+    VarsTable(const std::vector<std::string> &vars, double initValue);
+
+    /**
+     * 新建变量表。
+     * @param vars 变量数组
+     * @param initValue 初值
+     */
+    explicit VarsTable(std::initializer_list<std::pair<std::string, double>> initList);
+
+    /**
+     * 新建变量表。
+     * @param vars 变量数组
+     * @param initValue 初值
+     */
+    explicit VarsTable(const std::map<std::string, double> &table) noexcept;
+
+    /**
+     * 变量数量。
+     */
+    int VarNums() const noexcept;
+
+    /**
+     * 返回std::vector容器包装的变量名数组。
+     */
+    const std::vector<std::string> &Vars() const noexcept;
+
+    /**
+     * 返回所有变量名对应的值的数值向量。
+     */
+    const Vec &Values() const noexcept;
+
+    /**
+     * 设置数值向量。
+     */
+    void SetValues(const Vec &v) noexcept;
+
+    /**
+     * 返回是否有指定的变量。
+     */
+    bool Has(const std::string &varname) const noexcept;
+
+    std::map<std::string, double>::const_iterator begin() const noexcept;
+
+    std::map<std::string, double>::const_iterator end() const noexcept;
+
+    std::map<std::string, double>::const_iterator cbegin() const noexcept;
+
+    std::map<std::string, double>::const_iterator cend() const noexcept;
+
+    bool operator==(const VarsTable &rhs) const noexcept;
+
+    /**
+     * 根据变量名获取数值。
+     * @exception out_of_range 如果没有这个变量，抛出异常
+     */
+    double operator[](const std::string &varname) const;
+
+private:
+    std::vector<std::string> vars;
+    Vec values;
+    std::map<std::string, double> table;
+};
+
+inline std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept;
+
+} // namespace tomsolver
+
+namespace tomsolver {
+
+inline VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
+    : vars(vars), values(static_cast<int>(vars.size()), initValue) {
+    for (auto &var : vars) {
+        table.try_emplace(var, initValue);
+    }
+    assert(vars.size() == table.size() && "vars is not unique");
+}
+
+inline VarsTable::VarsTable(std::initializer_list<std::pair<std::string, double>> initList)
+    : VarsTable({initList.begin(), initList.end()}) {
+    assert(vars.size() == table.size() && "vars is not unique");
+}
+
+inline VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
+    : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
+    int i = 0;
+    for (auto &[var, val] : table) {
+        vars[i] = var;
+        values[i] = val;
+        ++i;
+    }
+}
+
+inline int VarsTable::VarNums() const noexcept {
+    return static_cast<int>(table.size());
+}
+
+inline const std::vector<std::string> &VarsTable::Vars() const noexcept {
+    return vars;
+}
+
+inline const Vec &VarsTable::Values() const noexcept {
+    return values;
+}
+
+inline void VarsTable::SetValues(const Vec &v) noexcept {
+    assert(v.Rows() == values.Rows());
+    values = v;
+    for (int i = 0; i < values.Rows(); ++i) {
+        table[vars[i]] = v[i];
+    }
+}
+
+inline bool VarsTable::Has(const std::string &varname) const noexcept {
+    return table.find(varname) != table.end();
+}
+
+inline std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
+    return table.begin();
+}
+
+inline std::map<std::string, double>::const_iterator VarsTable::end() const noexcept {
+    return table.end();
+}
+
+inline std::map<std::string, double>::const_iterator VarsTable::cbegin() const noexcept {
+    return table.cbegin();
+}
+
+inline std::map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
+    return table.cend();
+}
+
+inline bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
+    return values.Rows() == rhs.values.Rows() &&
+           std::equal(table.begin(), table.end(), rhs.table.begin(), [](const auto &lhs, const auto &rhs) {
+               auto &[lVar, lVal] = lhs;
+               auto &[rVar, rVal] = rhs;
+               return lVar == rVar && std::abs(lVal - rVal) <= Config::get().epsilon;
+           });
+}
+
+inline double VarsTable::operator[](const std::string &varname) const {
+    auto it = table.find(varname);
+    if (it == table.end()) {
+        throw std::out_of_range("no such variable: " + varname);
+    }
+    return it->second;
+}
+
+inline std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
+    for (auto &[var, val] : table) {
+        out << var << " = " << tomsolver::ToString(val) << std::endl;
+    }
+    return out;
 }
 
 } // namespace tomsolver
@@ -648,8 +1020,8 @@ inline NodeImpl::~NodeImpl() {
 }
 
 // 前序遍历。非递归实现。
-inline bool NodeImpl::Equal(const Node &rhs) const noexcept {
-    if (this == rhs.get()) {
+inline bool NodeImpl::Equal(const Node &other) const noexcept {
+    if (this == other.get()) {
         return true;
     }
 
@@ -690,7 +1062,7 @@ inline bool NodeImpl::Equal(const Node &rhs) const noexcept {
         return IsSame(lhs, rhs) && CheckChildren(lhs.left, rhs.left) && CheckChildren(lhs.right, rhs.right);
     };
 
-    if (!CheckNode(*this, *rhs)) {
+    if (!CheckNode(*this, *other)) {
         return false;
     }
 
@@ -1097,7 +1469,7 @@ inline Node CloneRecursively(const Node &src) noexcept {
 }
 
 // 前序遍历。非递归实现。
-inline Node CloneNonRecursively(const Node &src) noexcept {
+inline Node CloneNonRecursively(const Node &node) noexcept {
     std::stack<std::tuple<const NodeImpl &, NodeImpl &, Node &>> stk;
 
     auto MakeNode = [](const NodeImpl &src, NodeImpl *parent = nullptr) {
@@ -1117,8 +1489,8 @@ inline Node CloneNonRecursively(const Node &src) noexcept {
         EmplaceNode(src.right, *tgt, tgt->right);
     };
 
-    auto ret = MakeNode(*src);
-    EmplaceChildren(*src, ret);
+    auto ret = MakeNode(*node);
+    EmplaceChildren(*node, ret);
 
     while (!stk.empty()) {
         const auto &[src, parent, tgt] = stk.top();
@@ -1594,190 +1966,6 @@ inline double Calc(MathOperator op, double v1, double v2) {
 }
 
 } // namespace tomsolver
-/*
-
-inline Original Inverse(), Adjoint(), GetCofactor(), Det() is from https://github.com/taehwan642:
-
-///////////////////////////////////////////
-    MADE BY TAE HWAN KIM, SHIN JAE HO
-    김태환, 신재호 제작
-    If you see this documents, you can learn & understand Faster.
-    밑에 자료들을 보시면, 더욱 빠르게 배우고 이해하실 수 있으실겁니다.
-    https://www.wikihow.com/Find-the-Inverse-of-a-3x3-Matrix
-    https://www.wikihow.com/Find-the-Determinant-of-a-3X3-Matrix
-    LAST UPDATE 2020 - 03 - 30
-    마지막 업데이트 2020 - 03 - 30
-    This is my Github Profile. You can use this source whenever you want.
-    제 깃허브 페이지입니다. 언제든지 이 소스를 가져다 쓰셔도 됩니다.
-    https://github.com/taehwan642
-    Thanks :)
-    감사합니다 :)
-///////////////////////////////////////////
-
-*/
-
-namespace tomsolver {
-
-class Vec;
-
-class Mat {
-public:
-    explicit Mat(int row, int col, double initValue = 0) noexcept;
-
-    Mat(std::initializer_list<std::initializer_list<double>> init) noexcept;
-
-    Mat(int row, int col, std::valarray<double> data) noexcept;
-
-    Mat(const Mat &) = default;
-    Mat(Mat &&) = default;
-    Mat &operator=(const Mat &) = default;
-    Mat &operator=(Mat &&) = default;
-
-    std::slice_array<double> Row(int i, int offset = 0);
-    std::slice_array<double> Col(int j, int offset = 0);
-    auto Row(int i, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
-    auto Col(int j, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
-    const double &Value(int i, int j) const;
-    double &Value(int i, int j);
-
-    bool operator==(double m) const noexcept;
-    bool operator==(const Mat &b) const noexcept;
-
-    // be negative
-    Mat operator-() noexcept;
-
-    Mat operator+(const Mat &b) const noexcept;
-    Mat &operator+=(const Mat &b) noexcept;
-
-    Mat operator-(const Mat &b) const noexcept;
-
-    Mat operator*(double m) const noexcept;
-    Mat operator*(const Mat &b) const noexcept;
-
-    int Rows() const noexcept;
-
-    int Cols() const noexcept;
-
-    /**
-     * 输出Vec。如果列数不为1，抛出异常。
-     * @exception runtime_error 列数不为1
-     */
-    Vec ToVec() const;
-
-    Mat &SwapRow(int i, int j) noexcept;
-    Mat &SwapCol(int i, int j) noexcept;
-
-    std::string ToString() const noexcept;
-
-    void Resize(int newRows, int newCols) noexcept;
-
-    Mat &Zero() noexcept;
-
-    Mat &Ones() noexcept;
-
-    double Norm2() const noexcept;
-
-    double NormInfinity() const noexcept;
-
-    double NormNegInfinity() const noexcept;
-
-    double Min() const noexcept;
-
-    void SetValue(double value) noexcept;
-
-    /**
-     * 返回矩阵是否正定。
-     */
-    bool PositiveDetermine() const noexcept;
-
-    Mat Transpose() const noexcept;
-
-    /**
-     * 计算逆矩阵。
-     * @exception MathError 如果是奇异矩阵，抛出异常
-     */
-    Mat Inverse() const;
-
-protected:
-    int rows;
-    int cols;
-    std::valarray<double> data;
-
-    friend Mat operator*(double k, const Mat &mat) noexcept;
-    friend std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
-    friend Mat EachDivide(const Mat &a, const Mat &b) noexcept;
-    friend bool IsZero(const Mat &mat) noexcept;
-    friend bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
-    friend void GetCofactor(const Mat &A, Mat &temp, int p, int q, int n) noexcept;
-    friend void Adjoint(const Mat &A, Mat &adj) noexcept;
-    friend double Det(const Mat &A, int n) noexcept;
-};
-
-inline Mat operator*(double k, const Mat &mat) noexcept;
-
-inline std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept;
-
-inline Mat EachDivide(const Mat &a, const Mat &b) noexcept;
-
-inline bool IsZero(const Mat &mat) noexcept;
-
-inline bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept;
-
-inline int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept;
-
-/**
- * 伴随矩阵。
- */
-inline void Adjoint(const Mat &A, Mat &adj) noexcept;
-
-inline void GetCofactor(const Mat &A, Mat &temp, int p, int q, int n) noexcept;
-
-/**
- * 计算矩阵的行列式值。
- */
-inline double Det(const Mat &A, int n) noexcept;
-
-class Vec : public Mat {
-public:
-    explicit Vec(int rows, double initValue = 0) noexcept;
-
-    Vec(std::initializer_list<double> init) noexcept;
-
-    Vec(std::valarray<double> data) noexcept;
-
-    Mat &AsMat() noexcept;
-
-    void Resize(int newRows) noexcept;
-
-    double &operator[](std::size_t i) noexcept;
-
-    double operator[](std::size_t i) const noexcept;
-
-    Vec operator+(const Vec &b) const noexcept;
-
-    // be negative
-    Vec operator-() noexcept;
-
-    Vec operator-(const Vec &b) const noexcept;
-
-    Vec operator*(double m) const noexcept;
-
-    Vec operator*(const Vec &b) const noexcept;
-
-    Vec operator/(const Vec &b) const noexcept;
-
-    bool operator<(const Vec &b) noexcept;
-
-    friend double Dot(const Vec &a, const Vec &b) noexcept;
-    friend Vec operator*(double k, const Vec &V);
-};
-
-/**
- * 向量点乘。
- */
-inline double Dot(const Vec &a, const Vec &b) noexcept;
-
-} // namespace tomsolver
 
 namespace tomsolver {
 
@@ -2055,8 +2243,9 @@ inline bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
 }
 
 inline int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
-    std::valarray temp = std::abs(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
-    return std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
+    std::valarray temp = std::abs<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
+    auto ret = std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
+    return static_cast<int>(ret);
 }
 
 inline void Adjoint(const Mat &A, Mat &adj) noexcept // 딸림행렬, 수반행렬
@@ -2245,19 +2434,6 @@ inline std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept {
 
 namespace tomsolver {
 
-/**
- * 求解线性方程组Ax = b。传入矩阵A，向量b，返回向量x。
- * @exception MathError 奇异矩阵
- * @exception MathError 矛盾方程组
- * @exception MathError 不定方程（设置Config::get().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
- *
- */
-inline Vec SolveLinear(Mat A, Vec b);
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
 inline Vec SolveLinear(Mat A, Vec b) {
     int rows = A.Rows(); // 行数
     int cols = rows;     // 列数=未知数个数
@@ -2327,18 +2503,18 @@ inline Vec SolveLinear(Mat A, Vec b) {
         }
 
         // 主对角线化为1
-        auto ratio = A.Value(y, x);
+        auto ratioY = A.Value(y, x);
         // y行第j个->第cols个
-        std::valarray rowY = std::as_const(A).Row(y, x) / ratio;
+        std::valarray rowY = std::as_const(A).Row(y, x) / ratioY;
         A.Row(y, x) = rowY;
-        b[y] /= ratio;
+        b[y] /= ratioY;
 
         // 每行化为0
         for (auto row = y + 1; row < rows; row++) // 下1行->最后1行
         {
-            if (auto ratio = A.Value(row, x); std::abs(A.Value(row, x)) >= Config::get().epsilon) {
-                A.Row(row, x) -= rowY * ratio;
-                b[row] -= b[y] * ratio;
+            if (auto ratioRow = A.Value(row, x); std::abs(ratioRow) >= Config::get().epsilon) {
+                A.Row(row, x) -= rowY * ratioRow;
+                b[row] -= b[y] * ratioRow;
             }
         }
     }
@@ -2455,177 +2631,6 @@ inline Node Diff(const Node &node, const std::string &varname, int i = 1);
  * @exception runtime_error 如果表达式内包含AND(&) OR(|) MOD(%)这类不能求导的运算符，则抛出异常
  */
 inline Node Diff(Node &&node, const std::string &varname, int i = 1);
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-/**
- * 变量表。
- * 内部保存了多个变量名及其数值的对应关系。
- */
-class VarsTable {
-public:
-    /**
-     * 新建变量表。
-     * @param vars 变量数组
-     * @param initValue 初值
-     */
-    VarsTable(const std::vector<std::string> &vars, double initValue);
-
-    /**
-     * 新建变量表。
-     * @param vars 变量数组
-     * @param initValue 初值
-     */
-    explicit VarsTable(std::initializer_list<std::pair<std::string, double>> initList);
-
-    /**
-     * 新建变量表。
-     * @param vars 变量数组
-     * @param initValue 初值
-     */
-    explicit VarsTable(const std::map<std::string, double> &table) noexcept;
-
-    /**
-     * 变量数量。
-     */
-    int VarNums() const noexcept;
-
-    /**
-     * 返回std::vector容器包装的变量名数组。
-     */
-    const std::vector<std::string> &Vars() const noexcept;
-
-    /**
-     * 返回所有变量名对应的值的数值向量。
-     */
-    const Vec &Values() const noexcept;
-
-    /**
-     * 设置数值向量。
-     */
-    void SetValues(const Vec &v) noexcept;
-
-    /**
-     * 返回是否有指定的变量。
-     */
-    bool Has(const std::string &varname) const noexcept;
-
-    std::map<std::string, double>::const_iterator begin() const noexcept;
-
-    std::map<std::string, double>::const_iterator end() const noexcept;
-
-    std::map<std::string, double>::const_iterator cbegin() const noexcept;
-
-    std::map<std::string, double>::const_iterator cend() const noexcept;
-
-    bool operator==(const VarsTable &rhs) const noexcept;
-
-    /**
-     * 根据变量名获取数值。
-     * @exception out_of_range 如果没有这个变量，抛出异常
-     */
-    double operator[](const std::string &varname) const;
-
-private:
-    std::vector<std::string> vars;
-    Vec values;
-    std::map<std::string, double> table;
-};
-
-inline std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept;
-
-} // namespace tomsolver
-
-namespace tomsolver {
-
-inline VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
-    : vars(vars), values(static_cast<int>(vars.size()), initValue) {
-    for (auto &var : vars) {
-        table.try_emplace(var, initValue);
-    }
-    assert(vars.size() == table.size() && "vars is not unique");
-}
-
-inline VarsTable::VarsTable(std::initializer_list<std::pair<std::string, double>> initList)
-    : VarsTable({initList.begin(), initList.end()}) {
-    assert(vars.size() == table.size() && "vars is not unique");
-}
-
-inline VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
-    : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
-    int i = 0;
-    for (auto &[var, val] : table) {
-        vars[i] = var;
-        values[i] = val;
-        ++i;
-    }
-}
-
-inline int VarsTable::VarNums() const noexcept {
-    return static_cast<int>(table.size());
-}
-
-inline const std::vector<std::string> &VarsTable::Vars() const noexcept {
-    return vars;
-}
-
-inline const Vec &VarsTable::Values() const noexcept {
-    return values;
-}
-
-inline void VarsTable::SetValues(const Vec &v) noexcept {
-    assert(v.Rows() == values.Rows());
-    values = v;
-    for (int i = 0; i < values.Rows(); ++i) {
-        table[vars[i]] = v[i];
-    }
-}
-
-inline bool VarsTable::Has(const std::string &varname) const noexcept {
-    return table.find(varname) != table.end();
-}
-
-inline std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
-    return table.begin();
-}
-
-inline std::map<std::string, double>::const_iterator VarsTable::end() const noexcept {
-    return table.end();
-}
-
-inline std::map<std::string, double>::const_iterator VarsTable::cbegin() const noexcept {
-    return table.cbegin();
-}
-
-inline std::map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
-    return table.cend();
-}
-
-inline bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
-    return values.Rows() == rhs.values.Rows() &&
-           std::equal(table.begin(), table.end(), rhs.table.begin(), [](const auto &lhs, const auto &rhs) {
-               auto &[lVar, lVal] = lhs;
-               auto &[rVar, rVal] = rhs;
-               return lVar == rVar && std::abs(lVal - rVal) <= Config::get().epsilon;
-           });
-}
-
-inline double VarsTable::operator[](const std::string &varname) const {
-    auto it = table.find(varname);
-    if (it == table.end()) {
-        throw std::out_of_range("no such variable: " + varname);
-    }
-    return it->second;
-}
-
-inline std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
-    for (auto &[var, val] : table) {
-        out << var << " = " << tomsolver::ToString(val) << std::endl;
-    }
-    return out;
-}
 
 } // namespace tomsolver
 
@@ -3321,13 +3326,14 @@ inline std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content)
         throw SingleParseError(0, 0, "empty input", content);
     }
 
-    auto iter = content.begin(), s = iter;
+    auto iter = content.begin(), nameIter = iter;
     std::deque<Token> ret;
 
-    auto tryComfirmToken = [&ret, &iter, &s, &content] {
-        if (size_t size = std::distance(s, iter)) {
-            auto exp = std::string_view{s, size};
-            auto &token = ret.emplace_back(0, std::distance(content.begin(), s), false, exp, content);
+    auto tryComfirmToken = [&ret, &iter, &nameIter, &content] {
+        if (size_t size = std::distance(nameIter, iter)) {
+            auto exp = std::string_view{&*nameIter, size};
+            auto &token =
+                ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), nameIter)), false, exp, content);
 
             // 检验是否为浮点数
             try {
@@ -3361,13 +3367,14 @@ inline std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content)
             tryComfirmToken();
             auto unaryOp = ret.empty() || (ret.back().node->type == NodeType::OPERATOR &&
                                            ret.back().node->op != MathOperator::MATH_RIGHT_PARENTHESIS);
-            ret.emplace_back(0, std::distance(content.begin(), iter), true, std::string_view{iter, 1}, content).node =
-                Op(BaseOperatorCharToEnum(*iter, unaryOp));
-            s = ++iter;
+            ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), iter)), true,
+                             std::string_view{&*iter, 1}, content)
+                .node = Op(BaseOperatorCharToEnum(*iter, unaryOp));
+            nameIter = ++iter;
         } else if (isspace(*iter)) {
             // 忽略tab (\t) whitespaces (\n, \v, \f, \r) space
             tryComfirmToken();
-            s = ++iter;
+            nameIter = ++iter;
         } else {
             ++iter;
         }

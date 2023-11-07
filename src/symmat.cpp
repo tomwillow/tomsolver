@@ -1,6 +1,7 @@
 #include "symmat.h"
 
 #include "diff.h"
+#include "error_type.h"
 #include "mat.h"
 #include "node.h"
 #include "subs.h"
@@ -8,7 +9,6 @@
 #include <cmath>
 #include <iterator>
 #include <memory>
-#include <pthread.h>
 #include <utility>
 
 namespace tomsolver {

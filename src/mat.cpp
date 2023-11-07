@@ -9,7 +9,6 @@
 #include <iterator>
 #include <sstream>
 #include <tuple>
-#include <type_traits>
 #include <valarray>
 
 namespace tomsolver {
@@ -287,8 +286,9 @@ bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
 }
 
 int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
-    std::valarray temp = std::abs(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
-    return std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
+    std::valarray temp = std::abs<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
+    auto ret = std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
+    return static_cast<int>(ret);
 }
 
 void Adjoint(const Mat &A, Mat &adj) noexcept // 딸림행렬, 수반행렬

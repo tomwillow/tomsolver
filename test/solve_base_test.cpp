@@ -1,6 +1,6 @@
 #include "config.h"
+#include "error_type.h"
 #include "functions.h"
-#include "linear.h"
 #include "nonlinear.h"
 #include "parse.h"
 

@@ -71,8 +71,8 @@ NodeImpl::~NodeImpl() {
 }
 
 // 前序遍历。非递归实现。
-bool NodeImpl::Equal(const Node &rhs) const noexcept {
-    if (this == rhs.get()) {
+bool NodeImpl::Equal(const Node &other) const noexcept {
+    if (this == other.get()) {
         return true;
     }
 
@@ -113,7 +113,7 @@ bool NodeImpl::Equal(const Node &rhs) const noexcept {
         return IsSame(lhs, rhs) && CheckChildren(lhs.left, rhs.left) && CheckChildren(lhs.right, rhs.right);
     };
 
-    if (!CheckNode(*this, *rhs)) {
+    if (!CheckNode(*this, *other)) {
         return false;
     }
 
@@ -520,7 +520,7 @@ Node CloneRecursively(const Node &src) noexcept {
 }
 
 // 前序遍历。非递归实现。
-Node CloneNonRecursively(const Node &src) noexcept {
+Node CloneNonRecursively(const Node &node) noexcept {
     std::stack<std::tuple<const NodeImpl &, NodeImpl &, Node &>> stk;
 
     auto MakeNode = [](const NodeImpl &src, NodeImpl *parent = nullptr) {
@@ -540,8 +540,8 @@ Node CloneNonRecursively(const Node &src) noexcept {
         EmplaceNode(src.right, *tgt, tgt->right);
     };
 
-    auto ret = MakeNode(*src);
-    EmplaceChildren(*src, ret);
+    auto ret = MakeNode(*node);
+    EmplaceChildren(*node, ret);
 
     while (!stk.empty()) {
         const auto &[src, parent, tgt] = stk.top();
