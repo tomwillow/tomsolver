@@ -1,13 +1,12 @@
 #include "parse.h"
 
-#include "config.h"
+#include "error_type.h"
 #include "math_operator.h"
 #include "node.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <functional>
-#include <gmock/gmock.h>
 #include <iterator>
 #include <sstream>
 #include <string>

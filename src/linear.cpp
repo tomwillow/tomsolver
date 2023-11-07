@@ -4,8 +4,6 @@
 #include "error_type.h"
 
 #include <cassert>
-#include <utility>
-#include <valarray>
 #include <vector>
 
 namespace tomsolver {

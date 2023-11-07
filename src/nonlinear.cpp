@@ -1,7 +1,6 @@
 #include "nonlinear.h"
 
 #include "config.h"
-#include "error_type.h"
 #include "linear.h"
 
 #include <cassert>

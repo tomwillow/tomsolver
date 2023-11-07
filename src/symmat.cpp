@@ -1,6 +1,5 @@
 #include "symmat.h"
 
-#include "config.h"
 #include "diff.h"
 #include "mat.h"
 #include "node.h"

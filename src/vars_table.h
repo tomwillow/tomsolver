@@ -1,6 +1,5 @@
 #pragma once
 
-#include "error_type.h"
 #include "mat.h"
 
 #include <iostream>

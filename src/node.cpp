@@ -1,7 +1,6 @@
 #include "node.h"
 
 #include "config.h"
-#include "error_type.h"
 #include "math_operator.h"
 
 #include <cassert>

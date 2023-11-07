@@ -1,6 +1,7 @@
-#include "node.h"
-#include "functions.h"
 #include "config.h"
+#include "error_type.h"
+#include "functions.h"
+#include "node.h"
 
 #include "memory_leak_detection.h"
 

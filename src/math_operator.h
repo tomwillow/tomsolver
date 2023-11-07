@@ -1,7 +1,5 @@
 #pragma once
 
-#include "error_type.h"
-
 #include <string>
 #define _USE_MATH_DEFINES
 #include <math.h>

@@ -1,5 +1,4 @@
 #pragma once
-#include "error_type.h"
 #include "math_operator.h"
 
 #include <cassert>
