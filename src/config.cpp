@@ -3,11 +3,12 @@
 #include <array>
 #include <cstdio>
 #include <regex>
+#include <tuple>
 
 namespace tomsolver {
 
 std::string ToString(double value) noexcept {
-    static const std::array strategy = {
+    static const std::array strategies = {
         std::tuple{"%.16e", std::regex{"\\.?0+(?=e)"}},
         std::tuple{"%.16f", std::regex{"\\.?0+(?=$)"}},
     };
@@ -23,7 +24,9 @@ std::string ToString(double value) noexcept {
         return (absValue >= 1.0e16 || absValue <= 1.0e-16) ? 0 : 1;
     };
 
-    auto &[fmt, re] = strategy[getStrategyIdx()];
+    auto &strategy = strategies[getStrategyIdx()];
+    auto fmt = std::get<0>(strategy);
+    auto &re = std::get<1>(strategy);
 
 #ifdef WIN32
     sprintf_s(buf, fmt, value);

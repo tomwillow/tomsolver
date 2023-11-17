@@ -483,7 +483,7 @@ inline std::string ToString(double value) noexcept;
 namespace tomsolver {
 
 inline std::string ToString(double value) noexcept {
-    static const std::array strategy = {
+    static const std::array strategies = {
         std::tuple{"%.16e", std::regex{"\\.?0+(?=e)"}},
         std::tuple{"%.16f", std::regex{"\\.?0+(?=$)"}},
     };
@@ -499,7 +499,9 @@ inline std::string ToString(double value) noexcept {
         return (absValue >= 1.0e16 || absValue <= 1.0e-16) ? 0 : 1;
     };
 
-    auto &[fmt, re] = strategy[getStrategyIdx()];
+    auto &strategy = strategies[getStrategyIdx()];
+    auto fmt = std::get<0>(strategy);
+    auto &re = std::get<1>(strategy);
 
 #ifdef WIN32
     sprintf_s(buf, fmt, value);
@@ -613,9 +615,9 @@ inline VarsTable::VarsTable(std::initializer_list<std::pair<std::string, double>
 inline VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
     : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
     int i = 0;
-    for (auto &[var, val] : table) {
-        vars[i] = var;
-        values[i] = val;
+    for (auto &item : table) {
+        vars[i] = item.first;
+        values[i] = item.second;
         ++i;
     }
 }
@@ -663,8 +665,10 @@ inline std::map<std::string, double>::const_iterator VarsTable::cend() const noe
 inline bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
     return values.Rows() == rhs.values.Rows() &&
            std::equal(table.begin(), table.end(), rhs.table.begin(), [](const auto &lhs, const auto &rhs) {
-               auto &[lVar, lVal] = lhs;
-               auto &[rVar, rVal] = rhs;
+               auto &lVar = lhs.first;
+               auto &lVal = lhs.second;
+               auto &rVar = rhs.first;
+               auto &rVal = rhs.second;
                return lVar == rVar && std::abs(lVal - rVal) <= Config::get().epsilon;
            });
 }
@@ -678,8 +682,8 @@ inline double VarsTable::operator[](const std::string &varname) const {
 }
 
 inline std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
-    for (auto &[var, val] : table) {
-        out << var << " = " << tomsolver::ToString(val) << std::endl;
+    for (auto &item : table) {
+        out << item.first << " = " << tomsolver::ToString(item.second) << std::endl;
     }
     return out;
 }
@@ -1067,7 +1071,8 @@ inline bool NodeImpl::Equal(const Node &other) const noexcept {
     }
 
     while (!stk.empty()) {
-        const auto &[lhs, rhs] = stk.top();
+        const auto &lhs = std::get<0>(stk.top());
+        const auto &rhs = std::get<1>(stk.top());
         stk.pop();
 
         // 检查
@@ -1099,7 +1104,7 @@ inline NodeImpl &NodeImpl::Calc() {
 
 // 前序遍历。非递归实现。
 inline void NodeImpl::CheckParent() const noexcept {
-    std::stack<std::tuple<const NodeImpl &>> stk;
+    std::stack<std::reference_wrapper<const NodeImpl>> stk;
 
     auto EmplaceNode = [&stk](const Node &node) {
         if (node) {
@@ -1115,7 +1120,7 @@ inline void NodeImpl::CheckParent() const noexcept {
     TryEmplaceChildren(*this);
 
     while (!stk.empty()) {
-        const auto &[f] = stk.top();
+        const auto &f = stk.top().get();
         stk.pop();
 
 #ifndef NDEBUG
@@ -1240,7 +1245,7 @@ inline void NodeImpl::ToStringRecursively(std::stringstream &output) const noexc
 
 // 中序遍历。非递归实现。
 inline void NodeImpl::ToStringNonRecursively(std::stringstream &output) const noexcept {
-    std::stack<std::tuple<const NodeImpl &>> stk;
+    std::stack<std::reference_wrapper<const NodeImpl>> stk;
 
     NodeImpl rightParenthesis(NodeType::OPERATOR, MathOperator::MATH_RIGHT_PARENTHESIS, 0, "");
 
@@ -1311,7 +1316,7 @@ inline void NodeImpl::ToStringNonRecursively(std::stringstream &output) const no
     AddLeftLine(this);
 
     while (!stk.empty()) {
-        const auto &[cur] = stk.top();
+        const auto &cur = stk.top().get();
         stk.pop();
 
         // output
@@ -1357,8 +1362,8 @@ inline double NodeImpl::VpaRecursively() const {
 // 后序遍历。非递归实现。
 inline double NodeImpl::VpaNonRecursively() const {
 
-    std::stack<std::tuple<const NodeImpl &>> stk;
-    std::forward_list<std::tuple<const NodeImpl &>> revertedPostOrder;
+    std::stack<std::reference_wrapper<const NodeImpl>> stk;
+    std::forward_list<std::reference_wrapper<const NodeImpl>> revertedPostOrder;
 
     // ==== Part I ====
 
@@ -1366,7 +1371,7 @@ inline double NodeImpl::VpaNonRecursively() const {
     stk.emplace(*this);
 
     while (!stk.empty()) {
-        const auto &[node] = stk.top();
+        const auto &node = stk.top().get();
         stk.pop();
 
         if (node.left) {
@@ -1385,7 +1390,8 @@ inline double NodeImpl::VpaNonRecursively() const {
     // calcStk是用来计算值的临时栈，计算完成后calcStk的size应该为1
     std::stack<double> calcStk;
     // for (auto it = revertedPostOrder.rbegin(); it != revertedPostOrder.rend(); ++it) {
-    for (const auto &[node] : revertedPostOrder) {
+    for (const auto &nodeWrapper : revertedPostOrder) {
+        const auto &node = nodeWrapper.get();
         switch (node.type) {
         case NodeType::NUMBER:
             calcStk.emplace(node.value);
@@ -1493,7 +1499,9 @@ inline Node CloneNonRecursively(const Node &node) noexcept {
     EmplaceChildren(*node, ret);
 
     while (!stk.empty()) {
-        const auto &[src, parent, tgt] = stk.top();
+        const auto &src = std::get<0>(stk.top());
+        auto &parent = std::get<1>(stk.top());
+        auto &tgt = std::get<2>(stk.top());
         stk.pop();
 
         tgt = MakeNode(src, &parent);
@@ -1539,7 +1547,7 @@ inline Node Operator(MathOperator op, Node left, Node right) noexcept {
 inline std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
     std::set<std::string> ret;
 
-    std::stack<std::tuple<const NodeImpl &>> stk;
+    std::stack<std::reference_wrapper<const NodeImpl>> stk;
 
     auto EmplaceNode = [&stk](const Node &node) {
         if (node) {
@@ -1558,7 +1566,7 @@ inline std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
     EmplaceChild(*this);
 
     while (!stk.empty()) {
-        const auto &[node] = stk.top();
+        const auto &node = stk.top().get();
         stk.pop();
         EmplaceChild(node);
     }
@@ -2315,7 +2323,10 @@ inline void GetCofactor(const Mat &A, Mat &cofactor, int p, int q,
         std::tuple{makeValarray(n - 1 - p, n - 1 - q), newIndex(p, q), index(p + 1, q + 1)},
     };
 
-    for (const auto &[size, newStart, start] : config) {
+    for (const auto &conf : config) {
+        const auto &size = std::get<0>(conf);
+        const auto &newStart = std::get<1>(conf);
+        const auto &start = std::get<2>(conf);
         if (newStart < cofactor.data.size()) {
             cofactor.data[std::gslice(newStart, size, newStride)] = A.data[std::gslice(start, size, stride)];
         }
@@ -2815,7 +2826,7 @@ public:
     // 前序遍历。非递归实现。
     static Node SubsInner(Node node, const std::map<std::string, Node> &dict) noexcept {
 
-        std::stack<std::tuple<NodeImpl &>> stk;
+        std::stack<std::reference_wrapper<NodeImpl>> stk;
 
         auto Replace = [&dict](Node &cur) {
             if (cur->type != NodeType::VARIABLE) {
@@ -2845,7 +2856,7 @@ public:
             TryReplace(node->left);
 
             while (!stk.empty()) {
-                auto &[f] = stk.top();
+                auto &f = stk.top().get();
                 stk.pop();
                 TryReplace(f.right);
                 TryReplace(f.left);
@@ -2898,8 +2909,8 @@ inline Node Subs(const Node &node, const std::map<std::string, double> &varValue
 
 inline Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
     std::map<std::string, Node> dict;
-    for (auto &[var, val] : varValues) {
-        dict.try_emplace(var, Num(val));
+    for (auto &item : varValues) {
+        dict.try_emplace(item.first, Num(item.second));
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
@@ -2910,8 +2921,8 @@ inline Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
 
 inline Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
     std::map<std::string, Node> dict;
-    for (auto &[var, val] : varsTable) {
-        dict.try_emplace(var, Num(val));
+    for (auto &item : varsTable) {
+        dict.try_emplace(item.first, Num(item.second));
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
@@ -3907,7 +3918,8 @@ public:
         }
 
         while (!q.empty()) {
-            auto &[node, isLeftChild] = q.front();
+            auto &node = q.front().node;
+            auto isLeftChild = q.front().isLeftChild;
             q.pop();
 
             switch (node.type) {

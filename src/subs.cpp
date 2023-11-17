@@ -1,6 +1,7 @@
 #include "subs.h"
 #include "node.h"
 
+#include <functional>
 #include <map>
 #include <tuple>
 
@@ -13,7 +14,7 @@ public:
     // 前序遍历。非递归实现。
     static Node SubsInner(Node node, const std::map<std::string, Node> &dict) noexcept {
 
-        std::stack<std::tuple<NodeImpl &>> stk;
+        std::stack<std::reference_wrapper<NodeImpl>> stk;
 
         auto Replace = [&dict](Node &cur) {
             if (cur->type != NodeType::VARIABLE) {
@@ -43,7 +44,7 @@ public:
             TryReplace(node->left);
 
             while (!stk.empty()) {
-                auto &[f] = stk.top();
+                auto &f = stk.top().get();
                 stk.pop();
                 TryReplace(f.right);
                 TryReplace(f.left);
@@ -96,8 +97,8 @@ Node Subs(const Node &node, const std::map<std::string, double> &varValues) noex
 
 Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
     std::map<std::string, Node> dict;
-    for (auto &[var, val] : varValues) {
-        dict.try_emplace(var, Num(val));
+    for (auto &item : varValues) {
+        dict.try_emplace(item.first, Num(item.second));
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
@@ -108,8 +109,8 @@ Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
 
 Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
     std::map<std::string, Node> dict;
-    for (auto &[var, val] : varsTable) {
-        dict.try_emplace(var, Num(val));
+    for (auto &item : varsTable) {
+        dict.try_emplace(item.first, Num(item.second));
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }

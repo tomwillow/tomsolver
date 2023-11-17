@@ -359,7 +359,10 @@ void GetCofactor(const Mat &A, Mat &cofactor, int p, int q,
         std::tuple{makeValarray(n - 1 - p, n - 1 - q), newIndex(p, q), index(p + 1, q + 1)},
     };
 
-    for (const auto &[size, newStart, start] : config) {
+    for (const auto &conf : config) {
+        const auto &size = std::get<0>(conf);
+        const auto &newStart = std::get<1>(conf);
+        const auto &start = std::get<2>(conf);
         if (newStart < cofactor.data.size()) {
             cofactor.data[std::gslice(newStart, size, newStride)] = A.data[std::gslice(start, size, stride)];
         }

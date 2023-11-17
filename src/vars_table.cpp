@@ -23,9 +23,9 @@ VarsTable::VarsTable(std::initializer_list<std::pair<std::string, double>> initL
 VarsTable::VarsTable(const std::map<std::string, double> &table) noexcept
     : vars(table.size()), values(static_cast<int>(table.size())), table(table) {
     int i = 0;
-    for (auto &[var, val] : table) {
-        vars[i] = var;
-        values[i] = val;
+    for (auto &item : table) {
+        vars[i] = item.first;
+        values[i] = item.second;
         ++i;
     }
 }
@@ -73,8 +73,10 @@ std::map<std::string, double>::const_iterator VarsTable::cend() const noexcept {
 bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
     return values.Rows() == rhs.values.Rows() &&
            std::equal(table.begin(), table.end(), rhs.table.begin(), [](const auto &lhs, const auto &rhs) {
-               auto &[lVar, lVal] = lhs;
-               auto &[rVar, rVal] = rhs;
+               auto &lVar = lhs.first;
+               auto &lVal = lhs.second;
+               auto &rVar = rhs.first;
+               auto &rVal = rhs.second;
                return lVar == rVar && std::abs(lVal - rVal) <= Config::get().epsilon;
            });
 }
@@ -88,8 +90,8 @@ double VarsTable::operator[](const std::string &varname) const {
 }
 
 std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
-    for (auto &[var, val] : table) {
-        out << var << " = " << tomsolver::ToString(val) << std::endl;
+    for (auto &item : table) {
+        out << item.first << " = " << tomsolver::ToString(item.second) << std::endl;
     }
     return out;
 }

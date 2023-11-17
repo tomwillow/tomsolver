@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <forward_list>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -118,7 +119,8 @@ bool NodeImpl::Equal(const Node &other) const noexcept {
     }
 
     while (!stk.empty()) {
-        const auto &[lhs, rhs] = stk.top();
+        const auto &lhs = std::get<0>(stk.top());
+        const auto &rhs = std::get<1>(stk.top());
         stk.pop();
 
         // 检查
@@ -150,7 +152,7 @@ NodeImpl &NodeImpl::Calc() {
 
 // 前序遍历。非递归实现。
 void NodeImpl::CheckParent() const noexcept {
-    std::stack<std::tuple<const NodeImpl &>> stk;
+    std::stack<std::reference_wrapper<const NodeImpl>> stk;
 
     auto EmplaceNode = [&stk](const Node &node) {
         if (node) {
@@ -166,7 +168,7 @@ void NodeImpl::CheckParent() const noexcept {
     TryEmplaceChildren(*this);
 
     while (!stk.empty()) {
-        const auto &[f] = stk.top();
+        const auto &f = stk.top().get();
         stk.pop();
 
 #ifndef NDEBUG
@@ -291,7 +293,7 @@ void NodeImpl::ToStringRecursively(std::stringstream &output) const noexcept {
 
 // 中序遍历。非递归实现。
 void NodeImpl::ToStringNonRecursively(std::stringstream &output) const noexcept {
-    std::stack<std::tuple<const NodeImpl &>> stk;
+    std::stack<std::reference_wrapper<const NodeImpl>> stk;
 
     NodeImpl rightParenthesis(NodeType::OPERATOR, MathOperator::MATH_RIGHT_PARENTHESIS, 0, "");
 
@@ -362,7 +364,7 @@ void NodeImpl::ToStringNonRecursively(std::stringstream &output) const noexcept 
     AddLeftLine(this);
 
     while (!stk.empty()) {
-        const auto &[cur] = stk.top();
+        const auto &cur = stk.top().get();
         stk.pop();
 
         // output
@@ -408,8 +410,8 @@ double NodeImpl::VpaRecursively() const {
 // 后序遍历。非递归实现。
 double NodeImpl::VpaNonRecursively() const {
 
-    std::stack<std::tuple<const NodeImpl &>> stk;
-    std::forward_list<std::tuple<const NodeImpl &>> revertedPostOrder;
+    std::stack<std::reference_wrapper<const NodeImpl>> stk;
+    std::forward_list<std::reference_wrapper<const NodeImpl>> revertedPostOrder;
 
     // ==== Part I ====
 
@@ -417,7 +419,7 @@ double NodeImpl::VpaNonRecursively() const {
     stk.emplace(*this);
 
     while (!stk.empty()) {
-        const auto &[node] = stk.top();
+        const auto &node = stk.top().get();
         stk.pop();
 
         if (node.left) {
@@ -436,7 +438,8 @@ double NodeImpl::VpaNonRecursively() const {
     // calcStk是用来计算值的临时栈，计算完成后calcStk的size应该为1
     std::stack<double> calcStk;
     // for (auto it = revertedPostOrder.rbegin(); it != revertedPostOrder.rend(); ++it) {
-    for (const auto &[node] : revertedPostOrder) {
+    for (const auto &nodeWrapper : revertedPostOrder) {
+        const auto &node = nodeWrapper.get();
         switch (node.type) {
         case NodeType::NUMBER:
             calcStk.emplace(node.value);
@@ -544,7 +547,9 @@ Node CloneNonRecursively(const Node &node) noexcept {
     EmplaceChildren(*node, ret);
 
     while (!stk.empty()) {
-        const auto &[src, parent, tgt] = stk.top();
+        const auto &src = std::get<0>(stk.top());
+        auto &parent = std::get<1>(stk.top());
+        auto &tgt = std::get<2>(stk.top());
         stk.pop();
 
         tgt = MakeNode(src, &parent);
@@ -590,7 +595,7 @@ Node Operator(MathOperator op, Node left, Node right) noexcept {
 std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
     std::set<std::string> ret;
 
-    std::stack<std::tuple<const NodeImpl &>> stk;
+    std::stack<std::reference_wrapper<const NodeImpl>> stk;
 
     auto EmplaceNode = [&stk](const Node &node) {
         if (node) {
@@ -609,7 +614,7 @@ std::set<std::string> NodeImpl::GetAllVarNames() const noexcept {
     EmplaceChild(*this);
 
     while (!stk.empty()) {
-        const auto &[node] = stk.top();
+        const auto &node = stk.top().get();
         stk.pop();
         EmplaceChild(node);
     }
@@ -638,7 +643,7 @@ Node Op(MathOperator op) {
     return std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
 }
 
-bool VarNameIsLegal(const std::string& varname) noexcept {
+bool VarNameIsLegal(const std::string &varname) noexcept {
     return std::regex_match(varname.begin(), varname.end(), std::regex{R"((?=\w)\D\w*)"});
 }
 
