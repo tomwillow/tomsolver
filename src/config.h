@@ -41,11 +41,7 @@ struct Config {
 
     void Reset() noexcept;
 
-    template <auto = 0>
-    static Config &get() {
-        static Config config;
-        return config;
-    }
+    static Config &Get();
 
 private:
     Config() = default;

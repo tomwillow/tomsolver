@@ -307,7 +307,7 @@ namespace tomsolver {
  * 求解线性方程组Ax = b。传入矩阵A，向量b，返回向量x。
  * @exception MathError 奇异矩阵
  * @exception MathError 矛盾方程组
- * @exception MathError 不定方程（设置Config::get().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
+ * @exception MathError 不定方程（设置Config::Get().allowIndeterminateEquation=true可以允许不定方程组返回一组特解）
  *
  */
 inline Vec SolveLinear(Mat A, Vec b);
@@ -466,11 +466,7 @@ struct Config {
 
     void Reset() noexcept;
 
-    template <auto = 0>
-    static Config &get() {
-        static Config config;
-        return config;
-    }
+    static Config &Get();
 
 private:
     Config() = default;
@@ -513,6 +509,11 @@ inline std::string ToString(double value) noexcept {
 
 inline void Config::Reset() noexcept {
     *this = {};
+}
+
+inline Config &Config::Get() {
+    static Config config;
+    return config;
 }
 
 } // namespace tomsolver
@@ -669,7 +670,7 @@ inline bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
                auto &lVal = lhs.second;
                auto &rVar = rhs.first;
                auto &rVal = rhs.second;
-               return lVar == rVar && std::abs(lVal - rVal) <= Config::get().epsilon;
+               return lVar == rVar && std::abs(lVal - rVal) <= Config::Get().epsilon;
            });
 }
 
@@ -1945,7 +1946,7 @@ inline double Calc(MathOperator op, double v1, double v2) {
         break;
     }
 
-    if (Config::get().throwOnInvalidValue == false) {
+    if (Config::Get().throwOnInvalidValue == false) {
         return ret;
     }
 
@@ -2025,7 +2026,7 @@ inline double &Mat::Value(int i, int j) {
 
 inline bool Mat::operator==(double m) const noexcept {
     return std::all_of(std::begin(data), std::end(data), [m](auto val) {
-        return std::abs(val - m) < Config::get().epsilon;
+        return std::abs(val - m) < Config::Get().epsilon;
     });
 }
 
@@ -2033,7 +2034,7 @@ inline bool Mat::operator==(const Mat &b) const noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
     return std::all_of(std::begin(data), std::end(data), [iter = std::begin(b.data)](auto val) mutable {
-        return std::abs(val - *iter++) < Config::get().epsilon;
+        return std::abs(val - *iter++) < Config::Get().epsilon;
     });
 }
 
@@ -2212,7 +2213,7 @@ inline Mat Mat::Inverse() const {
     int n = rows;
     double det = Det(*this, n); // Determinant, 역행렬을 시킬 행렬의 행렬식을 구함
 
-    if (std::abs(det) <= Config::get().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
+    if (std::abs(det) <= Config::Get().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
     {
         throw MathError(ErrorType::ERROR_SINGULAR_MATRIX);
     }
@@ -2238,7 +2239,7 @@ inline Mat EachDivide(const Mat &a, const Mat &b) noexcept {
 
 inline bool IsZero(const Mat &mat) noexcept {
     return std::all_of(std::begin(mat.data), std::end(mat.data), [](auto val) {
-        return std::abs(val) <= Config::get().epsilon;
+        return std::abs(val) <= Config::Get().epsilon;
     });
 }
 
@@ -2479,7 +2480,7 @@ inline Vec SolveLinear(Mat A, Vec b) {
         A.SwapRow(y, maxAbsRowIndex);
         b.SwapRow(y, maxAbsRowIndex);
 
-        while (std::abs(A.Value(y, x)) < Config::get().epsilon) // 如果当前值为0  x一直递增到非0
+        while (std::abs(A.Value(y, x)) < Config::Get().epsilon) // 如果当前值为0  x一直递增到非0
         {
             x++;
             if (x == cols) {
@@ -2499,7 +2500,7 @@ inline Vec SolveLinear(Mat A, Vec b) {
         if (x == cols) // 本行全为0
         {
             RankA = y;
-            if (std::abs(b[y]) < Config::get().epsilon) {
+            if (std::abs(b[y]) < Config::Get().epsilon) {
                 RankAb = y;
             }
 
@@ -2522,7 +2523,7 @@ inline Vec SolveLinear(Mat A, Vec b) {
         // 每行化为0
         for (auto row = y + 1; row < rows; row++) // 下1行->最后1行
         {
-            if (auto ratioRow = A.Value(row, x); std::abs(ratioRow) >= Config::get().epsilon) {
+            if (auto ratioRow = A.Value(row, x); std::abs(ratioRow) >= Config::Get().epsilon) {
                 A.Row(row, x) -= rowY * ratioRow;
                 b[row] -= b[y] * ratioRow;
             }
@@ -2555,7 +2556,7 @@ inline Vec SolveLinear(Mat A, Vec b) {
 
     if (RankA < cols && RankA == RankAb) {
         if (bIndeterminateEquation) {
-            if (!Config::get().allowIndeterminateEquation) {
+            if (!Config::Get().allowIndeterminateEquation) {
                 throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION,
                                 "A = " + A.ToString() + "\nb = " + b.ToString());
             }
@@ -3644,7 +3645,7 @@ inline VarsTable Solve(const VarsTable &varsTable, const SymVec &equations);
 
 /**
  * 解非线性方程组equations。
- * 变量名通过分析equations得到。初值通过Config::get()得到。
+ * 变量名通过分析equations得到。初值通过Config::Get()得到。
  * @exception runtime_error 迭代次数超出限制
  */
 inline VarsTable Solve(const SymVec &equations);
@@ -3716,13 +3717,13 @@ inline VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &
 
     SymMat jaEqs = Jacobian(equations, table.Vars());
 
-    if (Config::get().logLevel >= LogLevel::TRACE) {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
         cout << "Jacobian = " << jaEqs.ToString() << endl;
     }
 
     while (1) {
         Vec phi = equations.Clone().Subs(table).Calc().ToMat().ToVec();
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "iteration = " << it << endl;
             cout << "phi = " << phi << endl;
         }
@@ -3731,7 +3732,7 @@ inline VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &
             break;
         }
 
-        if (it > Config::get().maxIterations) {
+        if (it > Config::Get().maxIterations) {
             throw runtime_error("迭代次数超出限制");
         }
 
@@ -3741,7 +3742,7 @@ inline VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &
 
         q += deltaq;
 
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "ja = " << ja << endl;
             cout << "deltaq = " << deltaq << endl;
             cout << "q = " << q << endl;
@@ -3762,12 +3763,12 @@ inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) 
 
     SymMat JaEqs = Jacobian(equations, table.Vars());
 
-    if (Config::get().logLevel >= LogLevel::TRACE) {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
         cout << "Jacobi = " << JaEqs << endl;
     }
 
     while (1) {
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "iteration = " << it << endl;
         }
 
@@ -3775,7 +3776,7 @@ inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) 
 
         Vec F = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算F
 
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "F = " << F << endl;
         }
 
@@ -3789,7 +3790,7 @@ inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) 
 
             Mat J = JaEqs.Clone().Subs(table).Calc().ToMat(); // 计算雅可比矩阵
 
-            if (Config::get().logLevel >= LogLevel::TRACE) {
+            if (Config::Get().logLevel >= LogLevel::TRACE) {
                 cout << "J = " << J << endl;
             }
 
@@ -3801,7 +3802,7 @@ inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) 
             Vec d = SolveLinear(J.Transpose() * J + mu * Mat(J.Rows(), J.Cols()).Ones(),
                                 -(J.Transpose() * F).ToVec()); // 得到d
 
-            if (Config::get().logLevel >= LogLevel::TRACE) {
+            if (Config::Get().logLevel >= LogLevel::TRACE) {
                 cout << "d = " << d << endl;
             }
 
@@ -3831,7 +3832,7 @@ inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) 
 
             FNew = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算新的F
 
-            if (Config::get().logLevel >= LogLevel::TRACE) {
+            if (Config::Get().logLevel >= LogLevel::TRACE) {
                 cout << "it=" << it << endl;
                 cout << "\talpha=" << alpha << endl;
                 cout << "mu=" << mu << endl;
@@ -3848,7 +3849,7 @@ inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) 
                 mu *= 10.0; // 扩大λ，使模型倾向梯度下降方向
             }
 
-            if (it++ == Config::get().maxIterations) {
+            if (it++ == Config::Get().maxIterations) {
                 throw runtime_error("迭代次数超出限制");
             }
         }
@@ -3859,16 +3860,16 @@ inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) 
 
         F = FNew; // 更新F
 
-        if (it++ == Config::get().maxIterations) {
+        if (it++ == Config::Get().maxIterations) {
             throw runtime_error("迭代次数超出限制");
         }
 
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << std::string(20, '=') << endl;
         }
     }
 
-    if (Config::get().logLevel >= LogLevel::TRACE) {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
         cout << "success" << endl;
     }
 
@@ -3876,20 +3877,20 @@ inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) 
 }
 
 inline VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
-    switch (Config::get().nonlinearMethod) {
+    switch (Config::Get().nonlinearMethod) {
     case NonlinearMethod::NEWTON_RAPHSON:
         return SolveByNewtonRaphson(varsTable, equations);
     case NonlinearMethod::LM:
         return SolveByLM(varsTable, equations);
     }
     throw runtime_error("invalid config.NonlinearMethod value: " +
-                        std::to_string(static_cast<int>(Config::get().nonlinearMethod)));
+                        std::to_string(static_cast<int>(Config::Get().nonlinearMethod)));
 }
 
 inline VarsTable Solve(const SymVec &equations) {
     auto varNames = equations.GetAllVarNames();
     std::vector<std::string> vecVarNames(varNames.begin(), varNames.end());
-    VarsTable varsTable(std::move(vecVarNames), Config::get().initialValue);
+    VarsTable varsTable(std::move(vecVarNames), Config::Get().initialValue);
     return Solve(varsTable, equations);
 }
 

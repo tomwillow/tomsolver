@@ -119,11 +119,11 @@ TEST(SolveBase, IndeterminateEquation) {
     }
 
     // 设置为允许不定方程
-    Config::get().allowIndeterminateEquation = true;
+    Config::Get().allowIndeterminateEquation = true;
 
     // 结束时恢复设置
     std::shared_ptr<void> defer(nullptr, [](auto) {
-        Config::get().Reset();
+        Config::Get().Reset();
     });
 
     VarsTable got = Solve(f);

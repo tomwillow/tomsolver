@@ -69,7 +69,7 @@ int main() {
     };
 
     // 设置初值为0.0
-    Config::get().initialValue = 0.0;
+    Config::Get().initialValue = 0.0;
 
     // 求解，结果保存到ans
     VarsTable ans = Solve(f);

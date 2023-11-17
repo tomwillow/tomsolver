@@ -40,4 +40,9 @@ void Config::Reset() noexcept {
     *this = {};
 }
 
+Config &Config::Get() {
+    static Config config;
+    return config;
+}
+
 } // namespace tomsolver
