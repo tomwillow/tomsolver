@@ -61,7 +61,7 @@ double &Mat::Value(int i, int j) {
 
 bool Mat::operator==(double m) const noexcept {
     return std::all_of(std::begin(data), std::end(data), [m](auto val) {
-        return std::abs(val - m) < Config::get().epsilon;
+        return std::abs(val - m) < Config::Get().epsilon;
     });
 }
 
@@ -69,7 +69,7 @@ bool Mat::operator==(const Mat &b) const noexcept {
     assert(rows == b.rows);
     assert(cols == b.cols);
     return std::all_of(std::begin(data), std::end(data), [iter = std::begin(b.data)](auto val) mutable {
-        return std::abs(val - *iter++) < Config::get().epsilon;
+        return std::abs(val - *iter++) < Config::Get().epsilon;
     });
 }
 
@@ -248,7 +248,7 @@ Mat Mat::Inverse() const {
     int n = rows;
     double det = Det(*this, n); // Determinant, 역행렬을 시킬 행렬의 행렬식을 구함
 
-    if (std::abs(det) <= Config::get().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
+    if (std::abs(det) <= Config::Get().epsilon) // 0일때는 예외처리 (역행렬을 구할 수 없기 때문.)
     {
         throw MathError(ErrorType::ERROR_SINGULAR_MATRIX);
     }
@@ -274,7 +274,7 @@ Mat EachDivide(const Mat &a, const Mat &b) noexcept {
 
 bool IsZero(const Mat &mat) noexcept {
     return std::all_of(std::begin(mat.data), std::end(mat.data), [](auto val) {
-        return std::abs(val) <= Config::get().epsilon;
+        return std::abs(val) <= Config::Get().epsilon;
     });
 }
 

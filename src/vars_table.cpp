@@ -77,7 +77,7 @@ bool VarsTable::operator==(const VarsTable &rhs) const noexcept {
                auto &lVal = lhs.second;
                auto &rVar = rhs.first;
                auto &rVal = rhs.second;
-               return lVar == rVar && std::abs(lVal - rVal) <= Config::get().epsilon;
+               return lVar == rVar && std::abs(lVal - rVal) <= Config::Get().epsilon;
            });
 }
 

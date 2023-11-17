@@ -71,13 +71,13 @@ VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equatio
 
     SymMat jaEqs = Jacobian(equations, table.Vars());
 
-    if (Config::get().logLevel >= LogLevel::TRACE) {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
         cout << "Jacobian = " << jaEqs.ToString() << endl;
     }
 
     while (1) {
         Vec phi = equations.Clone().Subs(table).Calc().ToMat().ToVec();
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "iteration = " << it << endl;
             cout << "phi = " << phi << endl;
         }
@@ -86,7 +86,7 @@ VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equatio
             break;
         }
 
-        if (it > Config::get().maxIterations) {
+        if (it > Config::Get().maxIterations) {
             throw runtime_error("迭代次数超出限制");
         }
 
@@ -96,7 +96,7 @@ VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equatio
 
         q += deltaq;
 
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "ja = " << ja << endl;
             cout << "deltaq = " << deltaq << endl;
             cout << "q = " << q << endl;
@@ -117,12 +117,12 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
     SymMat JaEqs = Jacobian(equations, table.Vars());
 
-    if (Config::get().logLevel >= LogLevel::TRACE) {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
         cout << "Jacobi = " << JaEqs << endl;
     }
 
     while (1) {
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "iteration = " << it << endl;
         }
 
@@ -130,7 +130,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
         Vec F = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算F
 
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "F = " << F << endl;
         }
 
@@ -144,7 +144,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
             Mat J = JaEqs.Clone().Subs(table).Calc().ToMat(); // 计算雅可比矩阵
 
-            if (Config::get().logLevel >= LogLevel::TRACE) {
+            if (Config::Get().logLevel >= LogLevel::TRACE) {
                 cout << "J = " << J << endl;
             }
 
@@ -156,7 +156,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
             Vec d = SolveLinear(J.Transpose() * J + mu * Mat(J.Rows(), J.Cols()).Ones(),
                                 -(J.Transpose() * F).ToVec()); // 得到d
 
-            if (Config::get().logLevel >= LogLevel::TRACE) {
+            if (Config::Get().logLevel >= LogLevel::TRACE) {
                 cout << "d = " << d << endl;
             }
 
@@ -186,7 +186,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
             FNew = equations.Clone().Subs(table).Calc().ToMat().ToVec(); // 计算新的F
 
-            if (Config::get().logLevel >= LogLevel::TRACE) {
+            if (Config::Get().logLevel >= LogLevel::TRACE) {
                 cout << "it=" << it << endl;
                 cout << "\talpha=" << alpha << endl;
                 cout << "mu=" << mu << endl;
@@ -203,7 +203,7 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
                 mu *= 10.0; // 扩大λ，使模型倾向梯度下降方向
             }
 
-            if (it++ == Config::get().maxIterations) {
+            if (it++ == Config::Get().maxIterations) {
                 throw runtime_error("迭代次数超出限制");
             }
         }
@@ -214,16 +214,16 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 
         F = FNew; // 更新F
 
-        if (it++ == Config::get().maxIterations) {
+        if (it++ == Config::Get().maxIterations) {
             throw runtime_error("迭代次数超出限制");
         }
 
-        if (Config::get().logLevel >= LogLevel::TRACE) {
+        if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << std::string(20, '=') << endl;
         }
     }
 
-    if (Config::get().logLevel >= LogLevel::TRACE) {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
         cout << "success" << endl;
     }
 
@@ -231,20 +231,20 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
 }
 
 VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
-    switch (Config::get().nonlinearMethod) {
+    switch (Config::Get().nonlinearMethod) {
     case NonlinearMethod::NEWTON_RAPHSON:
         return SolveByNewtonRaphson(varsTable, equations);
     case NonlinearMethod::LM:
         return SolveByLM(varsTable, equations);
     }
     throw runtime_error("invalid config.NonlinearMethod value: " +
-                        std::to_string(static_cast<int>(Config::get().nonlinearMethod)));
+                        std::to_string(static_cast<int>(Config::Get().nonlinearMethod)));
 }
 
 VarsTable Solve(const SymVec &equations) {
     auto varNames = equations.GetAllVarNames();
     std::vector<std::string> vecVarNames(varNames.begin(), varNames.end());
-    VarsTable varsTable(std::move(vecVarNames), Config::get().initialValue);
+    VarsTable varsTable(std::move(vecVarNames), Config::Get().initialValue);
     return Solve(varsTable, equations);
 }
 

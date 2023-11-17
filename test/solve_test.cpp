@@ -44,11 +44,11 @@ TEST(Solve, Base) {
 
     // Newton-Raphson方法
     {
-        Config::get().nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
+        Config::Get().nonlinearMethod = NonlinearMethod::NEWTON_RAPHSON;
 
         // 结束时恢复设置
         std::shared_ptr<void> defer(nullptr, [&](...) {
-            Config::get().Reset();
+            Config::Get().Reset();
         });
 
         VarsTable got = Solve(equations);
@@ -59,11 +59,11 @@ TEST(Solve, Base) {
 
     // LM方法
     {
-        Config::get().nonlinearMethod = NonlinearMethod::LM;
+        Config::Get().nonlinearMethod = NonlinearMethod::LM;
 
         // 结束时恢复设置
         std::shared_ptr<void> defer(nullptr, [&](...) {
-            Config::get().Reset();
+            Config::Get().Reset();
         });
 
         VarsTable got = Solve(equations);
@@ -104,14 +104,14 @@ TEST(Solve, Case1) {
      */
 
     // 设置初值为0.0
-    Config::get().initialValue = 0.0;
+    Config::Get().initialValue = 0.0;
 
     // 设置容差为1.0e-6，因为Matlab的默认容差是1.0e-6
-    Config::get().epsilon = 1.0e-6;
+    Config::Get().epsilon = 1.0e-6;
 
     // 结束时恢复设置
     std::shared_ptr<void> defer(nullptr, [&](...) {
-        Config::get().Reset();
+        Config::Get().Reset();
     });
 
     // 构造方程组
@@ -148,11 +148,11 @@ TEST(Solve, Case2) {
         fsolve(fun,x0)
 
      */
-    Config::get().nonlinearMethod = NonlinearMethod::LM;
+    Config::Get().nonlinearMethod = NonlinearMethod::LM;
 
     // 结束时恢复设置
     std::shared_ptr<void> defer(nullptr, [](auto) {
-        Config::get().Reset();
+        Config::Get().Reset();
     });
 
     // 构造符号矩阵: [a b; c d]

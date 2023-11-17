@@ -95,12 +95,12 @@ TEST(Function, InvalidNumber) {
 
     // 手动关闭无效值检查，不应抛异常
     {
-        Config::get().throwOnInvalidValue = false;
+        Config::Get().throwOnInvalidValue = false;
 
         Test(false);
 
         // 恢复配置
-        Config::get().Reset();
+        Config::Get().Reset();
     }
 }
 

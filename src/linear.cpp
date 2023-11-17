@@ -43,7 +43,7 @@ Vec SolveLinear(Mat A, Vec b) {
         A.SwapRow(y, maxAbsRowIndex);
         b.SwapRow(y, maxAbsRowIndex);
 
-        while (std::abs(A.Value(y, x)) < Config::get().epsilon) // 如果当前值为0  x一直递增到非0
+        while (std::abs(A.Value(y, x)) < Config::Get().epsilon) // 如果当前值为0  x一直递增到非0
         {
             x++;
             if (x == cols) {
@@ -63,7 +63,7 @@ Vec SolveLinear(Mat A, Vec b) {
         if (x == cols) // 本行全为0
         {
             RankA = y;
-            if (std::abs(b[y]) < Config::get().epsilon) {
+            if (std::abs(b[y]) < Config::Get().epsilon) {
                 RankAb = y;
             }
 
@@ -86,7 +86,7 @@ Vec SolveLinear(Mat A, Vec b) {
         // 每行化为0
         for (auto row = y + 1; row < rows; row++) // 下1行->最后1行
         {
-            if (auto ratioRow = A.Value(row, x); std::abs(ratioRow) >= Config::get().epsilon) {
+            if (auto ratioRow = A.Value(row, x); std::abs(ratioRow) >= Config::Get().epsilon) {
                 A.Row(row, x) -= rowY * ratioRow;
                 b[row] -= b[y] * ratioRow;
             }
@@ -119,7 +119,7 @@ Vec SolveLinear(Mat A, Vec b) {
 
     if (RankA < cols && RankA == RankAb) {
         if (bIndeterminateEquation) {
-            if (!Config::get().allowIndeterminateEquation) {
+            if (!Config::Get().allowIndeterminateEquation) {
                 throw MathError(ErrorType::ERROR_INDETERMINATE_EQUATION,
                                 "A = " + A.ToString() + "\nb = " + b.ToString());
             }
