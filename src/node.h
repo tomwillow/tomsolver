@@ -212,7 +212,7 @@ Node Op(MathOperator op);
 /**
  * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
  */
-bool VarNameIsLegal(const std::string& varname) noexcept;
+bool VarNameIsLegal(const std::string &varname) noexcept;
 
 /**
  * 新建一个变量节点。
@@ -220,8 +220,17 @@ bool VarNameIsLegal(const std::string& varname) noexcept;
  */
 Node Var(std::string varname);
 
+template <typename...>
+struct SfinaeNodeImpl : std::false_type {};
+
+template <>
+struct SfinaeNodeImpl<Node> : std::true_type {};
+
+template <>
+struct SfinaeNodeImpl<Node, Node> : std::true_type {};
+
 template <typename... T>
-using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;
+using SfinaeNode = std::enable_if_t<SfinaeNodeImpl<std::decay_t<T>...>::value, Node>;
 
 template <typename T1, typename T2>
 SfinaeNode<T1, T2> operator+(T1 &&n1, T2 &&n2) noexcept {

@@ -8,6 +8,13 @@
 
 namespace tomsolver {
 
+namespace {
+template <typename T>
+const T &asConst(T &a) {
+    return a;
+}
+} // namespace
+
 Vec SolveLinear(Mat A, Vec b) {
     int rows = A.Rows(); // 行数
     int cols = rows;     // 列数=未知数个数
@@ -79,14 +86,15 @@ Vec SolveLinear(Mat A, Vec b) {
         // 主对角线化为1
         auto ratioY = A.Value(y, x);
         // y行第j个->第cols个
-        std::valarray rowY = std::as_const(A).Row(y, x) / ratioY;
+        std::valarray<double> rowY = asConst(A).Row(y, x) / ratioY;
         A.Row(y, x) = rowY;
         b[y] /= ratioY;
 
         // 每行化为0
         for (auto row = y + 1; row < rows; row++) // 下1行->最后1行
         {
-            if (auto ratioRow = A.Value(row, x); std::abs(ratioRow) >= Config::Get().epsilon) {
+            auto ratioRow = A.Value(row, x);
+            if (std::abs(ratioRow) >= Config::Get().epsilon) {
                 A.Row(row, x) -= rowY * ratioRow;
                 b[row] -= b[y] * ratioRow;
             }
@@ -114,7 +122,7 @@ Vec SolveLinear(Mat A, Vec b) {
     // 后置换得到x
     for (int i = rows - 1; i >= 0; i--) // 最后1行->第1行
     {
-        ret[i] = b[i] - (std::as_const(A).Row(i, i + 1) * std::as_const(ret).Col(0, i + 1)).sum();
+        ret[i] = b[i] - (asConst(A).Row(i, i + 1) * asConst(ret).Col(0, i + 1)).sum();
     }
 
     if (RankA < cols && RankA == RankAb) {

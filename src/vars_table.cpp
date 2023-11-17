@@ -10,7 +10,7 @@ namespace tomsolver {
 VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
     : vars(vars), values(static_cast<int>(vars.size()), initValue) {
     for (auto &var : vars) {
-        table.try_emplace(var, initValue);
+        table.insert({var, initValue});
     }
     assert(vars.size() == table.size() && "vars is not unique");
 }

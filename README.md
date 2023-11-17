@@ -2,7 +2,7 @@
 
 ![workflow](https://github.com/tomwillow/tomsolver/actions/workflows/cmake-multi-platform.yml/badge.svg)
 
-C++17 极简非线性方程组求解器
+C++14 极简非线性方程组求解器
 
 "让C++求解非线性方程组像Matlab fsolve一样简单"
 

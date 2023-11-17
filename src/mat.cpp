@@ -140,7 +140,7 @@ Mat &Mat::SwapRow(int i, int j) noexcept {
     assert(j >= 0);
     assert(j < rows);
 
-    std::valarray temp = Row(i);
+    std::valarray<double> temp = Row(i);
     Row(i) = Row(j);
     Row(j) = temp;
 
@@ -156,7 +156,7 @@ Mat &Mat::SwapCol(int i, int j) noexcept {
     assert(j >= 0);
     assert(j < cols);
 
-    std::valarray t = Col(i);
+    std::valarray<double> t = Col(i);
     Col(i) = Col(j);
     Col(j) = t;
 
@@ -286,7 +286,7 @@ bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
 }
 
 int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
-    std::valarray temp = std::abs<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
+    std::valarray<double> temp = std::abs<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
     auto ret = std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
     return static_cast<int>(ret);
 }
@@ -352,11 +352,11 @@ void GetCofactor(const Mat &A, Mat &cofactor, int p, int q,
     auto newStride = makeValarray(n - 1, 1);
     auto stride = makeValarray(A.cols, 1);
 
-    std::array config = {
-        std::tuple{makeValarray(p, q), newIndex(0, 0), index(0, 0)},
-        std::tuple{makeValarray(p, n - 1 - q), newIndex(0, q), index(0, q + 1)},
-        std::tuple{makeValarray(n - 1 - p, q), newIndex(p, 0), index(p + 1, 0)},
-        std::tuple{makeValarray(n - 1 - p, n - 1 - q), newIndex(p, q), index(p + 1, q + 1)},
+    std::tuple<std::valarray<size_t>, size_t, size_t> config[] = {
+        {makeValarray(p, q), newIndex(0, 0), index(0, 0)},
+        {makeValarray(p, n - 1 - q), newIndex(0, q), index(0, q + 1)},
+        {makeValarray(n - 1 - p, q), newIndex(p, 0), index(p + 1, 0)},
+        {makeValarray(n - 1 - p, n - 1 - q), newIndex(p, q), index(p + 1, q + 1)},
     };
 
     for (const auto &conf : config) {

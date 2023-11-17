@@ -8,9 +8,9 @@
 namespace tomsolver {
 
 std::string ToString(double value) noexcept {
-    static const std::array strategies = {
-        std::tuple{"%.16e", std::regex{"\\.?0+(?=e)"}},
-        std::tuple{"%.16f", std::regex{"\\.?0+(?=$)"}},
+    static const std::tuple<const char *, std::regex> strategies[] = {
+        {"%.16e", std::regex{"\\.?0+(?=e)"}},
+        {"%.16f", std::regex{"\\.?0+(?=$)"}},
     };
 
     if (value == 0.0) {
