@@ -479,9 +479,9 @@ inline std::string ToString(double value) noexcept;
 namespace tomsolver {
 
 inline std::string ToString(double value) noexcept {
-    static const std::array strategies = {
-        std::tuple{"%.16e", std::regex{"\\.?0+(?=e)"}},
-        std::tuple{"%.16f", std::regex{"\\.?0+(?=$)"}},
+    static const std::tuple<const char *, std::regex> strategies[] = {
+        {"%.16e", std::regex{"\\.?0+(?=e)"}},
+        {"%.16f", std::regex{"\\.?0+(?=$)"}},
     };
 
     if (value == 0.0) {
@@ -603,7 +603,7 @@ namespace tomsolver {
 inline VarsTable::VarsTable(const std::vector<std::string> &vars, double initValue)
     : vars(vars), values(static_cast<int>(vars.size()), initValue) {
     for (auto &var : vars) {
-        table.try_emplace(var, initValue);
+        table.insert({var, initValue});
     }
     assert(vars.size() == table.size() && "vars is not unique");
 }
@@ -899,8 +899,17 @@ inline bool VarNameIsLegal(const std::string &varname) noexcept;
  */
 inline Node Var(std::string varname);
 
+template <typename...>
+struct SfinaeNodeImpl : std::false_type {};
+
+template <>
+struct SfinaeNodeImpl<Node> : std::true_type {};
+
+template <>
+struct SfinaeNodeImpl<Node, Node> : std::true_type {};
+
 template <typename... T>
-using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;
+using SfinaeNode = std::enable_if_t<SfinaeNodeImpl<std::decay_t<T>...>::value, Node>;
 
 template <typename T1, typename T2>
 inline SfinaeNode<T1, T2> operator+(T1 &&n1, T2 &&n2) noexcept {
@@ -2105,7 +2114,7 @@ inline Mat &Mat::SwapRow(int i, int j) noexcept {
     assert(j >= 0);
     assert(j < rows);
 
-    std::valarray temp = Row(i);
+    std::valarray<double> temp = Row(i);
     Row(i) = Row(j);
     Row(j) = temp;
 
@@ -2121,7 +2130,7 @@ inline Mat &Mat::SwapCol(int i, int j) noexcept {
     assert(j >= 0);
     assert(j < cols);
 
-    std::valarray t = Col(i);
+    std::valarray<double> t = Col(i);
     Col(i) = Col(j);
     Col(j) = t;
 
@@ -2251,7 +2260,7 @@ inline bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
 }
 
 inline int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
-    std::valarray temp = std::abs<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
+    std::valarray<double> temp = std::abs<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
     auto ret = std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
     return static_cast<int>(ret);
 }
@@ -2317,11 +2326,11 @@ inline void GetCofactor(const Mat &A, Mat &cofactor, int p, int q,
     auto newStride = makeValarray(n - 1, 1);
     auto stride = makeValarray(A.cols, 1);
 
-    std::array config = {
-        std::tuple{makeValarray(p, q), newIndex(0, 0), index(0, 0)},
-        std::tuple{makeValarray(p, n - 1 - q), newIndex(0, q), index(0, q + 1)},
-        std::tuple{makeValarray(n - 1 - p, q), newIndex(p, 0), index(p + 1, 0)},
-        std::tuple{makeValarray(n - 1 - p, n - 1 - q), newIndex(p, q), index(p + 1, q + 1)},
+    std::tuple<std::valarray<size_t>, size_t, size_t> config[] = {
+        {makeValarray(p, q), newIndex(0, 0), index(0, 0)},
+        {makeValarray(p, n - 1 - q), newIndex(0, q), index(0, q + 1)},
+        {makeValarray(n - 1 - p, q), newIndex(p, 0), index(p + 1, 0)},
+        {makeValarray(n - 1 - p, n - 1 - q), newIndex(p, q), index(p + 1, q + 1)},
     };
 
     for (const auto &conf : config) {
@@ -2445,6 +2454,13 @@ inline std::ostream &operator<<(std::ostream &out, const Mat &mat) noexcept {
 
 namespace tomsolver {
 
+namespace {
+template <typename T>
+inline const T &asConst(T &a) {
+    return a;
+}
+} // namespace
+
 inline Vec SolveLinear(Mat A, Vec b) {
     int rows = A.Rows(); // 行数
     int cols = rows;     // 列数=未知数个数
@@ -2516,14 +2532,15 @@ inline Vec SolveLinear(Mat A, Vec b) {
         // 主对角线化为1
         auto ratioY = A.Value(y, x);
         // y行第j个->第cols个
-        std::valarray rowY = std::as_const(A).Row(y, x) / ratioY;
+        std::valarray<double> rowY = asConst(A).Row(y, x) / ratioY;
         A.Row(y, x) = rowY;
         b[y] /= ratioY;
 
         // 每行化为0
         for (auto row = y + 1; row < rows; row++) // 下1行->最后1行
         {
-            if (auto ratioRow = A.Value(row, x); std::abs(ratioRow) >= Config::Get().epsilon) {
+            auto ratioRow = A.Value(row, x);
+            if (std::abs(ratioRow) >= Config::Get().epsilon) {
                 A.Row(row, x) -= rowY * ratioRow;
                 b[row] -= b[y] * ratioRow;
             }
@@ -2551,7 +2568,7 @@ inline Vec SolveLinear(Mat A, Vec b) {
     // 后置换得到x
     for (int i = rows - 1; i >= 0; i--) // 最后1行->第1行
     {
-        ret[i] = b[i] - (std::as_const(A).Row(i, i + 1) * std::as_const(ret).Col(0, i + 1)).sum();
+        ret[i] = b[i] - (asConst(A).Row(i, i + 1) * asConst(ret).Col(0, i + 1)).sum();
     }
 
     if (RankA < cols && RankA == RankAb) {
@@ -2879,7 +2896,7 @@ inline Node Subs(const Node &node, const std::string &oldVar, const Node &newNod
 
 inline Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
     std::map<std::string, Node> dict;
-    dict.try_emplace(oldVar, Clone(newNode));
+    dict.insert({oldVar, Clone(newNode)});
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
@@ -2891,7 +2908,7 @@ inline Node Subs(Node &&node, const std::vector<std::string> &oldVars, const Sym
     assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
     std::map<std::string, Node> dict;
     for (size_t i = 0; i < oldVars.size(); ++i) {
-        dict.try_emplace(oldVars[i], Clone(newNodes[i]));
+        dict.insert({oldVars[i], Clone(newNodes[i])});
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
@@ -2911,7 +2928,7 @@ inline Node Subs(const Node &node, const std::map<std::string, double> &varValue
 inline Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
     std::map<std::string, Node> dict;
     for (auto &item : varValues) {
-        dict.try_emplace(item.first, Num(item.second));
+        dict.insert({item.first, Num(item.second)});
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
@@ -2923,7 +2940,7 @@ inline Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
 inline Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
     std::map<std::string, Node> dict;
     for (auto &item : varsTable) {
-        dict.try_emplace(item.first, Num(item.second));
+        dict.insert({item.first, Num(item.second)});
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
@@ -3149,6 +3166,15 @@ private:
     size_t len = 0;
 };
 
+template <typename Stream>
+inline void append(Stream &) {}
+
+template <typename Stream, typename T, typename... Ts>
+inline void append(Stream &s, T &&arg, Ts &&...args) {
+    s << std::forward<T>(arg);
+    append(s, std::forward<Ts>(args)...);
+}
+
 struct Token;
 } // namespace internal
 
@@ -3166,7 +3192,7 @@ public:
         std::stringstream ss;
 
         ss << "[Parse Error] ";
-        (ss << ... << std::forward<T>(errInfo));
+        internal::append(ss, std::forward<T>(errInfo)...);
         ss << " at(" << line << ", " << pos << "):\n"
            << content << "\n"
            << std::string(pos, ' ') << "^---- error position";
@@ -3382,8 +3408,8 @@ inline std::deque<Token> ParseFunctions::ParseToTokens(StringView content) {
     auto tryComfirmToken = [&ret, &iter, &nameIter, &content] {
         if (size_t size = std::distance(nameIter, iter)) {
             auto exp = StringView{&*nameIter, size};
-            auto &token =
-                ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), nameIter)), false, exp, content);
+            ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), nameIter)), false, exp, content);
+            auto &token = ret.back();
 
             auto expStr = exp.toString();
             // 检验是否为浮点数
@@ -3396,7 +3422,8 @@ inline std::deque<Token> ParseFunctions::ParseToTokens(StringView content) {
                 }
             } catch (...) {}
 
-            if (auto op = Str2Function(exp); op != MathOperator::MATH_NULL) {
+            auto op = Str2Function(exp);
+            if (op != MathOperator::MATH_NULL) {
                 token.node = Op(op);
                 return;
             }
@@ -3418,8 +3445,8 @@ inline std::deque<Token> ParseFunctions::ParseToTokens(StringView content) {
             auto unaryOp = ret.empty() || (ret.back().node->type == NodeType::OPERATOR &&
                                            ret.back().node->op != MathOperator::MATH_RIGHT_PARENTHESIS);
             ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), iter)), true, StringView{&*iter, 1},
-                             content)
-                .node = Op(BaseOperatorCharToEnum(*iter, unaryOp));
+                             content);
+            ret.back().node = Op(BaseOperatorCharToEnum(*iter, unaryOp));
             nameIter = ++iter;
         } else if (isspace(*iter)) {
             // 忽略tab (\t) whitespaces (\n, \v, \f, \r) space
@@ -3490,14 +3517,16 @@ inline std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &
             if (!tokenStack.empty()) {
                 auto compare =
                     IsLeft2Right(tokenStack.top().node->op)
-                        ? std::function{[cmp = std::less_equal<>{}, rank = Rank(f.node->op)](
-                                            const Token &token) { // 左结合，则挤出高优先级及同优先级符号
+                        ? std::function<bool(const Token &)>{[cmp = std::less_equal<>{}, rank = Rank(f.node->op)](
+                                                                 const Token
+                                                                     &token) { // 左结合，则挤出高优先级及同优先级符号
                               return cmp(rank, Rank(token.node->op));
                           }}
-                        : std::function{[cmp = std::less<>{}, rank = Rank(f.node->op)](
-                                            const Token &token) { // 右结合，则挤出高优先级，但不挤出同优先级符号
-                              return cmp(rank, Rank(token.node->op));
-                          }};
+                        : std::function<bool(const Token &)>{
+                              [cmp = std::less<>{}, rank = Rank(f.node->op)](
+                                  const Token &token) { // 右结合，则挤出高优先级，但不挤出同优先级符号
+                                  return cmp(rank, Rank(token.node->op));
+                              }};
 
                 while (!tokenStack.empty() && compare(tokenStack.top())) {
                     postOrder.push_back(std::move(tokenStack.top())); // 符号进入post队列
@@ -4405,7 +4434,8 @@ inline SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
 inline std::set<std::string> SymMat::GetAllVarNames() const noexcept {
     std::set<std::string> ret;
     for (auto &node : *data) {
-        ret.merge(node->GetAllVarNames());
+        auto names = node->GetAllVarNames();
+        ret.insert(names.begin(), names.end());
     }
     return ret;
 }

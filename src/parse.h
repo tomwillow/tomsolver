@@ -49,6 +49,15 @@ private:
     size_t len = 0;
 };
 
+template <typename Stream>
+void append(Stream &) {}
+
+template <typename Stream, typename T, typename... Ts>
+void append(Stream &s, T &&arg, Ts &&...args) {
+    s << std::forward<T>(arg);
+    append(s, std::forward<Ts>(args)...);
+}
+
 struct Token;
 } // namespace internal
 
@@ -66,7 +75,7 @@ public:
         std::stringstream ss;
 
         ss << "[Parse Error] ";
-        (ss << ... << std::forward<T>(errInfo));
+        internal::append(ss, std::forward<T>(errInfo)...);
         ss << " at(" << line << ", " << pos << "):\n"
            << content << "\n"
            << std::string(pos, ' ') << "^---- error position";

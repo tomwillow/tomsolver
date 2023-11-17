@@ -151,8 +151,8 @@ std::deque<Token> ParseFunctions::ParseToTokens(StringView content) {
     auto tryComfirmToken = [&ret, &iter, &nameIter, &content] {
         if (size_t size = std::distance(nameIter, iter)) {
             auto exp = StringView{&*nameIter, size};
-            auto &token =
-                ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), nameIter)), false, exp, content);
+            ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), nameIter)), false, exp, content);
+            auto &token = ret.back();
 
             auto expStr = exp.toString();
             // 检验是否为浮点数
@@ -165,7 +165,8 @@ std::deque<Token> ParseFunctions::ParseToTokens(StringView content) {
                 }
             } catch (...) {}
 
-            if (auto op = Str2Function(exp); op != MathOperator::MATH_NULL) {
+            auto op = Str2Function(exp);
+            if (op != MathOperator::MATH_NULL) {
                 token.node = Op(op);
                 return;
             }
@@ -187,8 +188,8 @@ std::deque<Token> ParseFunctions::ParseToTokens(StringView content) {
             auto unaryOp = ret.empty() || (ret.back().node->type == NodeType::OPERATOR &&
                                            ret.back().node->op != MathOperator::MATH_RIGHT_PARENTHESIS);
             ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), iter)), true, StringView{&*iter, 1},
-                             content)
-                .node = Op(BaseOperatorCharToEnum(*iter, unaryOp));
+                             content);
+            ret.back().node = Op(BaseOperatorCharToEnum(*iter, unaryOp));
             nameIter = ++iter;
         } else if (isspace(*iter)) {
             // 忽略tab (\t) whitespaces (\n, \v, \f, \r) space
@@ -259,14 +260,16 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
             if (!tokenStack.empty()) {
                 auto compare =
                     IsLeft2Right(tokenStack.top().node->op)
-                        ? std::function{[cmp = std::less_equal<>{}, rank = Rank(f.node->op)](
-                                            const Token &token) { // 左结合，则挤出高优先级及同优先级符号
+                        ? std::function<bool(const Token &)>{[cmp = std::less_equal<>{}, rank = Rank(f.node->op)](
+                                                                 const Token
+                                                                     &token) { // 左结合，则挤出高优先级及同优先级符号
                               return cmp(rank, Rank(token.node->op));
                           }}
-                        : std::function{[cmp = std::less<>{}, rank = Rank(f.node->op)](
-                                            const Token &token) { // 右结合，则挤出高优先级，但不挤出同优先级符号
-                              return cmp(rank, Rank(token.node->op));
-                          }};
+                        : std::function<bool(const Token &)>{
+                              [cmp = std::less<>{}, rank = Rank(f.node->op)](
+                                  const Token &token) { // 右结合，则挤出高优先级，但不挤出同优先级符号
+                                  return cmp(rank, Rank(token.node->op));
+                              }};
 
                 while (!tokenStack.empty() && compare(tokenStack.top())) {
                     postOrder.push_back(std::move(tokenStack.top())); // 符号进入post队列

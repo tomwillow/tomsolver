@@ -114,7 +114,8 @@ SymMat &SymMat::Subs(const VarsTable &varsTable) noexcept {
 std::set<std::string> SymMat::GetAllVarNames() const noexcept {
     std::set<std::string> ret;
     for (auto &node : *data) {
-        ret.merge(node->GetAllVarNames());
+        auto names = node->GetAllVarNames();
+        ret.insert(names.begin(), names.end());
     }
     return ret;
 }

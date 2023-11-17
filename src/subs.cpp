@@ -66,7 +66,7 @@ Node Subs(const Node &node, const std::string &oldVar, const Node &newNode) noex
 
 Node Subs(Node &&node, const std::string &oldVar, const Node &newNode) noexcept {
     std::map<std::string, Node> dict;
-    dict.try_emplace(oldVar, Clone(newNode));
+    dict.insert({oldVar, Clone(newNode)});
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
 
@@ -78,7 +78,7 @@ Node Subs(Node &&node, const std::vector<std::string> &oldVars, const SymVec &ne
     assert(static_cast<int>(oldVars.size()) == newNodes.Rows());
     std::map<std::string, Node> dict;
     for (size_t i = 0; i < oldVars.size(); ++i) {
-        dict.try_emplace(oldVars[i], Clone(newNodes[i]));
+        dict.insert({oldVars[i], Clone(newNodes[i])});
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
@@ -98,7 +98,7 @@ Node Subs(const Node &node, const std::map<std::string, double> &varValues) noex
 Node Subs(Node &&node, const std::map<std::string, double> &varValues) noexcept {
     std::map<std::string, Node> dict;
     for (auto &item : varValues) {
-        dict.try_emplace(item.first, Num(item.second));
+        dict.insert({item.first, Num(item.second)});
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
@@ -110,7 +110,7 @@ Node Subs(const Node &node, const VarsTable &varsTable) noexcept {
 Node Subs(Node &&node, const VarsTable &varsTable) noexcept {
     std::map<std::string, Node> dict;
     for (auto &item : varsTable) {
-        dict.try_emplace(item.first, Num(item.second));
+        dict.insert({item.first, Num(item.second)});
     }
     return internal::SubsFunctions::SubsInner(Move(node), dict);
 }
