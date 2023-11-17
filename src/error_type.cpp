@@ -61,7 +61,7 @@ std::string GetErrorInfo(ErrorType err) {
     return u8"GetErrorInfo: bug";
 }
 
-MathError::MathError(ErrorType errorType, std::string_view extInfo) : errorType(errorType) {
+MathError::MathError(ErrorType errorType, const std::string& extInfo) : errorType(errorType) {
     std::stringstream ss;
     ss << GetErrorInfo(errorType) << ": \"" << extInfo << "\"";
     errInfo = ss.str();

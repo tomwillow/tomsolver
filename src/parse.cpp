@@ -17,7 +17,7 @@ namespace tomsolver {
 
 namespace {
 
-constexpr auto fnv1a(std::string_view s) {
+constexpr auto fnv1a(internal::StringView s) {
     constexpr uint64_t offsetBasis = 14695981039346656037ul;
     constexpr uint64_t prime = 1099511628211ul;
 
@@ -82,7 +82,7 @@ MathOperator BaseOperatorCharToEnum(char c, bool unary) noexcept {
     return MathOperator::MATH_NULL;
 }
 
-MathOperator Str2Function(std::string_view s) noexcept {
+MathOperator Str2Function(internal::StringView s) noexcept {
     switch (fnv1a(s)) {
     case "sin"_fnv1a:
         return MathOperator::MATH_SIN;
@@ -139,7 +139,7 @@ const char *MultiParseError::what() const noexcept {
 
 namespace internal {
 
-std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
+std::deque<Token> ParseFunctions::ParseToTokens(StringView content) {
 
     if (content.empty()) {
         throw SingleParseError(0, 0, "empty input", content);
@@ -150,14 +150,14 @@ std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
 
     auto tryComfirmToken = [&ret, &iter, &nameIter, &content] {
         if (size_t size = std::distance(nameIter, iter)) {
-            auto exp = std::string_view{&*nameIter, size};
+            auto exp = StringView{&*nameIter, size};
             auto &token =
                 ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), nameIter)), false, exp, content);
 
+            auto expStr = exp.toString();
             // 检验是否为浮点数
             try {
                 std::size_t sz;
-                auto expStr = std::string{exp};
                 auto d = std::stod(expStr, &sz);
                 if (sz == expStr.size()) {
                     token.node = Num(d);
@@ -172,12 +172,12 @@ std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
 
             // 变量
             // 非运算符、数字、函数
-            if (!VarNameIsLegal(exp)) // 变量名首字符需为下划线或字母
+            if (!VarNameIsLegal(expStr)) // 变量名首字符需为下划线或字母
             {
                 throw SingleParseError(token.line, token.pos, exp, "Invalid variable name: \"", exp, "\"");
             }
 
-            token.node = Var(exp);
+            token.node = Var(expStr);
         }
     };
 
@@ -186,8 +186,8 @@ std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
             tryComfirmToken();
             auto unaryOp = ret.empty() || (ret.back().node->type == NodeType::OPERATOR &&
                                            ret.back().node->op != MathOperator::MATH_RIGHT_PARENTHESIS);
-            ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), iter)), true,
-                             std::string_view{&*iter, 1}, content)
+            ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), iter)), true, StringView{&*iter, 1},
+                             content)
                 .node = Op(BaseOperatorCharToEnum(*iter, unaryOp));
             nameIter = ++iter;
         } else if (isspace(*iter)) {
@@ -366,7 +366,7 @@ Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
 
 } // namespace internal
 
-Node Parse(std::string_view expression) {
+Node Parse(internal::StringView expression) {
     auto tokens = internal::ParseFunctions::ParseToTokens(expression);
     auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
     auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);

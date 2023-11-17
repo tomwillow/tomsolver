@@ -7,6 +7,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <forward_list>
 #include <functional>
 #include <iostream>
@@ -22,7 +23,6 @@
 #include <stack>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -339,7 +339,7 @@ inline std::string GetErrorInfo(ErrorType err);
 
 class MathError : public std::exception {
 public:
-    MathError(ErrorType errorType, std::string_view extInfo = {});
+    MathError(ErrorType errorType, const std::string &extInfo = {});
 
     virtual const char *what() const noexcept override;
 
@@ -410,7 +410,7 @@ inline std::string GetErrorInfo(ErrorType err) {
     return u8"GetErrorInfo: bug";
 }
 
-inline MathError::MathError(ErrorType errorType, std::string_view extInfo) : errorType(errorType) {
+inline MathError::MathError(ErrorType errorType, const std::string &extInfo) : errorType(errorType) {
     std::stringstream ss;
     ss << GetErrorInfo(errorType) << ": \"" << extInfo << "\"";
     errInfo = ss.str();
@@ -886,13 +886,13 @@ inline Node Op(MathOperator op);
 /**
  * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
  */
-inline bool VarNameIsLegal(std::string_view varname) noexcept;
+inline bool VarNameIsLegal(const std::string &varname) noexcept;
 
 /**
  * 新建一个变量节点。
  * @exception runtime_error 名字不合法
  */
-inline Node Var(std::string_view varname);
+inline Node Var(std::string varname);
 
 template <typename... T>
 using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;
@@ -1587,16 +1587,15 @@ inline Node Op(MathOperator op) {
     return std::make_unique<internal::NodeImpl>(NodeType::OPERATOR, op, 0, "");
 }
 
-inline bool VarNameIsLegal(std::string_view varname) noexcept {
+inline bool VarNameIsLegal(const std::string &varname) noexcept {
     return std::regex_match(varname.begin(), varname.end(), std::regex{R"((?=\w)\D\w*)"});
 }
 
-inline Node Var(std::string_view varname) {
-    auto name = std::string{varname};
+inline Node Var(std::string varname) {
     if (!VarNameIsLegal(varname)) {
-        throw std::runtime_error("Illegal varname: " + name);
+        throw std::runtime_error("Illegal varname: " + varname);
     }
-    return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, std::move(name));
+    return std::make_unique<internal::NodeImpl>(NodeType::VARIABLE, MathOperator::MATH_NULL, 0, std::move(varname));
 }
 
 } // namespace tomsolver
@@ -3099,8 +3098,47 @@ inline void Simplify(Node &node) noexcept {
 namespace tomsolver {
 
 namespace internal {
+
+class StringView {
+public:
+    constexpr StringView() noexcept = default;
+    constexpr StringView(const char *str, size_t len) noexcept : str{str}, len{len} {}
+    constexpr StringView(const char *str) noexcept : str{str} {
+        while (*str++) {
+            len++;
+        }
+    }
+    StringView(const std::string &str) noexcept : StringView{str.data(), str.size()} {}
+    constexpr StringView(const StringView &) noexcept = default;
+    constexpr StringView &operator=(const StringView &) noexcept = default;
+
+    constexpr auto begin() const noexcept {
+        return str;
+    }
+    constexpr auto end() const noexcept {
+        return str + len;
+    }
+    constexpr auto empty() const noexcept {
+        return !len;
+    }
+
+    auto toString() const noexcept {
+        return std::string{begin(), end()};
+    }
+
+    template <typename Stream>
+    friend Stream &operator<<(Stream &s, const internal::StringView &sv) {
+        s.rdbuf()->sputn(sv.str, sv.len);
+        return s;
+    }
+
+private:
+    const char *str = nullptr;
+    size_t len = 0;
+};
+
 struct Token;
-}
+} // namespace internal
 
 class ParseError : public std::runtime_error {
 public:
@@ -3111,7 +3149,7 @@ protected:
 class SingleParseError : public ParseError {
 public:
     template <typename... T>
-    SingleParseError(int line, int pos, std::string_view content, T &&...errInfo)
+    SingleParseError(int line, int pos, internal::StringView content, T &&...errInfo)
         : line(line), pos(pos), content(content) {
         std::stringstream ss;
 
@@ -3131,10 +3169,10 @@ public:
     int GetPos() const noexcept;
 
 private:
-    int line;                 // 行号
-    int pos;                  // 第几个字符
-    std::string_view content; // 整行文本
-    std::string whatStr;      // 完整的错误信息
+    int line;                     // 行号
+    int pos;                      // 第几个字符
+    internal::StringView content; // 整行文本
+    std::string whatStr;          // 完整的错误信息
 };
 
 class MultiParseError : public ParseError {
@@ -3151,13 +3189,13 @@ private:
 namespace internal {
 
 struct Token {
-    std::string_view s;       // token内容
-    int line;                 // 行号
-    int pos;                  // 第几个字符
-    bool isBaseOperator;      // 是否为基本运算符（单个字符的运算符以及左右括号）
-    std::string_view content; // 整行文本
-    Node node;                // 节点
-    Token(int line, int pos, bool isBaseOperator, std::string_view s, std::string_view content)
+    internal::StringView s;       // token内容
+    int line;                     // 行号
+    int pos;                      // 第几个字符
+    bool isBaseOperator;          // 是否为基本运算符（单个字符的运算符以及左右括号）
+    internal::StringView content; // 整行文本
+    Node node;                    // 节点
+    Token(int line, int pos, bool isBaseOperator, StringView s, StringView content)
         : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
 };
 
@@ -3167,7 +3205,7 @@ public:
      * 解析表达式字符串为in order记号流。其实就是做词法分析。
      * @exception ParseError
      */
-    static std::deque<Token> ParseToTokens(std::string_view expression);
+    static std::deque<Token> ParseToTokens(StringView expression);
 
     /**
      * 由in order序列得到post order序列。实质上是把记号流转化为逆波兰表达式。
@@ -3188,7 +3226,7 @@ public:
  * 把字符串解析为表达式。
  * @exception ParseError
  */
-inline Node Parse(std::string_view expression);
+inline Node Parse(internal::StringView expression);
 
 inline Node operator""_f(const char *exp, size_t);
 
@@ -3198,7 +3236,7 @@ namespace tomsolver {
 
 namespace {
 
-inline constexpr auto fnv1a(std::string_view s) {
+inline constexpr auto fnv1a(internal::StringView s) {
     constexpr uint64_t offsetBasis = 14695981039346656037ul;
     constexpr uint64_t prime = 1099511628211ul;
 
@@ -3263,7 +3301,7 @@ inline MathOperator BaseOperatorCharToEnum(char c, bool unary) noexcept {
     return MathOperator::MATH_NULL;
 }
 
-inline MathOperator Str2Function(std::string_view s) noexcept {
+inline MathOperator Str2Function(internal::StringView s) noexcept {
     switch (fnv1a(s)) {
     case "sin"_fnv1a:
         return MathOperator::MATH_SIN;
@@ -3320,7 +3358,7 @@ inline const char *MultiParseError::what() const noexcept {
 
 namespace internal {
 
-inline std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content) {
+inline std::deque<Token> ParseFunctions::ParseToTokens(StringView content) {
 
     if (content.empty()) {
         throw SingleParseError(0, 0, "empty input", content);
@@ -3331,14 +3369,14 @@ inline std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content)
 
     auto tryComfirmToken = [&ret, &iter, &nameIter, &content] {
         if (size_t size = std::distance(nameIter, iter)) {
-            auto exp = std::string_view{&*nameIter, size};
+            auto exp = StringView{&*nameIter, size};
             auto &token =
                 ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), nameIter)), false, exp, content);
 
+            auto expStr = exp.toString();
             // 检验是否为浮点数
             try {
                 std::size_t sz;
-                auto expStr = std::string{exp};
                 auto d = std::stod(expStr, &sz);
                 if (sz == expStr.size()) {
                     token.node = Num(d);
@@ -3353,12 +3391,12 @@ inline std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content)
 
             // 变量
             // 非运算符、数字、函数
-            if (!VarNameIsLegal(exp)) // 变量名首字符需为下划线或字母
+            if (!VarNameIsLegal(expStr)) // 变量名首字符需为下划线或字母
             {
                 throw SingleParseError(token.line, token.pos, exp, "Invalid variable name: \"", exp, "\"");
             }
 
-            token.node = Var(exp);
+            token.node = Var(expStr);
         }
     };
 
@@ -3367,8 +3405,8 @@ inline std::deque<Token> ParseFunctions::ParseToTokens(std::string_view content)
             tryComfirmToken();
             auto unaryOp = ret.empty() || (ret.back().node->type == NodeType::OPERATOR &&
                                            ret.back().node->op != MathOperator::MATH_RIGHT_PARENTHESIS);
-            ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), iter)), true,
-                             std::string_view{&*iter, 1}, content)
+            ret.emplace_back(0, static_cast<int>(std::distance(content.begin(), iter)), true, StringView{&*iter, 1},
+                             content)
                 .node = Op(BaseOperatorCharToEnum(*iter, unaryOp));
             nameIter = ++iter;
         } else if (isspace(*iter)) {
@@ -3547,7 +3585,7 @@ inline Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
 
 } // namespace internal
 
-inline Node Parse(std::string_view expression) {
+inline Node Parse(internal::StringView expression) {
     auto tokens = internal::ParseFunctions::ParseToTokens(expression);
     auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
     auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
