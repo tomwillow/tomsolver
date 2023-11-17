@@ -2,15 +2,55 @@
 
 #include "node.h"
 
+#include <cstring>
+#include <sstream>
 #include <stdexcept>
-#include <string_view>
 #include <utility>
 
 namespace tomsolver {
 
 namespace internal {
+
+class StringView {
+public:
+    constexpr StringView() noexcept = default;
+    constexpr StringView(const char *str, size_t len) noexcept : str{str}, len{len} {}
+    constexpr StringView(const char *str) noexcept : str{str} {
+        while (*str++) {
+            len++;
+        }
+    }
+    StringView(const std::string &str) noexcept : StringView{str.data(), str.size()} {}
+    constexpr StringView(const StringView &) noexcept = default;
+    constexpr StringView &operator=(const StringView &) noexcept = default;
+
+    constexpr auto begin() const noexcept {
+        return str;
+    }
+    constexpr auto end() const noexcept {
+        return str + len;
+    }
+    constexpr auto empty() const noexcept {
+        return !len;
+    }
+
+    auto toString() const noexcept {
+        return std::string{begin(), end()};
+    }
+
+    template <typename Stream>
+    friend Stream &operator<<(Stream &s, const internal::StringView &sv) {
+        s.rdbuf()->sputn(sv.str, sv.len);
+        return s;
+    }
+
+private:
+    const char *str = nullptr;
+    size_t len = 0;
+};
+
 struct Token;
-}
+} // namespace internal
 
 class ParseError : public std::runtime_error {
 public:
@@ -21,7 +61,7 @@ protected:
 class SingleParseError : public ParseError {
 public:
     template <typename... T>
-    SingleParseError(int line, int pos, std::string_view content, T &&...errInfo)
+    SingleParseError(int line, int pos, internal::StringView content, T &&...errInfo)
         : line(line), pos(pos), content(content) {
         std::stringstream ss;
 
@@ -41,10 +81,10 @@ public:
     int GetPos() const noexcept;
 
 private:
-    int line;                 // 行号
-    int pos;                  // 第几个字符
-    std::string_view content; // 整行文本
-    std::string whatStr;      // 完整的错误信息
+    int line;                     // 行号
+    int pos;                      // 第几个字符
+    internal::StringView content; // 整行文本
+    std::string whatStr;          // 完整的错误信息
 };
 
 class MultiParseError : public ParseError {
@@ -61,13 +101,13 @@ private:
 namespace internal {
 
 struct Token {
-    std::string_view s;       // token内容
-    int line;                 // 行号
-    int pos;                  // 第几个字符
-    bool isBaseOperator;      // 是否为基本运算符（单个字符的运算符以及左右括号）
-    std::string_view content; // 整行文本
-    Node node;                // 节点
-    Token(int line, int pos, bool isBaseOperator, std::string_view s, std::string_view content)
+    internal::StringView s;       // token内容
+    int line;                     // 行号
+    int pos;                      // 第几个字符
+    bool isBaseOperator;          // 是否为基本运算符（单个字符的运算符以及左右括号）
+    internal::StringView content; // 整行文本
+    Node node;                    // 节点
+    Token(int line, int pos, bool isBaseOperator, StringView s, StringView content)
         : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
 };
 
@@ -77,7 +117,7 @@ public:
      * 解析表达式字符串为in order记号流。其实就是做词法分析。
      * @exception ParseError
      */
-    static std::deque<Token> ParseToTokens(std::string_view expression);
+    static std::deque<Token> ParseToTokens(StringView expression);
 
     /**
      * 由in order序列得到post order序列。实质上是把记号流转化为逆波兰表达式。
@@ -98,7 +138,7 @@ public:
  * 把字符串解析为表达式。
  * @exception ParseError
  */
-Node Parse(std::string_view expression);
+Node Parse(internal::StringView expression);
 
 Node operator""_f(const char *exp, size_t);
 

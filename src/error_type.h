@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 
 namespace tomsolver {
 
@@ -28,7 +27,7 @@ std::string GetErrorInfo(ErrorType err);
 
 class MathError : public std::exception {
 public:
-    MathError(ErrorType errorType, std::string_view extInfo = {}) ;
+    MathError(ErrorType errorType, const std::string &extInfo = {});
 
     virtual const char *what() const noexcept override;
 

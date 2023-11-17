@@ -8,7 +8,7 @@
 #include <sstream>
 #include <stack>
 #include <string>
-#include <string_view>
+
 #include <type_traits>
 #include <vector>
 
@@ -212,13 +212,13 @@ Node Op(MathOperator op);
 /**
  * 返回变量名是否有效。（只支持英文数字或者下划线，第一个字符必须是英文或者下划线）
  */
-bool VarNameIsLegal(std::string_view varname) noexcept;
+bool VarNameIsLegal(const std::string& varname) noexcept;
 
 /**
  * 新建一个变量节点。
  * @exception runtime_error 名字不合法
  */
-Node Var(std::string_view varname);
+Node Var(std::string varname);
 
 template <typename... T>
 using SfinaeNode = std::enable_if_t<std::conjunction_v<std::is_same<std::decay_t<T>, Node>...>, Node>;
