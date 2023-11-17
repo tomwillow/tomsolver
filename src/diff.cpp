@@ -28,7 +28,8 @@ public:
         }
 
         while (!q.empty()) {
-            auto &[node, isLeftChild] = q.front();
+            auto& node = q.front().node;
+            auto isLeftChild = q.front().isLeftChild;
             q.pop();
 
             switch (node.type) {
