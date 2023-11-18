@@ -122,7 +122,8 @@ Vec SolveLinear(Mat A, Vec b) {
     // 后置换得到x
     for (int i = rows - 1; i >= 0; i--) // 最后1行->第1行
     {
-        ret[i] = b[i] - (asConst(A).Row(i, i + 1) * asConst(ret).Col(0, i + 1)).sum();
+        auto vec = asConst(A).Row(i, i + 1) * asConst(ret).Col(0, i + 1);
+        ret[i] = b[i] - (vec.size() ? vec.sum() : 0);
     }
 
     if (RankA < cols && RankA == RankAb) {
