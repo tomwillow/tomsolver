@@ -1,6 +1,7 @@
 .idea/
 output/
 build/
+.vs/
 .vscode/
 __pycache__/
 .cache
