@@ -46,8 +46,8 @@ public:
 
     std::slice_array<double> Row(int i, int offset = 0);
     std::slice_array<double> Col(int j, int offset = 0);
-    auto Row(int i, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
-    auto Col(int j, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
+    auto Row(int i, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[(std::slice{})]);
+    auto Col(int j, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[(std::slice{})]);
     const double &Value(int i, int j) const;
     double &Value(int i, int j);
 
