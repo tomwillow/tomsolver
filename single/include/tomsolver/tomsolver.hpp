@@ -157,8 +157,8 @@ public:
 
     std::slice_array<double> Row(int i, int offset = 0);
     std::slice_array<double> Col(int j, int offset = 0);
-    auto Row(int i, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
-    auto Col(int j, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]);
+    auto Row(int i, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[(std::slice{})]);
+    auto Col(int j, int offset = 0) const -> decltype(std::declval<const std::valarray<double>>()[(std::slice{})]);
     const double &Value(int i, int j) const;
     double &Value(int i, int j);
 
@@ -2017,11 +2017,11 @@ inline std::slice_array<double> Mat::Col(int j, int offset) {
     return data[std::slice(j + offset * cols, rows - offset, cols)];
 }
 
-inline auto Mat::Row(int i, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
+inline auto Mat::Row(int i, int offset) const -> decltype(std::declval<const std::valarray<double>>()[(std::slice{})]) {
     return data[std::slice(cols * i + offset, cols - offset, 1)];
 }
 
-inline auto Mat::Col(int j, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
+inline auto Mat::Col(int j, int offset) const -> decltype(std::declval<const std::valarray<double>>()[(std::slice{})]) {
     return data[std::slice(j + offset * cols, rows - offset, cols)];
 }
 
@@ -2568,7 +2568,8 @@ inline Vec SolveLinear(Mat A, Vec b) {
     // 后置换得到x
     for (int i = rows - 1; i >= 0; i--) // 最后1行->第1行
     {
-        ret[i] = b[i] - (asConst(A).Row(i, i + 1) * asConst(ret).Col(0, i + 1)).sum();
+        auto vec = asConst(A).Row(i, i + 1) * asConst(ret).Col(0, i + 1);
+        ret[i] = b[i] - (vec.size() ? vec.sum() : 0);
     }
 
     if (RankA < cols && RankA == RankAb) {
