@@ -1,7 +1,7 @@
 #include "diff.h"
 #include "functions.h"
 #include "parse.h"
-
+#include "config.h"
 #include "memory_leak_detection.h"
 
 #include <gtest/gtest.h>
@@ -12,6 +12,10 @@ using namespace tomsolver;
 
 using std::cout;
 using std::endl;
+
+TEST(Diff, Init) {
+    ToString(3.3);
+}
 
 TEST(Diff, Base) {
     MemoryLeakDetection mld;
