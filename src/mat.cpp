@@ -43,11 +43,11 @@ std::slice_array<double> Mat::Col(int j, int offset) {
     return data[std::slice(j + offset * cols, rows - offset, cols)];
 }
 
-auto Mat::Row(int i, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
+auto Mat::Row(int i, int offset) const -> decltype(std::declval<const std::valarray<double>>()[(std::slice{})]) {
     return data[std::slice(cols * i + offset, cols - offset, 1)];
 }
 
-auto Mat::Col(int j, int offset) const -> decltype(std::declval<const std::valarray<double>>()[std::slice{}]) {
+auto Mat::Col(int j, int offset) const -> decltype(std::declval<const std::valarray<double>>()[(std::slice{})]) {
     return data[std::slice(j + offset * cols, rows - offset, cols)];
 }
 
