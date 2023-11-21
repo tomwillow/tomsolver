@@ -2,13 +2,15 @@
 
 ![workflow](https://github.com/tomwillow/tomsolver/actions/workflows/cmake-multi-platform.yml/badge.svg)
 
+[中文](https://github.com/tomwillow/tomsolver) [English](https://github.com/tomwillow/tomsolver/blob/master/README-en.md)
+
 C++14 极简非线性方程组求解器
 
-"让C++求解非线性方程组像Matlab fsolve一样简单"
+> 让C++求解非线性方程组像Matlab fsolve一样简单
 
 地址: https://github.com/tomwillow/tomsolver
 
-Contributors: 
+**Contributors:** 
 * Tom Willow (https://github.com/tomwillow)
 * lizho (https://github.com/lizho)
 
@@ -108,19 +110,26 @@ $ cmake --build . --target INSTALL
 
 # 目录结构
 
-* src: 源文件
-* test: 单元测试
-* single/include: header-only的tomsolver.hpp所在的文件夹
-* single/test: 所有单元测试整合为一个.cpp文件，用于测试tomsolver.hpp是否正确
-* scripts: 用于生成single下面的单文件头文件和单文件测试
+* **src**: 源文件
+* **test**: 单元测试
+* **single/include**: header-only的tomsolver.hpp所在的文件夹
+* **single/test**: 所有单元测试整合为一个.cpp文件，用于测试tomsolver.hpp是否正确
+* **scripts**: 用于生成single下面的单文件头文件和单文件测试
 
 ### 例子
-* example/solve: 解非线性方程的例子
-* example/diff_machine: 求导器，输入一行表达式，输出这个表达式的求导结果
+* **example/solve**: 解非线性方程的例子
+* **example/diff_machine**: 求导器，输入一行表达式，输出这个表达式的求导结果
 
-# E-mail
+# 开发计划
 
-tomwillow@qq.com
+* 增加doxygen注释+教程文档（CN+EN）
+* 增加benchmark测速
+* 增加使用Eigen库作为内置矩阵库的可选项
+* 对标Matlab fsolve，增加更多非线性方程组解法
+* 在Solve函数中增加可选的Config参数，可以使用非全局的Config进行求解
+  （类似于Matlab fsolve的options）
+* 增加对二元/多元函数的支持，例如pow(x, y)
+* 现在的Simplify函数还很朴素，把Simplify修改得更好
 
 # Thanks
 
@@ -128,6 +137,6 @@ https://github.com/taehwan642
 
 # 微信交流群
 
-如果有问题想要交流或者想参与开发，或者想与作者联系，欢迎加作者微信tomwillow。备注tomsolver按照指引进群。
+如果有问题想要交流或者想参与开发，或者想与作者联系，欢迎加微信tomwillow。备注tomsolver按照指引进群。
 
 如果您觉得此项目不错，请赏颗星吧！
