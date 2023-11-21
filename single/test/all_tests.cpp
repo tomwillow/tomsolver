@@ -191,9 +191,6 @@ std::pair<Node, double> CreateRandomExpresionTree(int len) {
 }
 
 } // namespace tomsolver
-TEST(Diff, Init) {
-    ToString(3.3);
-}
 TEST(Diff, Base) {
     MemoryLeakDetection mld;
 

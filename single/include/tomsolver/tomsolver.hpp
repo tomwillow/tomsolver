@@ -478,12 +478,16 @@ inline std::string ToString(double value) noexcept;
 
 namespace tomsolver {
 
-inline std::string ToString(double value) noexcept {
-    static const std::tuple<const char *, std::regex> strategies[] = {
-        {"%.16e", std::regex{"\\.?0+(?=e)"}},
-        {"%.16f", std::regex{"\\.?0+(?=$)"}},
-    };
+namespace {
 
+static const std::tuple<const char *, std::regex> strategies[] = {
+    {"%.16e", std::regex{"\\.?0+(?=e)"}},
+    {"%.16f", std::regex{"\\.?0+(?=$)"}},
+};
+
+}
+
+inline std::string ToString(double value) noexcept {
     if (value == 0.0) {
         return "0";
     }
