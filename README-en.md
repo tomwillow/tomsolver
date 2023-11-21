@@ -6,7 +6,9 @@ Simplest, Well-tested, Non-linear equations solver library by C++14.
 
 origin: https://github.com/tomwillow/tomsolver
 
-author: Tom Willow
+Contributors: 
+* Tom Willow (https://github.com/tomwillow)
+* lizho (https://github.com/lizho)
 
 # Status
 

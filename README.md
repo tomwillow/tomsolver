@@ -8,7 +8,9 @@ C++14 极简非线性方程组求解器
 
 地址: https://github.com/tomwillow/tomsolver
 
-作者: Tom Willow
+Contributors: 
+* Tom Willow (https://github.com/tomwillow)
+* lizho (https://github.com/lizho)
 
 # 特点
 
