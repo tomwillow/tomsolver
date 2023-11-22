@@ -130,6 +130,7 @@ $ cmake --build . --target INSTALL
   （类似于Matlab fsolve的options）
 * 增加对二元/多元函数的支持，例如pow(x, y)
 * 现在的Simplify函数还很朴素，把Simplify修改得更好
+* 增加LaTeX格式的公式输出
 
 # Thanks
 

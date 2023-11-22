@@ -131,6 +131,7 @@ Then add the include directory and link to the library file.
    (similar to Matlab fsolve's option)
 * add support for binary/multivariate functions, such as pow(x, y)
 * the current Simplify function is still very simple, modify Simplify to be better
+* add LaTeX format formula output
 
 # Thanks
 
