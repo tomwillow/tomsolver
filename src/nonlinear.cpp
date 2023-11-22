@@ -63,7 +63,7 @@ double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double u
     return alpha_new;
 }
 
-VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations) {
+VarsTable SolveByNewtonRaphson(const SymVec &equations, const VarsTable &varsTable) {
     int it = 0; // 迭代计数
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
@@ -109,7 +109,7 @@ VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equatio
     return table;
 }
 
-VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
+VarsTable SolveByLM(const SymVec &equations, const VarsTable &varsTable) {
     int it = 0; // 迭代计数
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
@@ -230,12 +230,12 @@ VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
     return table;
 }
 
-VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
+VarsTable Solve(const SymVec &equations, const VarsTable &varsTable) {
     switch (Config::Get().nonlinearMethod) {
     case NonlinearMethod::NEWTON_RAPHSON:
-        return SolveByNewtonRaphson(varsTable, equations);
+        return SolveByNewtonRaphson(equations, varsTable);
     case NonlinearMethod::LM:
-        return SolveByLM(varsTable, equations);
+        return SolveByLM(equations, varsTable);
     }
     throw runtime_error("invalid config.NonlinearMethod value: " +
                         std::to_string(static_cast<int>(Config::Get().nonlinearMethod)));
@@ -245,7 +245,7 @@ VarsTable Solve(const SymVec &equations) {
     auto varNames = equations.GetAllVarNames();
     std::vector<std::string> vecVarNames(varNames.begin(), varNames.end());
     VarsTable varsTable(std::move(vecVarNames), Config::Get().initialValue);
-    return Solve(varsTable, equations);
+    return Solve(equations, varsTable);
 }
 
 } // namespace tomsolver

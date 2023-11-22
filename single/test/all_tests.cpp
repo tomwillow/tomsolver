@@ -1383,7 +1383,7 @@ TEST(SolveBase, Base) {
 
     // Newton-Raphson方法
     {
-        VarsTable got = SolveByNewtonRaphson(varsTable, equations);
+        VarsTable got = SolveByNewtonRaphson(equations, varsTable);
         cout << got << endl;
 
         ASSERT_EQ(got, expected);
@@ -1391,7 +1391,7 @@ TEST(SolveBase, Base) {
 
     // LM方法
     {
-        VarsTable got = SolveByLM(varsTable, equations);
+        VarsTable got = SolveByLM(equations, varsTable);
         cout << got << endl;
 
         ASSERT_EQ(got, expected);

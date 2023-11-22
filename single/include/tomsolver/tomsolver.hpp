@@ -3661,25 +3661,28 @@ inline double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, d
  * 初值及变量名通过varsTable传入。
  * @exception runtime_error 迭代次数超出限制
  */
-inline VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations);
+inline VarsTable SolveByNewtonRaphson(const SymVec &equations, const VarsTable &varsTable);
 
 /**
  * 解非线性方程组equations。
  * 初值及变量名通过varsTable传入。
  * @exception runtime_error 迭代次数超出限制
  */
-inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations);
+inline VarsTable SolveByLM(const SymVec &equations, const VarsTable &varsTable);
 
 /**
  * 解非线性方程组equations。
  * 初值及变量名通过varsTable传入。
+ * @param equations 方程组。实质上是一个符号向量。
+ * @param varsTable 初值表。
  * @exception runtime_error 迭代次数超出限制
  */
-inline VarsTable Solve(const VarsTable &varsTable, const SymVec &equations);
+inline VarsTable Solve(const SymVec &equations, const VarsTable &varsTable);
 
 /**
  * 解非线性方程组equations。
  * 变量名通过分析equations得到。初值通过Config::Get()得到。
+ * @param equations 方程组。实质上是一个符号向量。
  * @exception runtime_error 迭代次数超出限制
  */
 inline VarsTable Solve(const SymVec &equations);
@@ -3743,7 +3746,7 @@ inline double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, d
     return alpha_new;
 }
 
-inline VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &equations) {
+inline VarsTable SolveByNewtonRaphson(const SymVec &equations, const VarsTable &varsTable) {
     int it = 0; // 迭代计数
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
@@ -3789,7 +3792,7 @@ inline VarsTable SolveByNewtonRaphson(const VarsTable &varsTable, const SymVec &
     return table;
 }
 
-inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) {
+inline VarsTable SolveByLM(const SymVec &equations, const VarsTable &varsTable) {
     int it = 0; // 迭代计数
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
@@ -3910,12 +3913,12 @@ inline VarsTable SolveByLM(const VarsTable &varsTable, const SymVec &equations) 
     return table;
 }
 
-inline VarsTable Solve(const VarsTable &varsTable, const SymVec &equations) {
+inline VarsTable Solve(const SymVec &equations, const VarsTable &varsTable) {
     switch (Config::Get().nonlinearMethod) {
     case NonlinearMethod::NEWTON_RAPHSON:
-        return SolveByNewtonRaphson(varsTable, equations);
+        return SolveByNewtonRaphson(equations, varsTable);
     case NonlinearMethod::LM:
-        return SolveByLM(varsTable, equations);
+        return SolveByLM(equations, varsTable);
     }
     throw runtime_error("invalid config.NonlinearMethod value: " +
                         std::to_string(static_cast<int>(Config::Get().nonlinearMethod)));
@@ -3925,7 +3928,7 @@ inline VarsTable Solve(const SymVec &equations) {
     auto varNames = equations.GetAllVarNames();
     std::vector<std::string> vecVarNames(varNames.begin(), varNames.end());
     VarsTable varsTable(std::move(vecVarNames), Config::Get().initialValue);
-    return Solve(varsTable, equations);
+    return Solve(equations, varsTable);
 }
 
 } // namespace tomsolver
