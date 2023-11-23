@@ -128,7 +128,7 @@ def combineClasses(elements, output_filename):
     allStdDeps.sort()
 
     # 5. 写入
-    with open(output_filename, "w", encoding="utf-8") as f:
+    with open(output_filename, "w", encoding="utf-8 sig") as f:
         f.write("#pragma once\n\n")
 
         # define先于#include写入
