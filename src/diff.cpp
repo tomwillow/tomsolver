@@ -4,6 +4,7 @@
 #include "simplify.h"
 
 #include <queue>
+#include <cmath> // std::log
 
 namespace tomsolver {
 
