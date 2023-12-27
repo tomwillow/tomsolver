@@ -10,6 +10,7 @@
 #include <sstream>
 #include <tuple>
 #include <valarray>
+#include <cmath> // std::abs
 
 namespace tomsolver {
 
