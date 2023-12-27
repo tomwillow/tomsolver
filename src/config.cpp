@@ -32,11 +32,7 @@ std::string ToString(double value) noexcept {
     auto fmt = std::get<0>(strategy);
     auto &re = std::get<1>(strategy);
 
-#ifdef WIN32
-    sprintf_s(buf, fmt, value);
-#else
-    sprintf(buf, fmt, value);
-#endif
+    snprintf(buf, sizeof(buf), fmt, value);
     return std::regex_replace(buf, re, "");
 }
 
