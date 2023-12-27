@@ -10,6 +10,7 @@
 #include <sstream>
 #include <tuple>
 #include <valarray>
+#include <cmath> // std::abs
 
 namespace tomsolver {
 
@@ -286,7 +287,7 @@ bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
 }
 
 int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
-    std::valarray<double> temp = std::abs<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
+    std::valarray<double> temp = std::valarray<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]).apply(std::abs);
     auto ret = std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
     return static_cast<int>(ret);
 }

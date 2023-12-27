@@ -5,6 +5,7 @@
 #include <array>
 #include <cassert>
 #include <cctype>
+#include <clocale>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -503,11 +504,7 @@ inline std::string ToString(double value) noexcept {
     auto fmt = std::get<0>(strategy);
     auto &re = std::get<1>(strategy);
 
-#ifdef WIN32
-    sprintf_s(buf, fmt, value);
-#else
-    sprintf(buf, fmt, value);
-#endif
+    snprintf(buf, sizeof(buf), fmt, value);
     return std::regex_replace(buf, re, "");
 }
 
@@ -2264,7 +2261,8 @@ inline bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
 }
 
 inline int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
-    std::valarray<double> temp = std::abs<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]);
+    std::valarray<double> temp =
+        std::valarray<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]).apply(std::abs);
     auto ret = std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
     return static_cast<int>(ret);
 }
