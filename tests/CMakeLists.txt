@@ -4,16 +4,16 @@ file(GLOB TEST_CODE
     *.cpp
 )
 
-add_executable(TomSolverTest ${TEST_CODE})
+add_executable(tomsolver_tests ${TEST_CODE})
 
-target_include_directories(TomSolverTest PUBLIC
+target_include_directories(tomsolver_tests PUBLIC
     ../src
 )
 
-target_link_libraries(TomSolverTest PUBLIC
-    TomSolver
+target_link_libraries(tomsolver_tests PUBLIC
+    tomsolver
     gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(TomSolverTest)
+gtest_discover_tests(tomsolver_tests)

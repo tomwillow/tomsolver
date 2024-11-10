@@ -1,7 +1,7 @@
 # for FetchContent
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
-project(TomSolver)
+project(tomsolver)
 
 # C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -58,9 +58,38 @@ file(GLOB SOURCE_CODE
 	src/*.h
 )
 
-add_library(TomSolver ${SOURCE_CODE})
+add_library(tomsolver ${SOURCE_CODE})
 
 # =====================================
 if(BUILD_EXAMPLES)
 	add_subdirectory(examples)
 endif()
+
+# =====================================
+# Install the library and its headers
+install(TARGETS tomsolver
+        EXPORT tomsolver_targets
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+
+install(DIRECTORY src/
+		DESTINATION include/tomsolver
+		FILES_MATCHING PATTERN "*.h"
+		)
+
+# Generate and install *-targets.cmake 
+install(EXPORT tomsolver_targets
+        FILE tomsolver-targets.cmake
+        NAMESPACE tomsolver::
+        DESTINATION share/tomsolver)
+
+# Generate the config file in the current binary dir (this ensures it's not placed directly in source)
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/tomsolver-config.cmake"
+"include(CMakeFindDependencyMacro)\n"
+"include(\"\${CMAKE_CURRENT_LIST_DIR}/tomsolver-targets.cmake\")\n"
+)
+
+# Install the generated config file
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tomsolver-config.cmake"
+        DESTINATION share/tomsolver)
