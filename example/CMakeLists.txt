@@ -1,0 +1,3 @@
+add_subdirectory(solve)
+add_subdirectory(solve2)
+add_subdirectory(diff_machine)
