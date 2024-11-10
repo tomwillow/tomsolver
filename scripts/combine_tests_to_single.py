@@ -71,7 +71,7 @@ if __name__ == "__main__":
     output_filename = f"{target_dir}/all_tests.cpp"
 
     srcFilenames = []
-    for path in util.findAllFile(f"{root_dir}/test"):
+    for path in util.findAllFile(f"{root_dir}/tests"):
         if path.find("_test.cpp") != -1:
             srcFilenames.append(path)
     srcFilenames.sort()
@@ -87,11 +87,11 @@ if __name__ == "__main__":
 
     #
     contents = []
-    contents.extend(MyTestDepFile(f"{root_dir}/test/memory_leak_detection.h").contents)
+    contents.extend(MyTestDepFile(f"{root_dir}/tests/memory_leak_detection.h").contents)
     contents.extend(
-        MyTestDepFile(f"{root_dir}/test/memory_leak_detection_win.h").contents
+        MyTestDepFile(f"{root_dir}/tests/memory_leak_detection_win.h").contents
     )
-    contents.extend(MyTestDepFile(f"{root_dir}/test/helper.cpp").contents)
+    contents.extend(MyTestDepFile(f"{root_dir}/tests/helper.cpp").contents)
 
     # 去掉所有#include "xxx"
     for i in range(len(contents) - 1, -1, -1):

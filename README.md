@@ -10,7 +10,8 @@ C++14 极简非线性方程组求解器
 
 地址: https://github.com/tomwillow/tomsolver
 
-**Contributors:** 
+**Contributors:**
+
 * Tom Willow (https://github.com/tomwillow)
 * lizho (https://github.com/lizho)
 
@@ -29,10 +30,12 @@ C++14 极简非线性方程组求解器
 # 跨平台支持
 
 测试环境：
+
 * Linux: ubuntu 22.04 x86_64 gcc 11.3.0
 * Windows: windows10 x64 Visual Studio 2019
 
 Github Actions自动测试：
+
 * Linux-latest gcc Debug&Release
 * Linux-latest clang Debug&Release
 * Windows-latest msvc Debug&Release
@@ -111,15 +114,16 @@ $ cmake --build . --target INSTALL
 # 目录结构
 
 * **src**: 源文件
-* **test**: 单元测试
+* **tests**: 单元测试
 * **single/include**: header-only的tomsolver.hpp所在的文件夹
 * **single/test**: 所有单元测试整合为一个.cpp文件，用于测试tomsolver.hpp是否正确
 * **scripts**: 用于生成single下面的单文件头文件和单文件测试
 
 ### 例子
-* **example/solve**: 解非线性方程的例子，演示基本用法和怎么设置统一的初值
-* **example/solve2**: 解非线性方程的例子，演示怎么切换解法和怎么替换方程中的已知量
-* **example/diff_machine**: 求导器，输入一行表达式，输出这个表达式的求导结果
+
+* **examples/solve**: 解非线性方程的例子，演示基本用法和怎么设置统一的初值
+* **examples/solve2**: 解非线性方程的例子，演示怎么切换解法和怎么替换方程中的已知量
+* **examples/diff_machine**: 求导器，输入一行表达式，输出这个表达式的求导结果
 
 # 开发计划
 

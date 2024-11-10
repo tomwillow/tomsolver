@@ -48,7 +48,7 @@ if(BUILD_TESTS)
 
 	enable_testing()
 
-	add_subdirectory(test)
+	add_subdirectory(tests)
 	add_subdirectory(single/test)
 endif()
 
@@ -62,5 +62,5 @@ add_library(TomSolver ${SOURCE_CODE})
 
 # =====================================
 if(BUILD_EXAMPLES)
-	add_subdirectory(example)
+	add_subdirectory(examples)
 endif()
