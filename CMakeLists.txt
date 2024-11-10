@@ -58,7 +58,7 @@ file(GLOB SOURCE_CODE
 	src/*.h
 )
 
-add_library(tomsolver ${SOURCE_CODE})
+add_library(tomsolver STATIC ${SOURCE_CODE})
 
 # =====================================
 if(BUILD_EXAMPLES)
