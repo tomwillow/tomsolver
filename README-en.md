@@ -11,6 +11,7 @@ origin: https://github.com/tomwillow/tomsolver
 > Make C++ solve nonlinear equations as easy as Matlab fsolve
 
 **Contributors:**
+
 * Tom Willow (https://github.com/tomwillow)
 * lizho (https://github.com/lizho)
 
@@ -29,10 +30,12 @@ origin: https://github.com/tomwillow/tomsolver
 # Supported Platforms
 
 Tested at:
+
 * Linux: ubuntu 22.04 x86_64 gcc 11.3.0
 * Windows: windows10 x64 Visual Studio 2019
 
 Tested at Github Actions:
+
 * Linux-latest gcc Debug&Release
 * Linux-latest clang Debug&Release
 * Windows-latest msvc Debug&Release
@@ -89,7 +92,6 @@ int main() {
 }
 ```
 
-
 # Usage
 
 ## 1. Header-Only usage
@@ -112,15 +114,16 @@ Then add the include directory and link to the library file.
 # Directory Structure
 
 * **src**: source files
-* **test**: unit tests
+* **tests**: unit tests
 * **single/include**: the folder where the header-only tomsolver.hpp is located
 * **single/test**: All unit tests are integrated into one .cpp file to test whether tomsolver.hpp is correct.
 * **scripts**: used to generate single-file header files and single-file tests under single
 
 ### examples
-* **example/solve**: Example of solving nonlinear equations, demonstrating basic usage and how to set a unified initial value
-* **example/solve2**: Example of solving nonlinear equations, demonstrating how to switch solution methods and replace known quantities in the equation
-* **example/diff_machine**: Derivator, input a line of expression and output the derivation result of this expression
+
+* **examples/solve**: Example of solving nonlinear equations, demonstrating basic usage and how to set a unified initial value
+* **examples/solve2**: Example of solving nonlinear equations, demonstrating how to switch solution methods and replace known quantities in the equation
+* **examples/diff_machine**: Derivator, input a line of expression and output the derivation result of this expression
 
 # Development Plan
 
@@ -129,7 +132,7 @@ Then add the include directory and link to the library file.
 * add an option to use Eigen library as matrix library
 * aim at Matlab fsolve, add more solving methods of nonlinear equations
 * add an optional Config parameter in Solve() function
-   (similar to Matlab fsolve's option)
+  (similar to Matlab fsolve's option)
 * add support for binary/multivariate functions, such as pow(x, y)
 * the current Simplify function is still very simple, modify Simplify to be better
 * add LaTeX format formula output
