@@ -1,11 +1,11 @@
 #include "helper.h"
 
-#include "node.h"
-#include "functions.h"
+#include <tomsolver/functions.h>
+#include <tomsolver/node.h>
 
+#include <chrono>
 #include <cmath>
 #include <random>
-#include <chrono>
 
 using std::cout;
 using std::endl;

@@ -1,5 +1,5 @@
-#include "subs.h"
-#include "functions.h"
+#include <tomsolver/functions.h>
+#include <tomsolver/subs.h>
 
 #include "memory_leak_detection.h"
 

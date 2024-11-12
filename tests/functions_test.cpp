@@ -1,7 +1,7 @@
-#include "config.h"
-#include "error_type.h"
-#include "functions.h"
-#include "node.h"
+#include <tomsolver/config.h>
+#include <tomsolver/error_type.h>
+#include <tomsolver/functions.h>
+#include <tomsolver/node.h>
 
 #include "memory_leak_detection.h"
 

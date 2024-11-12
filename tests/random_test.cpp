@@ -1,7 +1,8 @@
-#include "node.h"
+#include <tomsolver/node.h>
 
-#include "memory_leak_detection.h"
 #include "helper.h"
+#include "memory_leak_detection.h"
+
 
 #include <gtest/gtest.h>
 

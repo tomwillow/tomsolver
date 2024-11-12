@@ -1,5 +1,5 @@
-#include "error_type.h"
-#include "mat.h"
+#include <tomsolver/error_type.h>
+#include <tomsolver/mat.h>
 
 #include "memory_leak_detection.h"
 

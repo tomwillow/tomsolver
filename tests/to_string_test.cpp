@@ -1,4 +1,4 @@
-#include "config.h"
+#include <tomsolver/config.h>
 
 #include "memory_leak_detection.h"
 

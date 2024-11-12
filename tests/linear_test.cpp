@@ -1,4 +1,4 @@
-#include "linear.h"
+#include <tomsolver/linear.h>
 
 #include "memory_leak_detection.h"
 

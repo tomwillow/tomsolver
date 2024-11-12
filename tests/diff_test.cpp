@@ -1,7 +1,8 @@
-#include "diff.h"
-#include "functions.h"
-#include "parse.h"
 #include "memory_leak_detection.h"
+#include <tomsolver/diff.h>
+#include <tomsolver/functions.h>
+#include <tomsolver/parse.h>
+
 
 #include <gtest/gtest.h>
 

@@ -16,6 +16,6 @@ if __name__ == "__main__":
         srcFilenames.append(path)
     srcFilenames.sort()
 
-    include_dirs = [f"{root_dir}/src"]
+    include_dirs = [f"{root_dir}/src/tomsolver"]
 
     util.combineCodeFile(target_dir, output_filename, srcFilenames, include_dirs)

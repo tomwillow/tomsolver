@@ -1,8 +1,9 @@
-#include "config.h"
-#include "error_type.h"
-#include "functions.h"
-#include "nonlinear.h"
-#include "parse.h"
+#include <tomsolver/config.h>
+#include <tomsolver/error_type.h>
+#include <tomsolver/functions.h>
+#include <tomsolver/nonlinear.h>
+#include <tomsolver/parse.h>
+
 
 #include "memory_leak_detection.h"
 

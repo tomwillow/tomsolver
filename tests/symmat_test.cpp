@@ -1,5 +1,5 @@
-#include "symmat.h"
-#include "functions.h"
+#include <tomsolver/functions.h>
+#include <tomsolver/symmat.h>
 
 #include "memory_leak_detection.h"
 

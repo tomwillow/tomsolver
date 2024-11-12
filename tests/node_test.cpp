@@ -1,7 +1,7 @@
-#include "error_type.h"
-#include "functions.h"
-#include "math_operator.h"
-#include "node.h"
+#include <tomsolver/error_type.h>
+#include <tomsolver/functions.h>
+#include <tomsolver/math_operator.h>
+#include <tomsolver/node.h>
 
 #include "memory_leak_detection.h"
 

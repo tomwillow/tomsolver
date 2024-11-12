@@ -1,15 +1,16 @@
 import os
 import re
+import typing
 
 
-def getFullPath(basename: str, include_dirs) -> str:
+def getFullPath(basename: str, include_dirs) -> typing.Union[None, str]:
     """
     传入一个basename，查找include_dirs里面是否有这个文件，并返回全路径。
     """
     for dir in include_dirs:
         dest = os.path.join(dir, basename)
         if os.path.isfile(dest):
-            return dest
+            return os.path.abspath(dest).replace("\\", "/")
     return None
 
 
@@ -31,8 +32,8 @@ class MyClass:
     其他的内容存入self.contents。
     """
 
-    def __init__(self, filename, include_dirs):
-        self.filename = filename
+    def __init__(self, filename: str, include_dirs):
+        self.filename = os.path.abspath(filename).replace("\\", "/")
         with open(filename, "r", encoding="utf-8") as f:
             lines_orig = f.readlines()
 
@@ -83,8 +84,11 @@ class MyClass:
         print("  inner deps: ", self.depsInner)
         print("  std deps: ", self.depsLib)
 
+    def __repr__(self) -> str:
+        return f"inner deps: {self.depsInner}, std deps: {self.depsLib}"
 
-def combineClasses(elements, output_filename):
+
+def combineClasses(elements: typing.List[MyClass], output_filename):
     # 3. 拓扑排序
     sorted = []
     while len(elements) > 0:
@@ -159,7 +163,7 @@ def combineCodeFile(target_dir, output_filename, src_filenames, include_dirs):
         os.makedirs(target_dir)
 
     # 2. 把源路径下所有文件都分析一遍
-    elements = []
+    elements: typing.List[MyClass] = []
     for path in src_filenames:
         elements.append(MyClass(path, include_dirs))
 

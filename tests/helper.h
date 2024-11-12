@@ -1,5 +1,5 @@
 #pragma once
-#include "node.h"
+#include <tomsolver/node.h>
 
 namespace tomsolver {
 

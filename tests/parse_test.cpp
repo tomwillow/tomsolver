@@ -1,6 +1,7 @@
-#include "parse.h"
-#include "config.h"
-#include "functions.h"
+#include <tomsolver/config.h>
+#include <tomsolver/functions.h>
+#include <tomsolver/parse.h>
+
 
 #include "memory_leak_detection.h"
 
@@ -156,7 +157,9 @@ TEST(Parse, PostOrderError) {
         try {
             auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
             FAIL();
-        } catch (const ParseError &err) { cout << err.what() << endl; }
+        } catch (const ParseError &err) {
+            cout << err.what() << endl;
+        }
     }
 
     {
@@ -165,7 +168,9 @@ TEST(Parse, PostOrderError) {
         try {
             auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
             FAIL();
-        } catch (const ParseError &err) { cout << err.what() << endl; }
+        } catch (const ParseError &err) {
+            cout << err.what() << endl;
+        }
     }
 }
 
@@ -208,7 +213,9 @@ TEST(Parse, Mix) {
         auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
         auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
         FAIL();
-    } catch (const ParseError &err) { cout << err.what() << endl; }
+    } catch (const ParseError &err) {
+        cout << err.what() << endl;
+    }
 
     try {
         deque<internal::Token> tokens =
@@ -216,5 +223,7 @@ TEST(Parse, Mix) {
         auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
         auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
         FAIL();
-    } catch (const ParseError &err) { cout << err.what() << endl; }
+    } catch (const ParseError &err) {
+        cout << err.what() << endl;
+    }
 }

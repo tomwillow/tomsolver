@@ -53,12 +53,17 @@ if(BUILD_TESTS)
 endif()
 
 # =====================================
-file(GLOB SOURCE_CODE
+file(GLOB_RECURSE SOURCE_CODE
 	src/*.cpp
 	src/*.h
 )
 
 add_library(tomsolver STATIC ${SOURCE_CODE})
+
+target_include_directories(tomsolver PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>  
+    $<INSTALL_INTERFACE:include/>
+)
 
 # =====================================
 if(BUILD_EXAMPLES)
@@ -74,7 +79,7 @@ install(TARGETS tomsolver
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 install(DIRECTORY src/
-		DESTINATION include/tomsolver
+		DESTINATION include/
 		FILES_MATCHING PATTERN "*.h"
 		)
 
