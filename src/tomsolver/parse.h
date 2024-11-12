@@ -90,10 +90,10 @@ public:
     int GetPos() const noexcept;
 
 private:
-    int line;                     // 行号
-    int pos;                      // 第几个字符
-    internal::StringView content; // 整行文本
-    std::string whatStr;          // 完整的错误信息
+    int line;                     // the line index
+    int pos;                      // the position of character
+    internal::StringView content; // the whole content of the line
+    std::string whatStr;          // the whole error message
 };
 
 class MultiParseError : public ParseError {
@@ -104,18 +104,18 @@ public:
 
 private:
     std::vector<SingleParseError> parseErrors;
-    std::string whatStr; // 完整的错误信息
+    std::string whatStr; // the whole error message
 };
 
 namespace internal {
 
 struct Token {
-    internal::StringView s;       // token内容
-    int line;                     // 行号
-    int pos;                      // 第几个字符
-    bool isBaseOperator;          // 是否为基本运算符（单个字符的运算符以及左右括号）
-    internal::StringView content; // 整行文本
-    Node node;                    // 节点
+    internal::StringView s;       // the string of this token
+    int line;                     // the line index
+    int pos;                      // the position of character
+    bool isBaseOperator;          // if is base operator (single-character operator or parenthesis)
+    internal::StringView content; // the whole content of the line
+    Node node;                    // node
     Token(int line, int pos, bool isBaseOperator, StringView s, StringView content)
         : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
 };
