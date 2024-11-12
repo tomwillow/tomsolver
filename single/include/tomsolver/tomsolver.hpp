@@ -364,46 +364,46 @@ inline std::string GetErrorInfo(ErrorType err) {
         return u8"illegal character";
         break;
     case ErrorType::ERROR_INVALID_VARNAME:
-        return u8"不正确的变量名（必须以下划线\"_\"或英文字母开头）。";
+        return u8"invalid variable name (must start with an underscore \"_\" or a letter)";
         break;
     case ErrorType::ERROR_WRONG_EXPRESSION:
-        return u8"错误的表达式。";
+        return u8"invalid expression";
         break;
     case ErrorType::ERROR_EMPTY_INPUT:
-        return u8"表达式为空。";
+        return u8"empty input";
         break;
     case ErrorType::ERROR_UNDEFINED_VARIABLE:
-        return u8"未定义的变量。";
+        return u8"undefined variable";
         break;
     case ErrorType::ERROR_SUBS_NOT_EQUAL:
-        return u8"替换与被替换数目不等。";
+        return u8"number of substitutions does not match the number of items to be replaced";
         break;
     case ErrorType::ERROR_NOT_LINK_VARIABLETABLE:
-        return u8"程序未链接变量表。";
+        return u8"not linked variable table";
         break;
     case ErrorType::ERROR_OUTOF_DOMAIN:
-        return u8"超出定义域。";
+        return u8"out of domain";
         break;
     case ErrorType::ERROR_VAR_COUNT_NOT_EQUAL_NUM_COUNT:
-        return u8"变量名与初始值数量不对等。";
+        return u8"the number of variable is not equal with number count";
         break;
     case ErrorType::ERROR_VAR_HAS_BEEN_DEFINED:
-        return u8"变量重定义";
+        return u8"variable redefined";
         break;
     case ErrorType::ERROR_INDETERMINATE_EQUATION:
-        return u8"不定方程";
+        return u8"indeterminate equation";
         break;
     case ErrorType::ERROR_SINGULAR_MATRIX:
-        return u8"矩阵奇异";
+        return u8"singular matrix";
         break;
     case ErrorType::ERROR_INFINITY_SOLUTIONS:
-        return u8"无穷多解";
+        return u8"infinite solutions";
         break;
     case ErrorType::ERROR_OVER_DETERMINED_EQUATIONS:
-        return u8"方程组过定义";
+        return u8"overdetermined equations";
         break;
     case ErrorType::SIZE_NOT_MATCH:
-        return u8"size not match";
+        return u8"size does not match";
     default:
         assert(0);
         break;
