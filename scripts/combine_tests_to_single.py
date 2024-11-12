@@ -7,6 +7,12 @@ import util
 # repository的根目录
 root_dir = os.path.abspath(os.path.dirname(__file__) + "/..")
 
+# 测试代码中可能包含的本仓库内的include目录。
+# 用于合并测试文件时剔除#include语句
+INCLUDE_DIR_PREFIXES = [
+    os.path.abspath(f"{root_dir}/src"),
+    os.path.abspath(f"{root_dir}/tests"),
+]
 
 class MyTest:
     """
@@ -93,14 +99,29 @@ if __name__ == "__main__":
     )
     contents.extend(MyTestDepFile(f"{root_dir}/tests/helper.cpp").contents)
 
-    # 去掉所有#include "xxx"
-    for i in range(len(contents) - 1, -1, -1):
-        line = contents[i]
-        obj = re.match(r"#include\s+\"([a-z_./\\]+)\"", line)
+    tempContents = []
+    for line in contents:
+        # 去掉所有#include tomsolver的行
+        obj = re.match(r"#include\s+[\"<]([\w_./\\]+)[\">]", line)
         if obj is None:
+            tempContents.append(line)
             continue
 
-        contents.remove(line)
+        isInThisRepository = False
+        pureIncludePath = obj.group(1)
+        for dir in INCLUDE_DIR_PREFIXES:
+            fullIncludePath = f"{dir}/{pureIncludePath}"
+            if os.path.isfile(fullIncludePath):
+                # if this included header file is in this repository, remove it (not append)
+                isInThisRepository = True
+                break
+        if isInThisRepository:
+            continue
+
+        tempContents.append(line)
+
+    contents = tempContents
+
 
     # 写入
     with open(output_filename, "w", encoding="utf-8") as f:

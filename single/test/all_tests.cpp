@@ -71,9 +71,6 @@ private:
 
 #endif
 
-#include <tomsolver/functions.h>
-#include <tomsolver/node.h>
-
 #include <chrono>
 #include <cmath>
 #include <random>
