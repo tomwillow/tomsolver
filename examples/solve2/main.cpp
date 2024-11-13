@@ -1,4 +1,4 @@
-#include <tomsolver/tomsolver.hpp>
+#include <tomsolver/tomsolver.h>
 
 using namespace tomsolver;
 

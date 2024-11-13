@@ -1,6 +1,6 @@
 
 file(GLOB TEST_CODE
-	../include/tomsolver/*.hpp
+	../include/tomsolver/*.h
 	*.cpp
 )
 

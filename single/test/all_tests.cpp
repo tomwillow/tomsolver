@@ -1,4 +1,4 @@
-#include "tomsolver/tomsolver.hpp"
+#include "tomsolver/tomsolver.h"
 
 #include <gtest/gtest.h>
 

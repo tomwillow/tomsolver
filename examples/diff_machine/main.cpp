@@ -1,4 +1,4 @@
-#include <tomsolver/tomsolver.hpp>
+#include <tomsolver/tomsolver.h>
 
 using std::cerr;
 using std::cin;
