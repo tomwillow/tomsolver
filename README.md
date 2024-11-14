@@ -2,45 +2,45 @@
 
 ![workflow](https://github.com/tomwillow/tomsolver/actions/workflows/cmake-multi-platform.yml/badge.svg)
 
-[中文](https://github.com/tomwillow/tomsolver) [English](https://github.com/tomwillow/tomsolver/blob/master/README-en.md)
+[中文](https://github.com/tomwillow/tomsolver/blob/master/README-zh.md) [English](https://github.com/tomwillow/tomsolver)
 
-C++14 极简非线性方程组求解器
+Simplest, Well-tested, Non-linear equations solver library by C++14.
 
-> 让 C++求解非线性方程组像 Matlab fsolve 一样简单
+origin: https://github.com/tomwillow/tomsolver
 
-地址: https://github.com/tomwillow/tomsolver
+> Make C++ solve nonlinear equations as easy as Matlab fsolve
 
 **Contributors:**
 
 - Tom Willow (https://github.com/tomwillow)
 - lizho (https://github.com/lizho)
 
-# 特点
+# Features
 
-- 简单！简单！会用 fsolve 就会用这个！
-- 单头文件，直接 include 完事儿！
+- Simple! Simple! If you know how to use fsolve, you will use this!
+- Single header file, just include it!
 
-# 功能
+# Functions
 
-- 非线性方程组求解（牛顿-拉夫森法、LM 方法）
-- 线性方程组求解（高斯-列主元迭代法、逆矩阵）
-- 矩阵、向量运算（矩阵求逆、向量叉乘等）
-- “伪”符号运算（对表达式求导、对符号矩阵求雅可比矩阵）
+- Solving nonlinear equations (Newton-Raphson method, LM method)
+- Solving linear equations (Gaussian-column pivot iteration method, inverse matrix)
+- Matrix and vector operations (matrix inversion, vector cross multiplication, etc.)
+- "Pseudo" symbolic operations (derivatives of expressions, Jacobian matrices of symbolic matrices)
 
-# 跨平台支持
+# Supported Platforms
 
-测试环境：
+Tested at:
 
 - Linux: ubuntu 22.04 x86_64 gcc 11.3.0
 - Windows: windows10 x64 Visual Studio 2019
 
-Github Actions 自动测试：
+Tested at Github Actions:
 
 - Linux-latest gcc Debug&Release
 - Linux-latest clang Debug&Release
 - Windows-latest msvc Debug&Release
 
-# 例子
+# Example
 
 ```C++
 #include <tomsolver/tomsolver.h>
@@ -69,22 +69,22 @@ int main() {
             0.353246561920553   0.606082026502285
      */
 
-    // 构造方程组
+    // create equations
     SymVec f = {
         "exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f,
         "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f,
     };
 
-    // 设置初值为0.0
+    // set initial value 0.0
     Config::Get().initialValue = 0.0;
 
-    // 求解，结果保存到ans
+    // solve, results to ans
     VarsTable ans = Solve(f);
 
-    // 打印出ans
+    // print ans
     std::cout << ans << std::endl;
 
-    // 单独获取变量的值
+    // get variables' value
     std::cout << "x1 = " << ans["x1"] << std::endl;
     std::cout << "x2 = " << ans["x2"] << std::endl;
 
@@ -92,14 +92,14 @@ int main() {
 }
 ```
 
-# 用法
+# Usage
 
-## 1. header-only 用法
+## 1. Header-Only usage
 
-仅需要包含一个单头文件即可：
+Just include a single header file:
 `single/include/tomsolver/tomsolver.h`
 
-## 2. 二进制库+头文件用法
+## 2. Binary Library + Header Files usage
 
 ```bash
 $ git clone https://github.com/tomwillow/tomsolver
@@ -109,40 +109,40 @@ $ cmake ../tomsolver
 $ cmake --build . --target INSTALL
 ```
 
-然后添加 include 目录，并链接到库文件。
+Then add the include directory and link to the library file.
 
-# 目录结构
+# Directory Structure
 
-- **src**: 源文件
-- **tests**: 单元测试
-- **single/include**: header-only 的 tomsolver.h 所在的文件夹
-- **single/test**: 所有单元测试整合为一个.cpp 文件，用于测试 tomsolver.h 是否正确
-- **scripts**: 用于生成 single 下面的单文件头文件和单文件测试
+- **src**: source files
+- **tests**: unit tests
+- **single/include**: the folder where the header-only tomsolver.h is located
+- **single/test**: All unit tests are integrated into one .cpp file to test whether tomsolver.h is correct.
+- **scripts**: used to generate single-file header files and single-file tests under single
 
-### 例子
+### examples
 
-- **examples/solve**: 解非线性方程的例子，演示基本用法和怎么设置统一的初值
-- **examples/solve2**: 解非线性方程的例子，演示怎么切换解法和怎么替换方程中的已知量
-- **examples/diff_machine**: 求导器，输入一行表达式，输出这个表达式的求导结果
+- **examples/solve**: Example of solving nonlinear equations, demonstrating basic usage and how to set a unified initial value
+- **examples/solve2**: Example of solving nonlinear equations, demonstrating how to switch solution methods and replace known quantities in the equation
+- **examples/diff_machine**: Derivator, input a line of expression and output the derivation result of this expression
 
-# 开发计划
+# Development Plan
 
-- 增加 doxygen 注释+教程文档（CN+EN）
-- 增加 benchmark 测速
-- 增加使用 Eigen 库作为内置矩阵库的可选项
-- 对标 Matlab fsolve，增加更多非线性方程组解法
-- 在 Solve 函数中增加可选的 Config 参数，可以使用非全局的 Config 进行求解
-  （类似于 Matlab fsolve 的 options）
-- 增加对二元/多元函数的支持，例如 pow(x, y)
-- 现在的 Simplify 函数还很朴素，把 Simplify 修改得更好
-- 增加 LaTeX 格式的公式输出
+- add doxygen comments + tutorial document (CN+EN)
+- add benchmark tests
+- add an option to use Eigen library as matrix library
+- aim at Matlab fsolve, add more solving methods of nonlinear equations
+- add an optional Config parameter in Solve() function
+  (similar to Matlab fsolve's option)
+- add support for binary/multivariate functions, such as pow(x, y)
+- the current Simplify function is still very simple, modify Simplify to be better
+- add LaTeX format formula output
 
 # Thanks
 
 https://github.com/taehwan642
 
-# 微信交流群
+# WeChat group
 
-如果有问题想要交流或者想参与开发，或者想与作者联系，欢迎加微信 tomwillow。备注 tomsolver 按照指引进群。
+If you have any questions, want to communicate, want to participate in development, or want to contact the authors, you are welcome to add the WeChat _tomwillow_.
 
-如果您觉得此项目不错，请赏颗星吧！
+If you think this repository is good, please give it a star!
