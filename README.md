@@ -99,6 +99,28 @@ int main() {
 仅需要包含一个单头文件即可：
 `single/include/tomsolver/tomsolver.hpp`
 
+## 2. 使用VCPKG
+
+你可以使用vcpkg进行统一的包管理。
+
+* 清单模式（推荐）
+  新建 `vcpkg.json`文件：
+
+  ```
+  {
+    "dependencies": [
+      "tomsolver"
+    ]
+  }
+  ```
+
+  然后在当前目录执行：
+  `$ vcpkg install`
+  详细教程：[https://learn.microsoft.com/zh-cn/vcpkg/get_started/get-started?pivots=shell-powershell]()
+* 经典模式
+  直接执行：
+  `$ vcpkg install tomsolver`
+
 ## 2. 二进制库+头文件用法
 
 ```bash

@@ -99,6 +99,26 @@ int main() {
 Just include a single header file:
 `single/include/tomsolver/tomsolver.hpp`
 
+## 2. VCPKG
+
+You could use vcpkg for unified package usage.
+
+* Manifest mode(recommended)
+  Create a `vcpkg.json` file:
+  ```
+  {
+    "dependencies": [
+      "tomsolver"
+    ]
+  }
+  ```
+
+  Then run the following command in the same directory:
+  `$ vcpkg install`
+  Tutorial: [https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-bash](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-bash)
+* Classic mode
+  `$ vcpkg install tomsolver`
+
 ## 2. Binary Library + Header Files usage
 
 ```bash
