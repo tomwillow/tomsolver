@@ -2,7 +2,7 @@
 
 ![workflow](https://github.com/tomwillow/tomsolver/actions/workflows/cmake-multi-platform.yml/badge.svg)
 
-[中文](https://github.com/tomwillow/tomsolver/blob/master/README-en.md) [English](https://github.com/tomwillow/tomsolver)
+[中文](https://github.com/tomwillow/tomsolver/blob/master/README-zh.md) [English](https://github.com/tomwillow/tomsolver)
 
 C++14 极简非线性方程组求解器
 
@@ -94,12 +94,34 @@ int main() {
 
 # 用法
 
-## 1. header-only 用法
+## 1. header-only用法
 
 仅需要包含一个单头文件即可：
-`single/include/tomsolver/tomsolver.h`
+`single/include/tomsolver/tomsolver.hpp`
 
-## 2. 二进制库+头文件用法
+## 2. 使用VCPKG
+
+你可以使用[vcpkg](https://learn.microsoft.com/zh-cn/vcpkg/get_started/overview)进行统一的包管理。
+
+* 清单模式（推荐）
+  新建 `vcpkg.json`文件：
+
+  ```
+  {
+    "dependencies": [
+      "tomsolver"
+    ]
+  }
+  ```
+
+  然后在当前目录执行：
+  `$ vcpkg install`
+  详细教程：[https://learn.microsoft.com/zh-cn/vcpkg/get_started/get-started?pivots=shell-powershell]()
+* 经典模式
+  直接执行：
+  `$ vcpkg install tomsolver`
+
+## 3. 二进制库+头文件用法
 
 ```bash
 $ git clone https://github.com/tomwillow/tomsolver
