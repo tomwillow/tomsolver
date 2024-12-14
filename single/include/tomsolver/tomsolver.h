@@ -468,9 +468,6 @@ struct Config {
     void Reset() noexcept;
 
     static Config &Get();
-
-private:
-    Config() = default;
 };
 
 inline std::string ToString(double value) noexcept;
@@ -714,8 +711,7 @@ namespace internal {
  */
 struct NodeImpl {
 
-    NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
-        : type(type), op(op), value(value), varname(varname), parent(nullptr) {}
+    NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept;
 
     NodeImpl(const NodeImpl &rhs) noexcept;
     NodeImpl &operator=(const NodeImpl &rhs) noexcept;
@@ -761,10 +757,10 @@ struct NodeImpl {
     void CheckParent() const noexcept;
 
 private:
-    NodeType type = NodeType::NUMBER;
-    MathOperator op = MathOperator::MATH_NULL;
-    double value;
     std::string varname;
+    double value;
+    MathOperator op = MathOperator::MATH_NULL;
+    NodeType type = NodeType::NUMBER;
     NodeImpl *parent = nullptr;
     Node left, right;
     NodeImpl() = default;
@@ -982,6 +978,23 @@ inline SfinaeNode<T> &operator^=(Node &n1, T &&n2) noexcept {
 namespace tomsolver {
 
 namespace internal {
+
+inline NodeImpl::NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
+    : type(type), op(op), value(value), varname(varname), parent(nullptr) {
+    switch (type) {
+    case NodeType::NUMBER:
+        assert(op == MathOperator::MATH_NULL && varname == "");
+        break;
+    case NodeType::OPERATOR:
+        assert(op != MathOperator::MATH_NULL && varname == "");
+        break;
+    case NodeType::VARIABLE:
+        assert(op == MathOperator::MATH_NULL);
+        break;
+    default:
+        assert(0);
+    }
+}
 
 inline NodeImpl::NodeImpl(const NodeImpl &rhs) noexcept {
     *this = rhs;
@@ -3230,12 +3243,12 @@ private:
 namespace internal {
 
 struct Token {
+    Node node;                    // node
     internal::StringView s;       // the string of this token
     int line;                     // the line index
     int pos;                      // the position of character
     bool isBaseOperator;          // if is base operator (single-character operator or parenthesis)
     internal::StringView content; // the whole content of the line
-    Node node;                    // node
     Token(int line, int pos, bool isBaseOperator, StringView s, StringView content)
         : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
 };

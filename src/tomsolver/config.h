@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <clocale>
+#include <string>
 
 namespace tomsolver {
 
@@ -43,9 +43,6 @@ struct Config {
     void Reset() noexcept;
 
     static Config &Get();
-
-private:
-    Config() = default;
 };
 
 std::string ToString(double value) noexcept;

@@ -110,12 +110,12 @@ private:
 namespace internal {
 
 struct Token {
+    Node node;                    // node
     internal::StringView s;       // the string of this token
     int line;                     // the line index
     int pos;                      // the position of character
     bool isBaseOperator;          // if is base operator (single-character operator or parenthesis)
     internal::StringView content; // the whole content of the line
-    Node node;                    // node
     Token(int line, int pos, bool isBaseOperator, StringView s, StringView content)
         : s(s), line(line), pos(pos), isBaseOperator(isBaseOperator), content(content) {}
 };

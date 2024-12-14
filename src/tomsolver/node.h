@@ -34,8 +34,7 @@ namespace internal {
  */
 struct NodeImpl {
 
-    NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
-        : type(type), op(op), value(value), varname(varname), parent(nullptr) {}
+    NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept;
 
     NodeImpl(const NodeImpl &rhs) noexcept;
     NodeImpl &operator=(const NodeImpl &rhs) noexcept;
@@ -81,10 +80,10 @@ struct NodeImpl {
     void CheckParent() const noexcept;
 
 private:
-    NodeType type = NodeType::NUMBER;
-    MathOperator op = MathOperator::MATH_NULL;
-    double value;
     std::string varname;
+    double value;
+    MathOperator op = MathOperator::MATH_NULL;
+    NodeType type = NodeType::NUMBER;
     NodeImpl *parent = nullptr;
     Node left, right;
     NodeImpl() = default;

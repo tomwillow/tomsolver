@@ -20,6 +20,23 @@ namespace tomsolver {
 
 namespace internal {
 
+NodeImpl::NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
+    : type(type), op(op), value(value), varname(varname), parent(nullptr) {
+    switch (type) {
+    case NodeType::NUMBER:
+        assert(op == MathOperator::MATH_NULL && varname == "");
+        break;
+    case NodeType::OPERATOR:
+        assert(op != MathOperator::MATH_NULL && varname == "");
+        break;
+    case NodeType::VARIABLE:
+        assert(op == MathOperator::MATH_NULL);
+        break;
+    default:
+        assert(0);
+    }
+}
+
 NodeImpl::NodeImpl(const NodeImpl &rhs) noexcept {
     *this = rhs;
 }
