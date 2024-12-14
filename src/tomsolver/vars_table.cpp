@@ -54,6 +54,14 @@ bool VarsTable::Has(const std::string &varname) const noexcept {
     return table.find(varname) != table.end();
 }
 
+std::string VarsTable::ToString() const noexcept {
+    std::string ret;
+    for (auto &item : table) {
+        ret += item.first + " = " + tomsolver::ToString(item.second) + "\n";
+    }
+    return ret;
+}
+
 std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
     return table.begin();
 }
@@ -90,9 +98,7 @@ double VarsTable::operator[](const std::string &varname) const {
 }
 
 std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
-    for (auto &item : table) {
-        out << item.first << " = " << tomsolver::ToString(item.second) << std::endl;
-    }
+    out << table.ToString();
     return out;
 }
 

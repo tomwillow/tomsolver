@@ -145,6 +145,7 @@ Then add the include directory and link to the library file.
 ### examples
 
 - **examples/solve**: Example of solving nonlinear equations, demonstrating basic usage and how to set a unified initial value
+- **examples/set_initial_value**: Example of solving nonlinear equations, demostrating how to set every variable's initial value
 - **examples/solve2**: Example of solving nonlinear equations, demonstrating how to switch solution methods and replace known quantities in the equation
 - **examples/diff_machine**: Derivator, input a line of expression and output the derivation result of this expression
 

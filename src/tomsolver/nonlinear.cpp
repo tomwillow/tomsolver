@@ -1,6 +1,7 @@
 #include "nonlinear.h"
 
 #include "config.h"
+#include "error_type.h"
 #include "linear.h"
 
 #include <cassert>
@@ -63,23 +64,44 @@ double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, double u
     return alpha_new;
 }
 
+namespace internal {
+void PrintSolveStartInfo(const SymVec &equations, const VarsTable &varsTable) noexcept {
+    if (Config::Get().logLevel >= LogLevel::INFO) {
+        cout << "Solve start.\n";
+        cout << "  Method: Newton Raphson\n";
+        cout << "Equations:\n" + equations.ToString();
+        cout << "Inital Values:\n" + varsTable.ToString();
+    }
+}
+void PrintJacobian(const SymMat &jaEqs) noexcept {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
+        cout << "Jacobian:\n" + jaEqs.ToString();
+    }
+}
+void PrintAtIterationStart(int it) noexcept {
+    if (Config::Get().logLevel >= LogLevel::INFO) {
+        cout << std::string("==========") + "==========" + "\n";
+        cout << "iteration times = " + std::to_string(it) + "\n";
+    }
+}
+} // namespace internal
+
 VarsTable SolveByNewtonRaphson(const SymVec &equations, const VarsTable &varsTable) {
     int it = 0; // 迭代计数
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
     Vec q(n);                // x向量
+    internal::PrintSolveStartInfo(equations, varsTable);
 
-    SymMat jaEqs = Jacobian(equations, table.Vars());
-
-    if (Config::Get().logLevel >= LogLevel::TRACE) {
-        cout << "Jacobian = " << jaEqs.ToString() << endl;
-    }
+    SymMat JaEqs = Jacobian(equations, table.Vars());
+    internal::PrintJacobian(JaEqs);
 
     while (1) {
+        internal::PrintAtIterationStart(it);
+
         Vec phi = equations.Clone().Subs(table).Calc().ToMat().ToVec();
-        if (Config::Get().logLevel >= LogLevel::TRACE) {
-            cout << "iteration = " << it << endl;
-            cout << "phi = " << phi << endl;
+        if (Config::Get().logLevel >= LogLevel::INFO) {
+            cout << "phi = \n" + phi.ToString();
         }
 
         if (phi == 0) {
@@ -90,15 +112,24 @@ VarsTable SolveByNewtonRaphson(const SymVec &equations, const VarsTable &varsTab
             throw runtime_error("迭代次数超出限制");
         }
 
-        Mat ja = jaEqs.Clone().Subs(table).Calc().ToMat();
+        Mat ja = JaEqs.Clone().Subs(table).Calc().ToMat();
 
-        Vec deltaq = SolveLinear(ja, -phi);
+        try {
+            Vec deltaq = SolveLinear(ja, -phi);
+            if (Config::Get().logLevel >= LogLevel::TRACE) {
+                cout << "deltaq = " << deltaq << endl;
+            }
 
-        q += deltaq;
+            q += deltaq;
+        } catch (const tomsolver::MathError &err) {
+            if (err.GetErrorType() == ErrorType::ERROR_SINGULAR_MATRIX) {
+                throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "tip: consider using different initial values");
+            }
+            throw;
+        }
 
         if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "ja = " << ja << endl;
-            cout << "deltaq = " << deltaq << endl;
             cout << "q = " << q << endl;
         }
 
@@ -114,17 +145,13 @@ VarsTable SolveByLM(const SymVec &equations, const VarsTable &varsTable) {
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
     Vec q = table.Values();  // x向量
+    internal::PrintSolveStartInfo(equations, varsTable);
 
     SymMat JaEqs = Jacobian(equations, table.Vars());
-
-    if (Config::Get().logLevel >= LogLevel::TRACE) {
-        cout << "Jacobi = " << JaEqs << endl;
-    }
+    internal::PrintJacobian(JaEqs);
 
     while (1) {
-        if (Config::Get().logLevel >= LogLevel::TRACE) {
-            cout << "iteration = " << it << endl;
-        }
+        internal::PrintAtIterationStart(it);
 
         double mu = 1e-5; // LM方法的λ值
 

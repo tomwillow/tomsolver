@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdexcept>
 #include <string>
 
 namespace tomsolver {
@@ -25,7 +26,7 @@ enum class ErrorType {
 
 std::string GetErrorInfo(ErrorType err);
 
-class MathError : public std::exception {
+class MathError : public std::runtime_error {
 public:
     MathError(ErrorType errorType, const std::string &extInfo = {});
 

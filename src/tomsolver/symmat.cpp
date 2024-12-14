@@ -167,7 +167,7 @@ const Node &SymMat::Value(int i, int j) const noexcept {
 
 std::string SymMat::ToString() const noexcept {
     if (data->size() == 0) {
-        return "[]";
+        return "[]\n";
     }
 
     std::stringstream ss;
@@ -177,7 +177,7 @@ std::string SymMat::ToString() const noexcept {
     for (auto &node : *data) {
         ss << (i == 0 ? "" : " ") << node->ToString();
         i++;
-        ss << (i % cols == 0 ? (i == data->size() ? "]" : "\n") : ", ");
+        ss << (i % cols == 0 ? (i == data->size() ? "]\n" : "\n") : ", ");
     }
 
     return ss.str();

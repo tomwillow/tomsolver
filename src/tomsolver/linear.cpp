@@ -16,6 +16,12 @@ const T &asConst(T &a) {
 } // namespace
 
 Vec SolveLinear(Mat A, Vec b) {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
+        std::cout << "SolveLinear:Ax=b (x is the wanted)\n";
+        std::cout << "A=\n" + A.ToString();
+        std::cout << "b=\n" + b.ToString();
+    }
+
     int rows = A.Rows(); // 行数
     int cols = rows;     // 列数=未知数个数
 

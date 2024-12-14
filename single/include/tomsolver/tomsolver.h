@@ -338,7 +338,7 @@ enum class ErrorType {
 
 inline std::string GetErrorInfo(ErrorType err);
 
-class MathError : public std::exception {
+class MathError : public std::runtime_error {
 public:
     MathError(ErrorType errorType, const std::string &extInfo = {});
 
@@ -411,10 +411,12 @@ inline std::string GetErrorInfo(ErrorType err) {
     return u8"GetErrorInfo: bug";
 }
 
-inline MathError::MathError(ErrorType errorType, const std::string &extInfo) : errorType(errorType) {
-    std::stringstream ss;
-    ss << GetErrorInfo(errorType) << ": \"" << extInfo << "\"";
-    errInfo = ss.str();
+inline MathError::MathError(ErrorType errorType, const std::string &extInfo)
+    : std::runtime_error(extInfo), errorType(errorType) {
+    errInfo = GetErrorInfo(errorType);
+    if (!extInfo.empty()) {
+        errInfo += ": \"" + extInfo + "\"";
+    }
 }
 
 inline const char *MathError::what() const noexcept {
@@ -570,6 +572,8 @@ public:
      */
     bool Has(const std::string &varname) const noexcept;
 
+    std::string ToString() const noexcept;
+
     std::map<std::string, double>::const_iterator begin() const noexcept;
 
     std::map<std::string, double>::const_iterator end() const noexcept;
@@ -645,6 +649,14 @@ inline bool VarsTable::Has(const std::string &varname) const noexcept {
     return table.find(varname) != table.end();
 }
 
+inline std::string VarsTable::ToString() const noexcept {
+    std::string ret;
+    for (auto &item : table) {
+        ret += item.first + " = " + tomsolver::ToString(item.second) + "\n";
+    }
+    return ret;
+}
+
 inline std::map<std::string, double>::const_iterator VarsTable::begin() const noexcept {
     return table.begin();
 }
@@ -681,9 +693,7 @@ inline double VarsTable::operator[](const std::string &varname) const {
 }
 
 inline std::ostream &operator<<(std::ostream &out, const VarsTable &table) noexcept {
-    for (auto &item : table) {
-        out << item.first << " = " << tomsolver::ToString(item.second) << std::endl;
-    }
+    out << table.ToString();
     return out;
 }
 
@@ -2153,7 +2163,7 @@ inline Mat &Mat::SwapCol(int i, int j) noexcept {
 
 inline std::string Mat::ToString() const noexcept {
     if (data.size() == 0) {
-        return "[]";
+        return "[]\n";
     }
 
     std::stringstream ss;
@@ -2163,7 +2173,7 @@ inline std::string Mat::ToString() const noexcept {
     for (auto val : data) {
         ss << (i == 0 ? "" : " ") << tomsolver::ToString(val);
         i++;
-        ss << (i % cols == 0 ? (i == data.size() ? "]" : "\n") : ", ");
+        ss << (i % cols == 0 ? (i == data.size() ? "]\n" : "\n") : ", ");
     }
 
     return ss.str();
@@ -2477,6 +2487,12 @@ inline const T &asConst(T &a) {
 } // namespace
 
 inline Vec SolveLinear(Mat A, Vec b) {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
+        std::cout << "SolveLinear:Ax=b (x is the wanted)\n";
+        std::cout << "A=\n" + A.ToString();
+        std::cout << "b=\n" + b.ToString();
+    }
+
     int rows = A.Rows(); // 行数
     int cols = rows;     // 列数=未知数个数
 
@@ -3686,19 +3702,19 @@ inline VarsTable SolveByNewtonRaphson(const SymVec &equations, const VarsTable &
 inline VarsTable SolveByLM(const SymVec &equations, const VarsTable &varsTable);
 
 /**
- * 解非线性方程组equations。
- * 初值及变量名通过varsTable传入。
- * @param equations 方程组。实质上是一个符号向量。
- * @param varsTable 初值表。
- * @exception runtime_error 迭代次数超出限制
+ * Solve a system of nonlinear equations.
+ * Initial values and variable names are passed through varsTable. Will not use the Config::Get().initialValue
+ * @param equations: The system of equations. Essentially, it is a symbolic vector.
+ * @param varsTable: The table of initial values.
+ * @throws tomsolver::MathError: If the number of iterations exceeds the limit.
  */
 inline VarsTable Solve(const SymVec &equations, const VarsTable &varsTable);
 
 /**
- * 解非线性方程组equations。
- * 变量名通过分析equations得到。初值通过Config::Get()得到。
- * @param equations 方程组。实质上是一个符号向量。
- * @exception runtime_error 迭代次数超出限制
+ * Solve the equations.
+ * Variable names are obtained by analyzing the equations. Initial values are obtained through Config::Get().
+ * @param equations: The system of equations. Essentially, it is a symbolic vector.
+ * @throws tomsolver::MathError: If the number of iterations exceeds the limit.
  */
 inline VarsTable Solve(const SymVec &equations);
 
@@ -3761,23 +3777,44 @@ inline double FindAlpha(const Vec &x, const Vec &d, std::function<Vec(Vec)> f, d
     return alpha_new;
 }
 
+namespace internal {
+inline void PrintSolveStartInfo(const SymVec &equations, const VarsTable &varsTable) noexcept {
+    if (Config::Get().logLevel >= LogLevel::INFO) {
+        cout << "Solve start.\n";
+        cout << "  Method: Newton Raphson\n";
+        cout << "Equations:\n" + equations.ToString();
+        cout << "Inital Values:\n" + varsTable.ToString();
+    }
+}
+inline void PrintJacobian(const SymMat &jaEqs) noexcept {
+    if (Config::Get().logLevel >= LogLevel::TRACE) {
+        cout << "Jacobian:\n" + jaEqs.ToString();
+    }
+}
+inline void PrintAtIterationStart(int it) noexcept {
+    if (Config::Get().logLevel >= LogLevel::INFO) {
+        cout << std::string("==========") + "==========" + "\n";
+        cout << "iteration times = " + std::to_string(it) + "\n";
+    }
+}
+} // namespace internal
+
 inline VarsTable SolveByNewtonRaphson(const SymVec &equations, const VarsTable &varsTable) {
     int it = 0; // 迭代计数
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
     Vec q(n);                // x向量
+    internal::PrintSolveStartInfo(equations, varsTable);
 
-    SymMat jaEqs = Jacobian(equations, table.Vars());
-
-    if (Config::Get().logLevel >= LogLevel::TRACE) {
-        cout << "Jacobian = " << jaEqs.ToString() << endl;
-    }
+    SymMat JaEqs = Jacobian(equations, table.Vars());
+    internal::PrintJacobian(JaEqs);
 
     while (1) {
+        internal::PrintAtIterationStart(it);
+
         Vec phi = equations.Clone().Subs(table).Calc().ToMat().ToVec();
-        if (Config::Get().logLevel >= LogLevel::TRACE) {
-            cout << "iteration = " << it << endl;
-            cout << "phi = " << phi << endl;
+        if (Config::Get().logLevel >= LogLevel::INFO) {
+            cout << "phi = \n" + phi.ToString();
         }
 
         if (phi == 0) {
@@ -3788,15 +3825,24 @@ inline VarsTable SolveByNewtonRaphson(const SymVec &equations, const VarsTable &
             throw runtime_error("迭代次数超出限制");
         }
 
-        Mat ja = jaEqs.Clone().Subs(table).Calc().ToMat();
+        Mat ja = JaEqs.Clone().Subs(table).Calc().ToMat();
 
-        Vec deltaq = SolveLinear(ja, -phi);
+        try {
+            Vec deltaq = SolveLinear(ja, -phi);
+            if (Config::Get().logLevel >= LogLevel::TRACE) {
+                cout << "deltaq = " << deltaq << endl;
+            }
 
-        q += deltaq;
+            q += deltaq;
+        } catch (const tomsolver::MathError &err) {
+            if (err.GetErrorType() == ErrorType::ERROR_SINGULAR_MATRIX) {
+                throw MathError(ErrorType::ERROR_SINGULAR_MATRIX, "tip: consider using different initial values");
+            }
+            throw;
+        }
 
         if (Config::Get().logLevel >= LogLevel::TRACE) {
             cout << "ja = " << ja << endl;
-            cout << "deltaq = " << deltaq << endl;
             cout << "q = " << q << endl;
         }
 
@@ -3812,17 +3858,13 @@ inline VarsTable SolveByLM(const SymVec &equations, const VarsTable &varsTable) 
     VarsTable table = varsTable;
     int n = table.VarNums(); // 未知量数量
     Vec q = table.Values();  // x向量
+    internal::PrintSolveStartInfo(equations, varsTable);
 
     SymMat JaEqs = Jacobian(equations, table.Vars());
-
-    if (Config::Get().logLevel >= LogLevel::TRACE) {
-        cout << "Jacobi = " << JaEqs << endl;
-    }
+    internal::PrintJacobian(JaEqs);
 
     while (1) {
-        if (Config::Get().logLevel >= LogLevel::TRACE) {
-            cout << "iteration = " << it << endl;
-        }
+        internal::PrintAtIterationStart(it);
 
         double mu = 1e-5; // LM方法的λ值
 
@@ -4510,7 +4552,7 @@ inline const Node &SymMat::Value(int i, int j) const noexcept {
 
 inline std::string SymMat::ToString() const noexcept {
     if (data->size() == 0) {
-        return "[]";
+        return "[]\n";
     }
 
     std::stringstream ss;
@@ -4520,7 +4562,7 @@ inline std::string SymMat::ToString() const noexcept {
     for (auto &node : *data) {
         ss << (i == 0 ? "" : " ") << node->ToString();
         i++;
-        ss << (i % cols == 0 ? (i == data->size() ? "]" : "\n") : ", ");
+        ss << (i % cols == 0 ? (i == data->size() ? "]\n" : "\n") : ", ");
     }
 
     return ss.str();

@@ -33,19 +33,19 @@ VarsTable SolveByNewtonRaphson(const SymVec &equations, const VarsTable &varsTab
 VarsTable SolveByLM(const SymVec &equations, const VarsTable &varsTable);
 
 /**
- * 解非线性方程组equations。
- * 初值及变量名通过varsTable传入。
- * @param equations 方程组。实质上是一个符号向量。
- * @param varsTable 初值表。
- * @exception runtime_error 迭代次数超出限制
+ * Solve a system of nonlinear equations.
+ * Initial values and variable names are passed through varsTable. Will not use the Config::Get().initialValue
+ * @param equations: The system of equations. Essentially, it is a symbolic vector.
+ * @param varsTable: The table of initial values.
+ * @throws tomsolver::MathError: If the number of iterations exceeds the limit.
  */
 VarsTable Solve(const SymVec &equations, const VarsTable &varsTable);
 
 /**
- * 解非线性方程组equations。
- * 变量名通过分析equations得到。初值通过Config::Get()得到。
- * @param equations 方程组。实质上是一个符号向量。
- * @exception runtime_error 迭代次数超出限制
+ * Solve the equations.
+ * Variable names are obtained by analyzing the equations. Initial values are obtained through Config::Get().
+ * @param equations: The system of equations. Essentially, it is a symbolic vector.
+ * @throws tomsolver::MathError: If the number of iterations exceeds the limit.
  */
 VarsTable Solve(const SymVec &equations);
 

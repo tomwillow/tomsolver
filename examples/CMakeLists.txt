@@ -1,3 +1,4 @@
 add_subdirectory(solve)
+add_subdirectory(set_initial_values)
 add_subdirectory(solve2)
 add_subdirectory(diff_machine)

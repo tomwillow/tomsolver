@@ -61,10 +61,12 @@ std::string GetErrorInfo(ErrorType err) {
     return u8"GetErrorInfo: bug";
 }
 
-MathError::MathError(ErrorType errorType, const std::string &extInfo) : errorType(errorType) {
-    std::stringstream ss;
-    ss << GetErrorInfo(errorType) << ": \"" << extInfo << "\"";
-    errInfo = ss.str();
+MathError::MathError(ErrorType errorType, const std::string &extInfo)
+    : std::runtime_error(extInfo), errorType(errorType) {
+    errInfo = GetErrorInfo(errorType);
+    if (!extInfo.empty()) {
+        errInfo += ": \"" + extInfo + "\"";
+    }
 }
 
 const char *MathError::what() const noexcept {

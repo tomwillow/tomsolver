@@ -6,11 +6,11 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cmath> // std::abs
 #include <iterator>
 #include <sstream>
 #include <tuple>
 #include <valarray>
-#include <cmath> // std::abs
 
 namespace tomsolver {
 
@@ -166,7 +166,7 @@ Mat &Mat::SwapCol(int i, int j) noexcept {
 
 std::string Mat::ToString() const noexcept {
     if (data.size() == 0) {
-        return "[]";
+        return "[]\n";
     }
 
     std::stringstream ss;
@@ -176,7 +176,7 @@ std::string Mat::ToString() const noexcept {
     for (auto val : data) {
         ss << (i == 0 ? "" : " ") << tomsolver::ToString(val);
         i++;
-        ss << (i % cols == 0 ? (i == data.size() ? "]" : "\n") : ", ");
+        ss << (i % cols == 0 ? (i == data.size() ? "]\n" : "\n") : ", ");
     }
 
     return ss.str();
@@ -287,7 +287,8 @@ bool AllIsLessThan(const Mat &v1, const Mat &v2) noexcept {
 }
 
 int GetMaxAbsRowIndex(const Mat &A, int rowStart, int rowEnd, int col) noexcept {
-    std::valarray<double> temp = std::valarray<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]).apply(std::abs);
+    std::valarray<double> temp =
+        std::valarray<double>(A.Col(col)[std::slice(rowStart, rowEnd - rowStart + 1, 1)]).apply(std::abs);
     auto ret = std::distance(std::begin(temp), std::find(std::begin(temp), std::end(temp), temp.max())) + rowStart;
     return static_cast<int>(ret);
 }

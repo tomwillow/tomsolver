@@ -60,6 +60,8 @@ public:
      */
     bool Has(const std::string &varname) const noexcept;
 
+    std::string ToString() const noexcept;
+
     std::map<std::string, double>::const_iterator begin() const noexcept;
 
     std::map<std::string, double>::const_iterator end() const noexcept;

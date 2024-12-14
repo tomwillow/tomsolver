@@ -146,6 +146,7 @@ $ cmake --build . --target INSTALL
 ### 例子
 
 - **examples/solve**: 解非线性方程的例子，演示基本用法和怎么设置统一的初值
+- **examples/set_initial_values**: 解非线性方程的例子，演示怎么设置每个变量的初值
 - **examples/solve2**: 解非线性方程的例子，演示怎么切换解法和怎么替换方程中的已知量
 - **examples/diff_machine**: 求导器，输入一行表达式，输出这个表达式的求导结果
 
