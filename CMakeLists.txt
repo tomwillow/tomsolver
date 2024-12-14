@@ -9,7 +9,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(MSVC)
-	add_compile_options(/W4 /WX)
 	add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 else()
 	add_compile_options(-Wall -Wextra -pedantic -Werror)
@@ -64,6 +63,10 @@ target_include_directories(tomsolver PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>  
     $<INSTALL_INTERFACE:include/>
 )
+
+if(MSVC)
+    target_compile_options(tomsolver PRIVATE /W4 /WX)
+endif()
 
 # =====================================
 if(BUILD_EXAMPLES)

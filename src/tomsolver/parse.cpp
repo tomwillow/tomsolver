@@ -226,8 +226,10 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
         case NodeType::VARIABLE:
             postOrder.emplace_back(std::move(f));
             continue;
-        default:
+        case NodeType::OPERATOR:
             break;
+        default:
+            assert(0);
         };
 
         switch (f.node->op) {
@@ -343,6 +345,8 @@ Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
 
             break;
 
+        case NodeType::NUMBER:
+        case NodeType::VARIABLE:
         default:
             break;
         }

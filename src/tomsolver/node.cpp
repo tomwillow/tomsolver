@@ -21,7 +21,7 @@ namespace tomsolver {
 namespace internal {
 
 NodeImpl::NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
-    : type(type), op(op), value(value), varname(varname), parent(nullptr) {
+    : varname(varname), value(value), op(op), type(type), parent(nullptr) {
     switch (type) {
     case NodeType::NUMBER:
         assert(op == MathOperator::MATH_NULL && varname == "");
@@ -481,7 +481,7 @@ double NodeImpl::VpaNonRecursively() const {
             l = tomsolver::Calc(node.op, l, r);
             break;
         }
-
+        case NodeType::VARIABLE:
         default:
             throw std::runtime_error("wrong");
             break;

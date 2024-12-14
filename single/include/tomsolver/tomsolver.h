@@ -980,7 +980,7 @@ namespace tomsolver {
 namespace internal {
 
 inline NodeImpl::NodeImpl(NodeType type, MathOperator op, double value, std::string varname) noexcept
-    : type(type), op(op), value(value), varname(varname), parent(nullptr) {
+    : varname(varname), value(value), op(op), type(type), parent(nullptr) {
     switch (type) {
     case NodeType::NUMBER:
         assert(op == MathOperator::MATH_NULL && varname == "");
@@ -1440,7 +1440,7 @@ inline double NodeImpl::VpaNonRecursively() const {
             l = tomsolver::Calc(node.op, l, r);
             break;
         }
-
+        case NodeType::VARIABLE:
         default:
             throw std::runtime_error("wrong");
             break;
@@ -3499,8 +3499,10 @@ inline std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &
         case NodeType::VARIABLE:
             postOrder.emplace_back(std::move(f));
             continue;
-        default:
+        case NodeType::OPERATOR:
             break;
+        default:
+            assert(0);
         };
 
         switch (f.node->op) {
@@ -3616,6 +3618,8 @@ inline Node ParseFunctions::BuildExpressionTree(std::vector<Token> &postOrder) {
 
             break;
 
+        case NodeType::NUMBER:
+        case NodeType::VARIABLE:
         default:
             break;
         }
