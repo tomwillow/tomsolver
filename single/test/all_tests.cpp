@@ -1072,6 +1072,18 @@ TEST(Parse, PostOrder) {
     }
 
     {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1-2-3");
+
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+
+        ASSERT_TRUE(postOrder[0].node->Equal(Num(1)));
+        ASSERT_TRUE(postOrder[1].node->Equal(Num(2)));
+        ASSERT_TRUE(postOrder[2].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
+        ASSERT_TRUE(postOrder[3].node->Equal(Num(3)));
+        ASSERT_TRUE(postOrder[4].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
+    }
+
+    {
         deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("2^3^4");
 
         auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
@@ -1123,6 +1135,14 @@ TEST(Parse, BuildTree) {
         auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
         auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
         ASSERT_EQ(node->ToString(), "1*2-3");
+        node->CheckParent();
+    }
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("x^2-y^2-7");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        ASSERT_EQ(node->ToString(), "x^2-y^2-7");
         node->CheckParent();
     }
 }
@@ -1619,6 +1639,24 @@ TEST(Solve, Case3) {
     cout << f << endl;
 
     auto ans = Solve(f);
+
+    cout << ans << endl;
+}
+TEST(Solve, Case4) {
+    MemoryLeakDetection mld;
+
+    std::setlocale(LC_ALL, ".UTF8");
+
+    SymVec f{
+        Parse("x^2+y^2-25"),
+        Parse("x^2-y^2-7"),
+    };
+
+    cout << f << endl;
+
+    VarsTable initialValues{{"x", 4.1}, {"y", 3.1}};
+
+    auto ans = Solve(f, initialValues);
 
     cout << ans << endl;
 }

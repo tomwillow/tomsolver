@@ -2,7 +2,6 @@
 #include <tomsolver/functions.h>
 #include <tomsolver/parse.h>
 
-
 #include "memory_leak_detection.h"
 
 #include <gtest/gtest.h>
@@ -136,6 +135,18 @@ TEST(Parse, PostOrder) {
     }
 
     {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("1-2-3");
+
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+
+        ASSERT_TRUE(postOrder[0].node->Equal(Num(1)));
+        ASSERT_TRUE(postOrder[1].node->Equal(Num(2)));
+        ASSERT_TRUE(postOrder[2].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
+        ASSERT_TRUE(postOrder[3].node->Equal(Num(3)));
+        ASSERT_TRUE(postOrder[4].node->Equal(internal::Operator(MathOperator::MATH_SUB)));
+    }
+
+    {
         deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("2^3^4");
 
         auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
@@ -189,6 +200,14 @@ TEST(Parse, BuildTree) {
         auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
         auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
         ASSERT_EQ(node->ToString(), "1*2-3");
+        node->CheckParent();
+    }
+
+    {
+        deque<internal::Token> tokens = internal::ParseFunctions::ParseToTokens("x^2-y^2-7");
+        auto postOrder = internal::ParseFunctions::InOrderToPostOrder(tokens);
+        auto node = internal::ParseFunctions::BuildExpressionTree(postOrder);
+        ASSERT_EQ(node->ToString(), "x^2-y^2-7");
         node->CheckParent();
     }
 }

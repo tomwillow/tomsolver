@@ -206,3 +206,22 @@ TEST(Solve, Case3) {
 
     cout << ans << endl;
 }
+
+TEST(Solve, Case4) {
+    MemoryLeakDetection mld;
+
+    std::setlocale(LC_ALL, ".UTF8");
+
+    SymVec f{
+        Parse("x^2+y^2-25"),
+        Parse("x^2-y^2-7"),
+    };
+
+    cout << f << endl;
+
+    VarsTable initialValues{{"x", 4.1}, {"y", 3.1}};
+
+    auto ans = Solve(f, initialValues);
+
+    cout << ans << endl;
+}
