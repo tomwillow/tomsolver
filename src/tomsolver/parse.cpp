@@ -259,7 +259,7 @@ std::vector<Token> ParseFunctions::InOrderToPostOrder(std::deque<Token> &inOrder
             // 不是括号也不是正负号
             if (!tokenStack.empty()) {
                 auto compare =
-                    IsLeft2Right(tokenStack.top().node->op)
+                    IsLeft2Right(f.node->op)
                         ? std::function<bool(const Token &)>{[cmp = std::less_equal<>{}, rank = Rank(f.node->op)](
                                                                  const Token
                                                                      &token) { // 左结合，则挤出高优先级及同优先级符号
