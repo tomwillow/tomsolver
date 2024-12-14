@@ -68,25 +68,27 @@ int main() {
 
             0.353246561920553   0.606082026502285
      */
+    try {
+        // create equations from string
+        SymVec f = {
+            "exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f,
+            "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f,
+        };
 
-    // create equations
-    SymVec f = {
-        "exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f,
-        "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f,
-    };
+        // solve it!
+        VarsTable ans = Solve(f);
 
-    // set initial value 0.0
-    Config::Get().initialValue = 0.0;
+        // print the solution
+        std::cout << ans << std::endl;
 
-    // solve, results to ans
-    VarsTable ans = Solve(f);
-
-    // print ans
-    std::cout << ans << std::endl;
-
-    // get variables' value
-    std::cout << "x1 = " << ans["x1"] << std::endl;
-    std::cout << "x2 = " << ans["x2"] << std::endl;
+        // get the values of solution
+        std::cout << "x1 = " << ans["x1"] << std::endl;
+        std::cout << "x2 = " << ans["x2"] << std::endl;
+    } catch (const std::runtime_error &err) {
+        // if any error occurs, exception will be thrown
+        std::cerr << err.what() << std::endl;
+        return -1;
+    }
 
     return 0;
 }
@@ -105,6 +107,7 @@ You could use [vcpkg](https://learn.microsoft.com/en-us/vcpkg/get_started/overvi
 
 * Manifest mode(recommended)
   Create a `vcpkg.json` file:
+
   ```
   {
     "dependencies": [

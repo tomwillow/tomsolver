@@ -68,25 +68,27 @@ int main() {
 
             0.353246561920553   0.606082026502285
      */
+    try {
+        // 创建方程组
+        SymVec f = {
+            "exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f,
+            "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f,
+        };
 
-    // 构造方程组
-    SymVec f = {
-        "exp(-exp(-(x1 + x2))) - x2 * (1 + x1 ^ 2)"_f,
-        "x1 * cos(x2) + x2 * sin(x1) - 0.5"_f,
-    };
+        // 求解！
+        VarsTable ans = Solve(f);
 
-    // 设置初值为0.0
-    Config::Get().initialValue = 0.0;
+        // 打印结果
+        std::cout << ans << std::endl;
 
-    // 求解，结果保存到ans
-    VarsTable ans = Solve(f);
-
-    // 打印出ans
-    std::cout << ans << std::endl;
-
-    // 单独获取变量的值
-    std::cout << "x1 = " << ans["x1"] << std::endl;
-    std::cout << "x2 = " << ans["x2"] << std::endl;
+        // 取得结果
+        std::cout << "x1 = " << ans["x1"] << std::endl;
+        std::cout << "x2 = " << ans["x2"] << std::endl;
+    } catch (const std::runtime_error &err) {
+        // 如果出错，捕获异常，并打印
+        std::cerr << err.what() << std::endl;
+        return -1;
+    }
 
     return 0;
 }
