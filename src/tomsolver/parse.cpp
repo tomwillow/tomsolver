@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <sstream>
