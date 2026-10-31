@@ -7,6 +7,7 @@ on:
     branches: [ "master", "dev", "action" ]
   pull_request:
     branches: [ "master", "dev", "action" ]
+  workflow_dispatch: 
 
 jobs:
   build:
