@@ -3,9 +3,9 @@
 #include "helper.h"
 #include "memory_leak_detection.h"
 
-
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <random>
 
 using namespace tomsolver;
