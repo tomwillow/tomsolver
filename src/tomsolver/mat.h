@@ -33,7 +33,7 @@ class Vec;
 
 class Mat {
 public:
-    explicit Mat(int row, int col, double initValue = 0) noexcept;
+    explicit Mat(int row, int col, double initValue = 0);
 
     Mat(std::initializer_list<std::initializer_list<double>> init) noexcept;
 
@@ -150,7 +150,7 @@ double Det(const Mat &A, int n) noexcept;
 
 class Vec : public Mat {
 public:
-    explicit Vec(int rows, double initValue = 0) noexcept;
+    explicit Vec(int rows, double initValue = 0);
 
     Vec(std::initializer_list<double> init) noexcept;
 

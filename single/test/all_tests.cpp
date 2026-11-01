@@ -620,6 +620,12 @@ TEST(Linear, Base) {
     ASSERT_EQ(x, expected);
 }
 
+TEST(Mat, InvalidDimensions) {
+    EXPECT_THROW(Mat(0, 1), std::invalid_argument);
+    EXPECT_THROW(Mat(1, -1), std::invalid_argument);
+    EXPECT_THROW(Vec(0), std::invalid_argument);
+    EXPECT_THROW(Mat(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()), std::length_error);
+}
 TEST(Mat, Multiply) {
     MemoryLeakDetection mld;
 

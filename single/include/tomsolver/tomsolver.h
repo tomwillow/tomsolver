@@ -7,6 +7,8 @@
 #include <cctype>
 #include <clocale>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <forward_list>
@@ -145,7 +147,7 @@ class Vec;
 
 class Mat {
 public:
-    explicit Mat(int row, int col, double initValue = 0) noexcept;
+    explicit Mat(int row, int col, double initValue = 0);
 
     Mat(std::initializer_list<std::initializer_list<double>> init) noexcept;
 
@@ -262,7 +264,7 @@ inline double Det(const Mat &A, int n) noexcept;
 
 class Vec : public Mat {
 public:
-    explicit Vec(int rows, double initValue = 0) noexcept;
+    explicit Vec(int rows, double initValue = 0);
 
     Vec(std::initializer_list<double> init) noexcept;
 
@@ -2010,10 +2012,27 @@ inline double Calc(MathOperator op, double v1, double v2) {
 
 namespace tomsolver {
 
-inline Mat::Mat(int rows, int cols, double initValue) noexcept : rows(rows), cols(cols), data(initValue, rows * cols) {
-    assert(rows > 0);
-    assert(cols > 0);
+namespace {
+
+inline std::size_t MatElementCount(int rows, int cols) {
+    if (rows <= 0 || cols <= 0) {
+        throw std::invalid_argument("Matrix dimensions must be positive");
+    }
+
+    const auto maxElementCount = static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max()) / sizeof(double);
+    const auto rowCount = static_cast<std::size_t>(rows);
+    const auto colCount = static_cast<std::size_t>(cols);
+    if (rowCount > maxElementCount / colCount) {
+        throw std::length_error("Matrix dimensions are too large");
+    }
+
+    return rowCount * colCount;
 }
+
+} // namespace
+
+inline Mat::Mat(int rows, int cols, double initValue)
+    : rows(rows), cols(cols), data(initValue, MatElementCount(rows, cols)) {}
 
 inline Mat::Mat(std::initializer_list<std::initializer_list<double>> init) noexcept {
     rows = static_cast<int>(init.size());
@@ -2401,7 +2420,7 @@ inline double Det(const Mat &A, int n) noexcept {
     return D; // 마지막엔 n X n 행렬의 Determinant를 리턴해준다.
 }
 
-inline Vec::Vec(int rows, double initValue) noexcept : Mat(rows, 1, initValue) {}
+inline Vec::Vec(int rows, double initValue) : Mat(rows, 1, initValue) {}
 
 inline Vec::Vec(std::initializer_list<double> init) noexcept : Vec(std::valarray<double>{init}) {}
 
